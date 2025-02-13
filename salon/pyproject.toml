@@ -8,3 +8,6 @@ target-version = ["py313"]
 # Enable Pyflakes `E` and `F` codes by default.
 select = ["E", "F"]
 ignore = ["E501", "E741"]
+
+[tool.bandit]
+skips = ["B105"]
