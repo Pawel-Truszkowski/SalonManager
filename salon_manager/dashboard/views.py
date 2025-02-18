@@ -3,19 +3,19 @@ from django.shortcuts import render
 
 # Create your views here.
 def home(request):
-    return render(request, "core/index.html")
+    return render(request, "dashboard/index.html")
 
 
 def offer(request):
-    return render(request, "core/offer.html")
+    return render(request, "dashboard/offer.html")
 
 
 def services(request):
-    return render(request, "core/services.html")
+    return render(request, "dashboard/services.html")
 
 
 def about(request):
-    return render(request, "core/about.html")
+    return render(request, "dashboard/about.html")
 
 
 def booking(request):
