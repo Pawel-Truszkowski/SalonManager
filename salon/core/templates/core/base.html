@@ -81,7 +81,20 @@
                 <li><a href="{% url 'about' %}">About</a></li>
                 <li><a href="{% url 'booking' %}">Book Online</a></li>
                 <li><a href="{% url 'contact' %}">Contact</a></li>
-                <li><a href="#">Login</a></li>
+
+                  {% if user.is_authenticated %}
+                  <li>
+                        <form method="post" action="{% url 'logout' %}">
+                            {% csrf_token %}
+                            <div class="form-group">
+                                <button class="btn btn-outline-info" type="submit">Logout</button>
+                            </div>
+                        </form>
+                  </li>
+                    {% else %}
+                      <li><a href="{% url 'login' %}">Login</a></li>
+                      <li href="#">Register</li>
+                    {% endif %}
               </ul>
             </nav>
           </div>
