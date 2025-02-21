@@ -1,10 +1,10 @@
-{% extends 'core/base.html' %}
+{% extends 'dashboard/base.html' %}
 {% load crispy_forms_tags %}
 {% block content %}
-    <div class="content-section">
+    <div class="site-section">
         <div class="container">
-            <div class="row">
-                <div class="col-md-6 col-lg-4 text-center">
+            <div class="row text-center">
+                <div class="col-md-12">
                     <form method="POST">
                         {% csrf_token %}
                         <fieldset class="form-group">

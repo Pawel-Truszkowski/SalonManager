@@ -19,8 +19,8 @@ def about(request):
 
 
 def booking(request):
-    return render(request, "core/booking.html")
+    return render(request, "dashboard/booking.html")
 
 
 def contact(request):
-    return render(request, "core/contact.html")
+    return render(request, "dashboard/contact.html")
