@@ -43,6 +43,7 @@ INSTALLED_APPS = [
 INSTALLED_EXTENSIONS = [
     "dashboard",
     "users",
+    "services",
 ]
 
 INSTALLED_APPS += INSTALLED_EXTENSIONS
