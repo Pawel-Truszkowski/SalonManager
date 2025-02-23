@@ -18,5 +18,5 @@ class Service(models.Model):
     price = models.DecimalField(max_digits=6, decimal_places=2)
     duration = models.PositiveIntegerField()
 
-    def __repr__(self):
+    def __str__(self):
         return self.name

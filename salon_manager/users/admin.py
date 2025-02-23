@@ -10,22 +10,15 @@ class CustomUserAdmin(UserAdmin):
         "email",
         "username",
         "phone_number",
-        "is_customer",
-        "is_employee",
+        "role",
         "is_staff",
     )
     fieldsets = UserAdmin.fieldsets + (
         (
             "Additional info:",
-            {"fields": ("phone_number", "is_customer", "is_employee")},
+            {"fields": ("phone_number", "role")},
         ),
     )
-
-
-@admin.register(Employee)
-class EmployeeAdmin(admin.ModelAdmin):
-    list_display = ("user", "work_start", "work_end")
-    search_fields = ("user__username", "user__email")
 
 
 @admin.register(Profile)
@@ -34,3 +27,4 @@ class ProfileAdmin(admin.ModelAdmin):
 
 
 admin.site.register(CustomUser, CustomUserAdmin)
+admin.site.register(Employee)
