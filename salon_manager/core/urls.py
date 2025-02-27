@@ -25,6 +25,7 @@ from users import views as user_views
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("", include("dashboard.urls")),
+    path("services/", include("services.urls")),
     path("reservations/", include("reservations.urls")),
     path("login/", LoginView.as_view(template_name="users/login.html"), name="login"),
     path("logout/", LogoutView.as_view(next_page="home"), name="logout"),
