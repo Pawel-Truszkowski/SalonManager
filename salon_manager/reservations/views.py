@@ -9,7 +9,7 @@ from .models import Reservation, WorkDay
 
 
 @login_required(redirect_field_name="login")
-def reservation(request):
+def reservation_create(request):
     employees = Employee.objects.all()
     services = Service.objects.all()
 
@@ -55,6 +55,6 @@ def reservation(request):
 
     return render(
         request,
-        "reservations/reservation.html",
+        "reservations/reservation_create.html",
         context={"form": form, "employees": employees, "services": services},
     )
