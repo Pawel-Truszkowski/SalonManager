@@ -4,21 +4,24 @@ from phonenumber_field.modelfields import PhoneNumberField
 from PIL import Image
 from services.models import Service
 
+ROLE = (("CUSTOMER", "Customer"), ("EMPLOYEE", "Employee"))
+
 
 class CustomUser(AbstractUser):
     phone_number = PhoneNumberField(blank=True)
-    is_customer = models.BooleanField(default=True)
-    is_employee = models.BooleanField(default=False)
+    role = models.CharField(max_length=10, choices=ROLE, default="CUSTOMER")
+
+    @property
+    def is_customer(self) -> bool:
+        return self.role == "CUSTOMER"
 
 
 class Employee(models.Model):
-    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE)
-    work_start = models.TimeField()
-    work_end = models.TimeField()
+    name = models.CharField(max_length=100)
     services = models.ManyToManyField(Service, related_name="employees")
 
     def __str__(self):
-        return self.user.get_full_name()
+        return self.name
 
 
 class Profile(models.Model):
