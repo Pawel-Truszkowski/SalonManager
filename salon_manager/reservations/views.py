@@ -1,6 +1,6 @@
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.http import HttpResponse
-from django.shortcuts import redirect, render
+from django.shortcuts import render
 from services.models import Service
 from users.models import Employee
 
@@ -8,18 +8,17 @@ from .forms import ReservationForm
 from .models import Reservation, WorkDay
 
 
-@login_required
+@login_required(redirect_field_name="login")
 def reservation(request):
     employees = Employee.objects.all()
     services = Service.objects.all()
 
     if request.method == "POST":
         form = ReservationForm(request.POST)
+
         if form.is_valid():
             reservation = form.save(commit=False)
             reservation.customer = request.user
-            print(reservation.employee_id)
-            print("Employee:", reservation.employee_id, type(reservation.employee))
             workday = WorkDay.objects.filter(
                 employee=reservation.employee_id, date=reservation.reservation_date
             ).first()
@@ -41,6 +40,7 @@ def reservation(request):
                         reservation_date=reservation.reservation_date,
                         start_time=reservation.start_time,
                     )
+
                     if existing_reservation.exists():
                         form.add_error(
                             None,
@@ -48,8 +48,7 @@ def reservation(request):
                         )
                     else:
                         reservation.save()
-                        return redirect("reservation_success")
-            print("Form errors:", form.errors)
+                        messages.success(request, "Twoja rezerwacja została dodana!")
 
     else:
         form = ReservationForm()
@@ -59,7 +58,3 @@ def reservation(request):
         "reservations/reservation.html",
         context={"form": form, "employees": employees, "services": services},
     )
-
-
-def reservation_success(request):
-    return render(request, "reservations/reservation_success.html")

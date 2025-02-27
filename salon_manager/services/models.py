@@ -19,4 +19,4 @@ class Service(models.Model):
     duration = models.PositiveIntegerField()
 
     def __str__(self):
-        return self.name
+        return f"{self.name} - {self.duration} min"
