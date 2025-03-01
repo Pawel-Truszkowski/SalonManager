@@ -4,12 +4,6 @@ from django.db import models
 from services.models import Service
 from users.models import CustomUser, Employee
 
-RESERVATION_STATUS_CHOICES = (
-    ("PENDING", "Oczekujące"),
-    ("CONFIRMED", "Potwierdzone"),
-    ("CANCELLED", "Anulowane"),
-)
-
 
 class WorkDay(models.Model):
     date = models.DateField()
@@ -21,6 +15,12 @@ class WorkDay(models.Model):
 
 
 class Reservation(models.Model):
+    RESERVATION_STATUS_CHOICES = (
+        ("PENDING", "Oczekujące"),
+        ("CONFIRMED", "Potwierdzone"),
+        ("CANCELLED", "Anulowane"),
+    )
+
     customer = models.ForeignKey(
         CustomUser,
         on_delete=models.CASCADE,

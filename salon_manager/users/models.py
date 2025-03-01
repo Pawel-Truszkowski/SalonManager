@@ -4,12 +4,12 @@ from phonenumber_field.modelfields import PhoneNumberField
 from PIL import Image
 from services.models import Service
 
-ROLE = (("CUSTOMER", "Customer"), ("EMPLOYEE", "Employee"))
-
 
 class CustomUser(AbstractUser):
+    ROLES = (("CUSTOMER", "Customer"), ("EMPLOYEE", "Employee"))
+
     phone_number = PhoneNumberField(blank=True)
-    role = models.CharField(max_length=10, choices=ROLE, default="CUSTOMER")
+    role = models.CharField(max_length=10, choices=ROLES, default="CUSTOMER")
 
     @property
     def is_customer(self) -> bool:
