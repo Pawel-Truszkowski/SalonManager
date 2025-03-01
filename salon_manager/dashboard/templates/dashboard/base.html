@@ -26,7 +26,9 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/mediaelement@4.2.7/build/mediaelementplayer.min.css">
     <link rel="stylesheet" href="{% static 'core/css/aos.css' %}">
     <link rel="stylesheet" href="{% static 'core/css/style.css' %}">
+
   </head>
+
   <body>
 
   <div class="site-wrap">
@@ -47,7 +49,7 @@
         <div class="row align-items-center">
 
           <div class="col-6 col-xl-2" data-aos="fade-down">
-            <h1 class="mb-0"><a href="{% url 'home' %}" class="text-black h2 mb-0">Royal Beauty</a></h1>
+            <h1 class="mb-0"><a href="{% url 'home' %}" class="text-green h2 mb-0">Royal Beauty</a></h1>
           </div>
           <div class="col-10 col-md-8 d-none d-xl-block" data-aos="fade-down">
             <nav class="site-navigation position-relative text-right text-lg-center" role="navigation">
@@ -127,21 +129,22 @@
 
     </header>
 
-    <main role="main" class="container-fluid">
-         <div class="row">
-             <div class="col">
-                 {% if messages %}
-                    {% for message in messages %}
-                        <div class="alert alert-{{ message.tags }}">
-                            {{ message }}
-                        </div>
-                    {% endfor %}
-                 {% endif %}
-                 {% block content %}
-                 {% endblock %}
-             </div>
-         </div>
-    </main>
+
+    <div class="row">
+      <div class="col">
+        {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">
+          {{ message }}
+        </div>
+        {% endfor %}
+        {% endif %}
+      </div>
+    </div>
+
+
+    {% block content %}
+    {% endblock %}
 
     <footer class="site-footer">
       <div class="container">

@@ -16,29 +16,43 @@
   </div>
 
 
-    <div class="site-section">
-      <div class="container">
-        {% for category in service_categories %}
-        <div class="row">
-          <div class="col-md-12 col-lg-4 text-center mb-5 mb-lg-5">
-            <h2> {{ category.name }} </h2>
+<div class="site-section">
+  <div class="container">
+    {% for category in service_categories %}
+
+    <!-- Nagłówek kategorii, wycentrowany -->
+    <div class="row">
+      <div class="col-12 text-center mb-4">
+        <h2 class="font-weight-bold">{{ category.name }}</h2>
+      </div>
+    </div>
+
+    <!-- Usługi w danej kategorii -->
+    <div class="row justify-content-center">
+      {% for service in services %}
+        {% if service.category == category %}
+        <div class="col-md-6 col-lg-4 text-center mb-5">
+          <div class="h-100 p-4 p-lg-5 bg-light site-block-feature-7">
+            <span class="icon flaticon-nails display-3 text-primary mb-4 d-block"></span>
+            <h3 class="text-black h4">{{ service.name }}</h3>
+            <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Rerum exercitationem quae id dolorum debitis.</p>
+            <p><strong class="font-weight-bold text-primary">{{ service.price }} PLN</strong></p>
+            <button class="btn btn-primary text-white" type="button">Zarezerwuj</button>
           </div>
-          {% for service in services %}
-          {% if service.category == category %}
-            <div class="col-md-6 col-lg-4 text-center mb-5 mb-lg-5">
-              <div class="h-100 p-4 p-lg-5 bg-light site-block-feature-7">
-                <span class="icon flaticon-manicure display-3 text-primary mb-4 d-block"></span>
-                <h3 class="text-black h4">{{ service.name }}</h3>
-                <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Rerum exercitationem quae id dolorum debitis.</p>
-                <p><strong class="font-weight-bold text-primary">{{ service.price }} PLN</strong></p>
-              </div>
-            </div>
-            {% endif %}
-          {% endfor %}
         </div>
-        {% empty %}
-          <p>Brak dostępnych kategorii.</p>
-        {% endfor %}
+        {% endif %}
+      {% empty %}
+        <div class="col-12 text-center">
+          <p>Brak dostępnych usług w tej kategorii.</p>
+        </div>
+      {% endfor %}
+    </div>
+
+    {% empty %}
+      <p class="text-center">Brak dostępnych kategorii.</p>
+    {% endfor %}
+  </div>
+</div>
 
         <div class="row">
           <div class="col-md-6 col-lg-4 text-center mb-5 mb-lg-5">

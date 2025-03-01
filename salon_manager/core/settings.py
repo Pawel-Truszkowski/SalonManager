@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     "phonenumber_field",
     "crispy_forms",
     "crispy_bootstrap5",
+    "formtools",
 ]
 
 INSTALLED_EXTENSIONS = [
