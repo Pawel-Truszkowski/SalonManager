@@ -1,0 +1,25 @@
+{% extends 'reservations/wizard/base_wizard.html' %}
+{% load crispy_forms_tags %}
+
+{% block step_title %}Informacje o Tobie{% endblock %}
+
+{% block form_content %}
+<div class="row form-group">
+  <div class="col-md-12 mb-3 mb-md-0">
+    {{ wizard.form.name|as_crispy_field }}
+  </div>
+</div>
+<div class="row form-group">
+  <div class="col-md-12 mb-3 mb-md-0">
+    {{ wizard.form.email|as_crispy_field }}
+  </div>
+</div>
+<div class="row form-group">
+  <div class="col-md-12 mb-3 mb-md-0">
+    {{ wizard.form.phone|as_crispy_field }}
+  </div>
+</div>
+<div class="alert alert-info">
+  <p class="mb-0">Ta informacja jest o Twoim profilu. Jeśli potrzebujesz ją zaktualizować, proszę przejdź do ustawień profilu.</p>
+</div>
+{% endblock %}
