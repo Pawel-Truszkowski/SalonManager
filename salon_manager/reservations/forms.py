@@ -115,6 +115,7 @@ class TimeSelectionForm(forms.Form):
 
         try:
             workday = WorkDay.objects.get(employee=self.employee, date=self.date)
+            # TODO EXCEPT HERE
             existing_resevations = Reservation.objects.filter(
                 employee=self.employee,
                 reservation_date=self.date,
