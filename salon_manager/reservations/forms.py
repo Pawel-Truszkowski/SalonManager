@@ -1,22 +1,11 @@
 import datetime
+import locale
 
 from django import forms
-from django.forms import ModelForm
-from phonenumber_field.modelfields import PhoneNumberField
 from services.models import Service
 from users.models import Employee
 
 from .models import Reservation, WorkDay
-
-
-class ReservationForm(forms.ModelForm):
-    class Meta:
-        model = Reservation
-        fields = ["service", "reservation_date", "start_time", "employee"]
-        widgets = {
-            "reservation_date": forms.DateInput(attrs={"type": "date"}),
-            "start_time": forms.TimeInput(attrs={"type": "time"}),
-        }
 
 
 class CustomerInfoForm(forms.Form):
@@ -38,6 +27,7 @@ class CustomerInfoForm(forms.Form):
 class ServiceSelectionForm(forms.Form):
     service = forms.ModelChoiceField(
         queryset=Service.objects.all(),
+        label=False,
         widget=forms.Select(attrs={"class": "form-control"}),
     )
 
@@ -45,6 +35,7 @@ class ServiceSelectionForm(forms.Form):
 class EmployeeSelectionForm(forms.Form):
     employee = forms.ModelChoiceField(
         queryset=Employee.objects.all(),
+        label=False,
         widget=forms.Select(attrs={"class": "form-control"}),
     )
 
@@ -56,20 +47,47 @@ class EmployeeSelectionForm(forms.Form):
 
 
 class DateSelectionForm(forms.Form):
-    reservation_date = forms.DateField(
-        widget=forms.DateInput(attrs={"type": "date", "class": "form-control"}),
+    reservation_date = forms.ChoiceField(
+        label=False, widget=forms.Select(attrs={"class": "form-control"}), choices=[]
     )
 
     def __init__(self, *args, **kwargs):
         self.employee = kwargs.pop("employee", None)
         super().__init__(*args, **kwargs)
 
-        today = datetime.date.today()
-        self.fields["reservation_date"].widget.attrs["min"] = today.strftime("%Y-%m-%d")
+        if self.employee:
+            today = datetime.date.today()
+
+            workdays = WorkDay.objects.filter(
+                employee=self.employee,
+                date__gte=today,
+                date__lte=today + datetime.timedelta(days=60),
+            ).order_by("date")
+
+            locale.setlocale(locale.LC_TIME, "pl_PL.UTF-8")
+
+            date_choices = [
+                (
+                    workday.date.strftime("%Y-%m-%d"),
+                    workday.date.strftime("%A, %d %B, %Y"),
+                )
+                for workday in workdays
+            ]
+
+            if date_choices:
+                self.fields["reservation_date"].choices = date_choices
+            else:
+                self.fields["reservation_date"].choices = [("", "Brak dostępnych dat.")]
 
     def clean_reservation_date(self):
         date = self.cleaned_data["reservation_date"]
         today = datetime.date.today()
+
+        if isinstance(date, str):
+            try:
+                date = datetime.datetime.strptime(date, "%Y-%m-%d").date()
+            except ValueError:
+                raise ValueError("Niepoprawny format daty. Oczekiwano YYYY-MM-DD.")
 
         if date < today:
             raise forms.ValidationError("Nie możesz wwybrać daty z przeszłości.")
@@ -83,8 +101,10 @@ class DateSelectionForm(forms.Form):
 
 
 class TimeSelectionForm(forms.Form):
-    start_time = forms.TimeField(
-        widget=forms.TimeInput(attrs={"type": "time", "class": "form-control"})
+    start_time = forms.ChoiceField(
+        label="Select a time",
+        widget=forms.Select(attrs={"class": "form-control"}),
+        choices=[],
     )
 
     def __init__(self, *args, **kwargs):
@@ -93,8 +113,68 @@ class TimeSelectionForm(forms.Form):
         self.service = kwargs.pop("service", None)
         super().__init__(*args, **kwargs)
 
+        try:
+            workday = WorkDay.objects.get(employee=self.employee, date=self.date)
+            existing_resevations = Reservation.objects.filter(
+                employee=self.employee,
+                reservation_date=self.date,
+                status__in=["PENDING", "CONFIRMED"],
+            )
+
+            available_slots = []
+            service_duration = datetime.timedelta(minutes=self.service.duration)
+
+            current_time = datetime.datetime.combine(self.date, workday.start_time)
+            end_time = datetime.datetime.combine(self.date, workday.end_time)
+
+            # Create 15-minute intervals
+            while current_time + service_duration <= end_time:
+                time_slot_end = current_time + service_duration
+
+                is_available = True
+                for reservation in existing_resevations:
+                    reservation_start = datetime.datetime.combine(
+                        self.date, reservation.start_time
+                    )
+                    reservation_end = datetime.datetime.combine(
+                        self.date, reservation.end_time
+                    )
+
+                    if (
+                        current_time < reservation_end
+                        and time_slot_end > reservation_start
+                    ):
+                        is_available = False
+                        break
+
+                if is_available:
+                    time_display = current_time.strftime("%I:%M %p")
+                    time_value = current_time.strftime("%H:%M")
+                    available_slots.append((time_value, time_display))
+
+                current_time += datetime.timedelta(minutes=15)
+
+            if available_slots:
+                self.fields["start_time"].choices = available_slots
+            else:
+                self.fields["start_time"].choices = [("", "Brak dostępnych miejsc.")]
+
+        except WorkDay.DoesNotExist:
+            self.fields["start_time"].choices = [
+                (
+                    "",
+                    "Brak dostępnych miejsc w wybranej dacie. Proszę spróbuj inny dzień",
+                )
+            ]
+
     def clean_start_time(self):
         time = self.cleaned_data["start_time"]
+
+        if isinstance(time, str):
+            try:
+                time = datetime.datetime.strptime(time, "%H:%M").time()
+            except ValueError:
+                raise ValueError("Niepoprawny format czasu.")
 
         workday = WorkDay.objects.filter(employee=self.employee, date=self.date).first()
         if workday:
