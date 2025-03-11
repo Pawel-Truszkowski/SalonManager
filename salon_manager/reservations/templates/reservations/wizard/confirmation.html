@@ -1,0 +1,63 @@
+{% extends 'reservations/wizard/base_wizard.html' %}
+{% load crispy_forms_tags %}
+
+{% block step_title %}Potwierdź wizytę{% endblock %}
+
+{% block form_content %}
+<div class="p-4 border mb-3">
+  <div class="row mb-3">
+    <div class="col-md-6">
+      <strong>Usługa:</strong>
+    </div>
+    <div class="col-md-6">
+      {{ service.name }}
+    </div>
+  </div>
+  <div class="row mb-3">
+    <div class="col-md-6">
+      <strong>Czas usługi:</strong>
+    </div>
+    <div class="col-md-6">
+      {{ service.duration }} minut
+    </div>
+  </div>
+  <div class="row mb-3">
+    <div class="col-md-6">
+      <strong>Cena:</strong>
+    </div>
+    <div class="col-md-6">
+      {{ service.price }} zł
+    </div>
+  </div>
+  <div class="row mb-3">
+    <div class="col-md-6">
+      <strong>Pracownik:</strong>
+    </div>
+    <div class="col-md-6">
+      {{ employee.name }}
+    </div>
+  </div>
+  <div class="row mb-3">
+    <div class="col-md-6">
+      <strong>Data:</strong>
+    </div>
+    <div class="col-md-6">
+      {{ reservation_date|date:"F j, Y" }}
+    </div>
+  </div>
+  <div class="row mb-3">
+    <div class="col-md-6">
+      <strong>Czas:</strong>
+    </div>
+    <div class="col-md-6">
+      {{ start_time|time:"H:i" }} - {{ end_time|time:"H:i" }}
+    </div>
+  </div>
+</div>
+
+<div class="row form-group">
+  <div class="col-md-12 mb-3 mb-md-0">
+    {{ wizard.form.notes|as_crispy_field }}
+  </div>
+</div>
+{% endblock %}

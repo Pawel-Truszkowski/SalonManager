@@ -1,0 +1,12 @@
+{% extends 'reservations/wizard/base_wizard.html' %}
+{% load crispy_forms_tags %}
+
+{% block step_title %}Wybierz pracownika{% endblock %}
+
+{% block form_content %}
+<div class="row form-group">
+  <div class="col-md-12 mb-3 mb-md-0">
+    {{ wizard.form.employee|as_crispy_field }}
+  </div>
+</div>
+{% endblock %}
