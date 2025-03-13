@@ -241,5 +241,8 @@
 
   <script src="{% static 'core/js/main.js' %}"></script>
 
+  <!-- Just before the closing body tag -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  {% block extra_js %}{% endblock %}
   </body>
 </html>
