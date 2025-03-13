@@ -1,0 +1,134 @@
+<!-- reservations/templates/reservations/wizard/reservation_select.html -->
+{% extends 'reservations/wizard/base_wizard.html' %}
+{% load crispy_forms_tags %}
+
+{% block step_title %}Select Service & Appointment Time{% endblock %}
+
+{% block form_content %}
+<div class="row form-group">
+  <div class="col-md-12 mb-3">
+    {{ wizard.form.service|as_crispy_field }}
+  </div>
+</div>
+
+<div class="row form-group">
+  <div class="col-md-12 mb-3">
+    {{ wizard.form.employee|as_crispy_field }}
+  </div>
+</div>
+
+<div class="row form-group">
+  <div class="col-md-12 mb-3">
+    {{ wizard.form.reservation_date|as_crispy_field }}
+  </div>
+</div>
+
+<div class="row form-group">
+  <div class="col-md-12 mb-3">
+    {{ wizard.form.start_time|as_crispy_field }}
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // When service changes, update employee options
+    $('#id_service').on('change', function() {
+        var serviceId = $(this).val();
+        updateEmployees(serviceId);
+        // Reset other fields
+        $('#id_reservation_date').val('');
+        $('#id_start_time').empty().append('<option value="">Select a date first</option>');
+    });
+
+    // When employee changes, update available dates
+    $('#id_employee').on('change', function() {
+        var employeeId = $(this).val();
+        if (employeeId) {
+            updateAvailableDates(employeeId);
+        }
+        // Reset time field
+        $('#id_start_time').empty().append('<option value="">Select a date first</option>');
+    });
+
+    // When date changes, update available times
+    $('#id_reservation_date').on('change', function() {
+        var date = $(this).val();
+        var employeeId = $('#id_employee').val();
+        var serviceId = $('#id_service').val();
+
+        if (date && employeeId && serviceId) {
+            updateAvailableTimes(employeeId, serviceId, date);
+        }
+    });
+
+    function updateEmployees(serviceId) {
+        $.ajax({
+            url: '{% url "get_employees" %}',
+            data: {
+                'service_id': serviceId
+            },
+            dataType: 'json',
+            success: function(data) {
+                $('#id_employee').empty();
+                $('#id_employee').append('<option value="">---------</option>');
+
+                $.each(data.employees, function(index, employee) {
+                    $('#id_employee').append(
+                        $('<option></option>').val(employee.id).html(employee.name)
+                    );
+                });
+            }
+        });
+    }
+
+    function updateAvailableDates(employeeId) {
+        $.ajax({
+            url: '{% url "get_available_dates" %}',
+            data: {
+                'employee_id': employeeId
+            },
+            dataType: 'json',
+            success: function(data) {
+                var dateField = $('#id_reservation_date');
+                dateField.prop('disabled', false);
+
+                if (data.dates.length === 0) {
+                    dateField.after('<p class="text-danger">No available dates for this stylist</p>');
+                }
+            }
+        });
+    }
+
+    function updateAvailableTimes(employeeId, serviceId, date) {
+        $.ajax({
+            url: '{% url "get_available_times" %}',
+            data: {
+                'employee_id': employeeId,
+                'service_id': serviceId,
+                'date': date
+            },
+            dataType: 'json',
+            success: function(data) {
+                var timeField = $('#id_start_time');
+                timeField.empty();
+
+                if (data.times.length === 0) {
+                    timeField.append('<option value="">No available times</option>');
+                } else {
+                    timeField.append('<option value="">Select a time</option>');
+
+                    $.each(data.times, function(index, time) {
+                        timeField.append(
+                            $('<option></option>').val(time.value).html(time.display)
+                        );
+                    });
+                }
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

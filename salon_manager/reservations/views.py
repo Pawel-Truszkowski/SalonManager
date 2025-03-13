@@ -2,29 +2,26 @@ import datetime
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.http import JsonResponse
 from django.shortcuts import redirect, render
 from django.utils.decorators import method_decorator
 from formtools.wizard.views import SessionWizardView
+from services.models import Service
+from users.models import Employee
 
 from . import forms
-from .models import Reservation
+from .models import Reservation, WorkDay
 
 FORMS = [
     ("customer", forms.CustomerInfoForm),
-    ("service", forms.ServiceSelectionForm),
-    ("employee", forms.EmployeeSelectionForm),
-    ("date", forms.DateSelectionForm),
-    ("time", forms.TimeSelectionForm),
+    ("select", forms.ReservationSelectionForm),
     ("confirm", forms.ConfirmationForm),
 ]
 
 
 TEMPLATES = {
     "customer": "reservations/wizard/customer_info.html",
-    "service": "reservations/wizard/service_selection.html",
-    "employee": "reservations/wizard/employee_selection.html",
-    "date": "reservations/wizard/date_selection.html",
-    "time": "reservations/wizard/time_selection.html",
+    "select": "reservations/wizard/reservation_select.html",
     "confirm": "reservations/wizard/confirmation.html",
 }
 
@@ -36,76 +33,164 @@ class ReservationWizard(SessionWizardView):
 
     def get_form_kwargs(self, step=None):
         kwargs = super().get_form_kwargs(step)
-
         if step == "customer":
             kwargs["user"] = self.request.user
-
-        elif step == "employee":
-            service_data = self.get_cleaned_data_for_step("service")
-            if service_data:
-                kwargs["service"] = service_data["service"]
-
-        elif step == "date":
-            employee_data = self.get_cleaned_data_for_step("employee")
-            if employee_data:
-                kwargs["employee"] = employee_data["employee"]
-
-        elif step == "time":
-            employee_data = self.get_cleaned_data_for_step("employee")
-            date_data = self.get_cleaned_data_for_step("date")
-            service_data = self.get_cleaned_data_for_step("service")
-
-            if employee_data and date_data and service_data:
-                kwargs["employee"] = employee_data["employee"]
-                kwargs["date"] = date_data["reservation_date"]
-                kwargs["service"] = service_data["service"]
-
         return kwargs
 
     def get_context_data(self, form, **kwargs):
         context = super().get_context_data(form=form, **kwargs)
 
         if self.steps.current == "confirm":
-            service_data = self.get_cleaned_data_for_step("service")
-            employee_data = self.get_cleaned_data_for_step("employee")
-            date_data = self.get_cleaned_data_for_step("date")
-            time_data = self.get_cleaned_data_for_step("time")
+            select_data = self.get_cleaned_data_for_step("select")
+            if select_data:
+                service = select_data["service"]
+                employee = select_data["employee"]
+                date = select_data["reservation_date"]
+                time = select_data["start_time"]
 
-            start_datetime = datetime.datetime.combine(
-                date_data["reservation_date"], time_data["start_time"]
-            )
-            duration = datetime.timedelta(minutes=service_data["service"].duration)
-            end_datetime = start_datetime + duration
+                # Convert time string to time object
+                time_obj = datetime.datetime.strptime(time, "%H:%M").time()
 
-            context["end_time"] = end_datetime.time()
+                # Calculate end time
+                start_datetime = datetime.datetime.combine(date, time_obj)
+                duration = datetime.timedelta(minutes=service.duration)
+                end_datetime = start_datetime + duration
 
-            context.update(
-                {
-                    "service": service_data["service"],
-                    "employee": employee_data["employee"],
-                    "reservation_date": date_data["reservation_date"],
-                    "start_time": time_data["start_time"],
-                }
-            )
+                context.update(
+                    {
+                        "service": service,
+                        "employee": employee,
+                        "reservation_date": date,
+                        "start_time": time_obj,
+                        "end_time": end_datetime.time(),
+                    }
+                )
 
         return context
 
     def done(self, form_list, **kwargs):
-        all_data = self.get_all_cleaned_data()
+        # Get data from forms
+        select_data = self.get_cleaned_data_for_step("select")
 
+        # Convert time string to time object
+        time_str = select_data["start_time"]
+        time_obj = datetime.datetime.strptime(time_str, "%H:%M").time()
+
+        # Create reservation
         reservation = Reservation(
             customer=self.request.user,
-            service=all_data["service"],
-            employee=all_data["employee"],
-            reservation_date=all_data["reservation_date"],
-            start_time=all_data["start_time"],
+            service=select_data["service"],
+            employee=select_data["employee"],
+            reservation_date=select_data["reservation_date"],
+            start_time=time_obj,
             status="PENDING",
         )
 
+        # Save the reservation
         reservation.save()
 
-        messages.success(self.request, "Twoja wizyta została dodana pomyślnie!")
+        messages.success(self.request, "Your appointment has been successfully booked!")
         return redirect("reservation_success")
+
+
+# Ajax views for dynamic form updates
+@login_required
+def get_employees(request):
+    service_id = request.GET.get("service_id")
+    if service_id:
+        employees = Employee.objects.filter(services__id=service_id)
+        return JsonResponse(
+            {"employees": [{"id": emp.id, "name": emp.name} for emp in employees]}
+        )
+    return JsonResponse({"employees": []})
+
+
+@login_required
+def get_available_dates(request):
+    employee_id = request.GET.get("employee_id")
+    if employee_id:
+        today = datetime.date.today()
+        workdays = WorkDay.objects.filter(
+            employee_id=employee_id,
+            date__gte=today,
+            date__lte=today + datetime.timedelta(days=30),
+        ).order_by("date")
+
+        return JsonResponse(
+            {
+                "dates": [
+                    {
+                        "date": workday.date.strftime("%Y-%m-%d"),
+                        "display": workday.date.strftime("%A, %B %d, %Y"),
+                    }
+                    for workday in workdays
+                ]
+            }
+        )
+    return JsonResponse({"dates": []})
+
+
+@login_required
+def get_available_times(request):
+    employee_id = request.GET.get("employee_id")
+    service_id = request.GET.get("service_id")
+    date_str = request.GET.get("date")
+
+    if all([employee_id, service_id, date_str]):
+        try:
+            selected_date = datetime.datetime.strptime(date_str, "%Y-%m-%d").date()
+            employee = Employee.objects.get(id=employee_id)
+            service = Service.objects.get(id=service_id)
+
+            # Get workday
+            workday = WorkDay.objects.get(employee=employee, date=selected_date)
+
+            # Get existing reservations
+            existing_reservations = Reservation.objects.filter(
+                employee=employee,
+                reservation_date=selected_date,
+                status__in=["PENDING", "CONFIRMED"],
+            )
+
+            # Generate time slots
+            available_slots = []
+            service_duration = datetime.timedelta(minutes=service.duration)
+
+            current_time = datetime.datetime.combine(selected_date, workday.start_time)
+            end_time = datetime.datetime.combine(selected_date, workday.end_time)
+
+            while current_time + service_duration <= end_time:
+                slot_end = current_time + service_duration
+                is_available = True
+
+                for reservation in existing_reservations:
+                    res_start = datetime.datetime.combine(
+                        selected_date, reservation.start_time
+                    )
+                    res_end = datetime.datetime.combine(
+                        selected_date, reservation.end_time
+                    )
+
+                    if current_time < res_end and slot_end > res_start:
+                        is_available = False
+                        break
+
+                if is_available:
+                    time_value = current_time.strftime("%H:%M")
+                    time_display = current_time.strftime("%I:%M %p")
+                    available_slots.append(
+                        {"value": time_value, "display": time_display}
+                    )
+
+                # Move to next 15-minute slot
+                current_time += datetime.timedelta(minutes=15)
+
+            return JsonResponse({"times": available_slots})
+
+        except (WorkDay.DoesNotExist, Employee.DoesNotExist, Service.DoesNotExist):
+            return JsonResponse({"times": [], "error": "Invalid selection"})
+
+    return JsonResponse({"times": []})
 
 
 @login_required(redirect_field_name="login")
