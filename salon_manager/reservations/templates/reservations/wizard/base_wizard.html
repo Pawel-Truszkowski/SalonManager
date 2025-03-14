@@ -1,6 +1,7 @@
 {% extends 'dashboard/base.html' %}
 {% load static %}
 {% load crispy_forms_tags %}
+{% load custom_filters %}
 
 {% block head %}
 {{ wizard.form.media }}
@@ -22,12 +23,13 @@
 <div class="site-section bg-light">
   <div class="container">
     <div class="row">
-      <div class="col-md-12 mb-5">
+      <div class="col-md-8 col-lg-6 mx-auto">
         <div class="p-3 p-lg-5 border">
+
           <div class="progress mb-4">
             <div class="progress-bar" role="progressbar"
-                 style="width: {{ wizard.steps.step0|add:"3" }}0%;"
-                 aria-valuenow="{{ wizard.steps.step0|add:"1" }}0"
+                 style="width: {{ wizard.steps.step0|add:"1"|mul:100|div:wizard.steps.count }}%;"
+                 aria-valuenow="{{ wizard.steps.step0|add:"1"|mul:100|div:wizard.steps.count }}"
                  aria-valuemin="0"
                  aria-valuemax="100">
               Step {{ wizard.steps.step1 }} of {{ wizard.steps.count }}

@@ -31,8 +31,20 @@ class ReservationWizard(SessionWizardView):
     def get_template_names(self):
         return [TEMPLATES[self.steps.current]]
 
+    def post(self, *args, **kwargs):
+        if "wizard_goto_step" in self.request.POST:
+            return self.render_goto_step(self.request.POST["wizard_goto_step"])
+        return super().post(self, *args, **kwargs)
+
     def get_form_kwargs(self, step=None):
         kwargs = super().get_form_kwargs(step)
+
+        if (
+            self.steps.current != self.steps.last
+            and "wizard_goto_step" in self.request.POST
+        ):
+            kwargs.update({"data": None})
+
         if step == "customer":
             kwargs["user"] = self.request.user
         return kwargs
@@ -48,10 +60,8 @@ class ReservationWizard(SessionWizardView):
                 date = select_data["reservation_date"]
                 time = select_data["start_time"]
 
-                # Convert time string to time object
                 time_obj = datetime.datetime.strptime(time, "%H:%M").time()
 
-                # Calculate end time
                 start_datetime = datetime.datetime.combine(date, time_obj)
                 duration = datetime.timedelta(minutes=service.duration)
                 end_datetime = start_datetime + duration
@@ -69,14 +79,11 @@ class ReservationWizard(SessionWizardView):
         return context
 
     def done(self, form_list, **kwargs):
-        # Get data from forms
         select_data = self.get_cleaned_data_for_step("select")
 
-        # Convert time string to time object
         time_str = select_data["start_time"]
         time_obj = datetime.datetime.strptime(time_str, "%H:%M").time()
 
-        # Create reservation
         reservation = Reservation(
             customer=self.request.user,
             service=select_data["service"],
@@ -86,14 +93,12 @@ class ReservationWizard(SessionWizardView):
             status="PENDING",
         )
 
-        # Save the reservation
         reservation.save()
 
         messages.success(self.request, "Your appointment has been successfully booked!")
         return redirect("reservation_success")
 
 
-# Ajax views for dynamic form updates
 @login_required
 def get_employees(request):
     service_id = request.GET.get("service_id")
@@ -141,11 +146,8 @@ def get_available_times(request):
             selected_date = datetime.datetime.strptime(date_str, "%Y-%m-%d").date()
             employee = Employee.objects.get(id=employee_id)
             service = Service.objects.get(id=service_id)
-
-            # Get workday
             workday = WorkDay.objects.get(employee=employee, date=selected_date)
 
-            # Get existing reservations
             existing_reservations = Reservation.objects.filter(
                 employee=employee,
                 reservation_date=selected_date,

@@ -3,9 +3,7 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
-    path(
-        "book/", views.ReservationWizard.as_view(views.FORMS), name="reservation_wizard"
-    ),
+    path("", views.ReservationWizard.as_view(views.FORMS), name="reservation_wizard"),
     path("booking-success/", views.reservation_success, name="reservation_success"),
     # Ajax URLs
     path("ajax/get-employees/", views.get_employees, name="get_employees"),
