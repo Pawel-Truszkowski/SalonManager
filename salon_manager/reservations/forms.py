@@ -36,8 +36,7 @@ class ReservationSelectionForm(forms.Form):
         )
     )
 
-    start_time = forms.ChoiceField(
-        choices=[("", "Select a date first")],
+    start_time = forms.CharField(
         widget=forms.Select(attrs={"class": "form-control", "id": "id_start_time"}),
     )
 
