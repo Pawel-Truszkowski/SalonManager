@@ -39,14 +39,9 @@ class ReservationWizard(SessionWizardView):
     def get_form_kwargs(self, step=None):
         kwargs = super().get_form_kwargs(step)
 
-        if (
-            self.steps.current != self.steps.last
-            and "wizard_goto_step" in self.request.POST
-        ):
-            kwargs.update({"data": None})
-
         if step == "customer":
             kwargs["user"] = self.request.user
+
         return kwargs
 
     def get_context_data(self, form, **kwargs):
@@ -154,43 +149,37 @@ def get_available_times(request):
                 status__in=["PENDING", "CONFIRMED"],
             )
 
-            # Generate time slots
-            available_slots = []
-            service_duration = datetime.timedelta(minutes=service.duration)
-
-            current_time = datetime.datetime.combine(selected_date, workday.start_time)
-            end_time = datetime.datetime.combine(selected_date, workday.end_time)
-
-            while current_time + service_duration <= end_time:
-                slot_end = current_time + service_duration
-                is_available = True
-
-                for reservation in existing_reservations:
-                    res_start = datetime.datetime.combine(
-                        selected_date, reservation.start_time
-                    )
-                    res_end = datetime.datetime.combine(
-                        selected_date, reservation.end_time
-                    )
-
-                    if current_time < res_end and slot_end > res_start:
-                        is_available = False
-                        break
-
-                if is_available:
-                    time_value = current_time.strftime("%H:%M")
-                    time_display = current_time.strftime("%I:%M %p")
-                    available_slots.append(
-                        {"value": time_value, "display": time_display}
-                    )
-
-                # Move to next 15-minute slot
-                current_time += datetime.timedelta(minutes=15)
-
-            return JsonResponse({"times": available_slots})
-
         except (WorkDay.DoesNotExist, Employee.DoesNotExist, Service.DoesNotExist):
             return JsonResponse({"times": [], "error": "Invalid selection"})
+
+        available_slots = []
+        service_duration = datetime.timedelta(minutes=service.duration)
+
+        current_time = datetime.datetime.combine(selected_date, workday.start_time)
+        end_time = datetime.datetime.combine(selected_date, workday.end_time)
+
+        while current_time + service_duration <= end_time:
+            slot_end = current_time + service_duration
+            is_available = True
+
+            for reservation in existing_reservations:
+                res_start = datetime.datetime.combine(
+                    selected_date, reservation.start_time
+                )
+                res_end = datetime.datetime.combine(selected_date, reservation.end_time)
+
+                if current_time < res_end and slot_end > res_start:
+                    is_available = False
+                    break
+
+            if is_available:
+                time_value = current_time.strftime("%H:%M")
+                time_display = current_time.strftime("%I:%M %p")
+                available_slots.append({"value": time_value, "display": time_display})
+
+            current_time += datetime.timedelta(minutes=15)
+
+        return JsonResponse({"times": available_slots})
 
     return JsonResponse({"times": []})
 

@@ -18,6 +18,9 @@ class CustomerInfoForm(forms.Form):
             self.fields["email"].initial = self.user.email
             self.fields["phone"].initial = self.user.phone_number
 
+            for field in self.fields:
+                self.fields[field].widget.attrs["readonly"] = True
+
 
 class ReservationSelectionForm(forms.Form):
     service = forms.ModelChoiceField(
@@ -31,8 +34,12 @@ class ReservationSelectionForm(forms.Form):
     )
 
     reservation_date = forms.DateField(
-        widget=forms.DateInput(
-            attrs={"type": "date", "class": "form-control", "id": "id_reservation_date"}
+        widget=forms.TextInput(
+            attrs={
+                "class": "form-control",
+                "id": "id_reservation_date",
+                "autocomplete": "off",
+            }
         )
     )
 

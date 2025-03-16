@@ -1,13 +1,13 @@
 {% extends 'reservations/wizard/base_wizard.html' %}
 {% load crispy_forms_tags %}
 
-{% block step_title %}Potwierdź wizytę{% endblock %}
+{% block step_title %}Confirm Appointment{% endblock %}
 
 {% block form_content %}
 <div class="p-4 border mb-3">
   <div class="row mb-3">
     <div class="col-md-6">
-      <strong>Usługa:</strong>
+      <strong>Service:</strong>
     </div>
     <div class="col-md-6">
       {{ service.name }}
@@ -15,15 +15,15 @@
   </div>
   <div class="row mb-3">
     <div class="col-md-6">
-      <strong>Czas usługi:</strong>
+      <strong>Duration:</strong>
     </div>
     <div class="col-md-6">
-      {{ service.duration }} minut
+      {{ service.duration }} min
     </div>
   </div>
   <div class="row mb-3">
     <div class="col-md-6">
-      <strong>Cena:</strong>
+      <strong>Price:</strong>
     </div>
     <div class="col-md-6">
       {{ service.price }} zł
@@ -31,7 +31,7 @@
   </div>
   <div class="row mb-3">
     <div class="col-md-6">
-      <strong>Pracownik:</strong>
+      <strong>Stylist:</strong>
     </div>
     <div class="col-md-6">
       {{ employee.name }}
@@ -39,7 +39,7 @@
   </div>
   <div class="row mb-3">
     <div class="col-md-6">
-      <strong>Data:</strong>
+      <strong>Date:</strong>
     </div>
     <div class="col-md-6">
       {{ reservation_date|date:"F j, Y" }}
@@ -47,7 +47,7 @@
   </div>
   <div class="row mb-3">
     <div class="col-md-6">
-      <strong>Czas:</strong>
+      <strong>Time:</strong>
     </div>
     <div class="col-md-6">
       {{ start_time|time:"H:i" }} - {{ end_time|time:"H:i" }}
