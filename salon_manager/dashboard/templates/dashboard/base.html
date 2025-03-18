@@ -29,10 +29,10 @@
 
   </head>
 
+
   <body>
 
   <div class="site-wrap">
-
     <div class="site-mobile-menu">
       <div class="site-mobile-menu-header">
         <div class="site-mobile-menu-close mt-3">
@@ -42,12 +42,9 @@
       <div class="site-mobile-menu-body"></div>
     </div>
 
-
     <header class="site-navbar py-1" role="banner">
-
       <div class="container-fluid">
         <div class="row align-items-center">
-
           <div class="col-6 col-xl-2" data-aos="fade-down">
             <h1 class="mb-0"><a href="{% url 'home' %}" class="text-green h2 mb-0">Royal Beauty</a></h1>
           </div>
@@ -55,7 +52,7 @@
             <nav class="site-navigation position-relative text-right text-lg-center" role="navigation">
 
               <ul class="site-menu js-clone-nav mx-auto d-none d-lg-block">
-                <li class="has-children active">
+                <li class="has-children {% if request.path == '/' %}active{% endif %}">
                   <a href="{% url 'home' %}">Home</a>
                   <ul class="dropdown">
                     <li><a href="#">Menu One</a></li>
@@ -71,7 +68,7 @@
                     </li>
                   </ul>
                 </li>
-                <li class="has-children">
+                <li class="has-children {% if request.path == '/offer/' %}active{% endif %}">
                   <a href="{% url 'offer' %}">Offer</a>
                   <ul class="dropdown">
                     <li><a href="#">Menu One</a></li>
@@ -79,24 +76,24 @@
                     <li><a href="#">Menu Three</a></li>
                   </ul>
                 </li>
-                <li><a href="{% url 'services_list' %}">Services</a></li>
-                <li><a href="{% url 'about' %}">About</a></li>
-                <li><a href="{% url 'reservation_wizard' %}">Book Online</a></li>
-                <li><a href="{% url 'contact' %}">Contact</a></li>
+                <li class="{% if request.path == '/services/' %}active{% endif %}"><a href="{% url 'services_list' %}">Services</a></li>
+                <li class="{% if request.path == '/about/' %}active{% endif %}"><a href="{% url 'about' %}">About</a></li>
+                <li class="{% if request.path == '/reservations/book/' %}active{% endif %}"><a href="{% url 'reservation_wizard' %}">Book Online</a></li>
+                <li class="{% if request.path == '/contact/' %}active{% endif %}"><a href="{% url 'contact' %}">Contact</a></li>
 
-                  {% if user.is_authenticated %}
-                  <li><a href="{% url 'profile' %}">Profile</a></li>
+                {% if user.is_authenticated %}
+                  <li class="{% if request.path == '/profile/' %}active{% endif %}"><a href="{% url 'profile' %}">Profile</a></li>
                   <li>
                         <form method="post" action="{% url 'logout' %}">
                             {% csrf_token %}
                             <div class="form-group">
-                                <button class="btn btn-outline-info" type="submit">Logout</button>
+                                <button class="btn btn-primary text-white" type="submit">Logout</button>
                             </div>
                         </form>
                   </li>
                     {% else %}
-                      <li><a href="{% url 'login' %}">Login</a></li>
-                      <li><a href="{% url 'register' %}">Register</a></li>
+                      <li class="{% if request.path == '/login/' %}active{% endif %}"><a href="{% url 'login' %}">Login</a></li>
+                      <li class="{% if request.path == '/register/' %}active{% endif %}"><a href="{% url 'register' %}">Register</a></li>
                     {% endif %}
               </ul>
             </nav>
@@ -106,16 +103,15 @@
             <div class="d-none d-xl-inline-block">
               <ul class="site-menu js-clone-nav ml-auto list-unstyled d-flex text-right mb-0" data-class="social">
                 <li>
-                  <a href="#" class="pl-0 pr-3 text-black"><span class="icon-facebook"></span></a>
+                  <a href="https://www.facebook.com/p/Royal-Beauty-100063223181002/" target="_blank" class="pl-0 pr-3 text-black"><span class="icon-facebook"></span></a>
                 </li>
                 <li>
-                  <a href="#" class="pl-3 pr-3 text-black"><span class="icon-twitter"></span></a>
+                  <a href="https://booksy.com/pl-pl/91217_royal-beauty_brwi-i-rzesy_13750_wroclaw#ba_s=sr_1" target="_blank" class="pl-3 pr-3 text-black">
+                    <img src="{% static 'core/images/booksy.svg' %}" alt="Booksy" style="height: 22px;">
+                  </a>
                 </li>
                 <li>
-                  <a href="#" class="pl-3 pr-3 text-black"><span class="icon-instagram"></span></a>
-                </li>
-                <li>
-                  <a href="#" class="pl-3 pr-3 text-black"><span class="icon-youtube-play"></span></a>
+                  <a href="https://www.instagram.com/royalbeauty_studiourody_/#" target="_blank" class="pl-3 pr-3 text-black"><span class="icon-instagram"></span></a>
                 </li>
               </ul>
             </div>
@@ -129,7 +125,6 @@
 
     </header>
 
-
     <div class="row">
       <div class="col">
         {% if messages %}
@@ -142,7 +137,6 @@
       </div>
     </div>
 
-
     {% block content %}
     {% endblock %}
 
@@ -151,11 +145,9 @@
         <div class="row">
           <div class="col-lg-4">
             <div class="mb-5">
-              <h3 class="footer-heading mb-4">About Hairsal</h3>
+              <h3 class="footer-heading mb-4">About Royal Beauty</h3>
               <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Saepe pariatur reprehenderit vero atque, consequatur id ratione, et non dignissimos culpa? Ut veritatis, quos illum totam quis blanditiis, minima minus odio!</p>
             </div>
-
-
 
           </div>
           <div class="col-lg-4 mb-5 mb-lg-0">
@@ -180,27 +172,13 @@
                 </ul>
               </div>
             </div>
-
-
-
           </div>
 
           <div class="col-lg-4 mb-5 mb-lg-0">
-
-
             <div class="mb-5">
-              <h3 class="footer-heading mb-2">Subscribe Newsletter</h3>
-              <p>Lorem ipsum dolor sit amet consectetur adipisicing elit minima minus odio.</p>
-
-              <form action="#" method="post">
-                <div class="input-group mb-3">
-                  <input type="text" class="form-control border-secondary text-white bg-transparent" placeholder="Enter Email" aria-label="Enter Email" aria-describedby="button-addon2">
-                  <div class="input-group-append">
-                    <button class="btn btn-primary text-white" type="button" id="button-addon2">Send</button>
-                  </div>
-                </div>
-              </form>
-
+              <h3 class="footer-heading mb-4">Our Location</h3>
+              <p>Royal Beauty, al. Wiśniowa 41, 53-137 Wrocław</p>
+              <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d12088.393828358772!2d16.993136256891056!3d51.08474779978278!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x49caf574c0bde66b%3A0xde2e0ad18af18c63!2sRoyal%20Beauty%20Studio%20Urody!5e0!3m2!1spl!2spl!4v1742237924157!5m2!1spl!2spl" width="300" height="225" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
             </div>
 
           </div>
@@ -209,10 +187,11 @@
         <div class="row pt-5 mt-5 text-center">
           <div class="col-md-12">
             <div class="mb-5">
-              <a href="#" class="pl-0 pr-3"><span class="icon-facebook"></span></a>
-              <a href="#" class="pl-3 pr-3"><span class="icon-twitter"></span></a>
-              <a href="#" class="pl-3 pr-3"><span class="icon-instagram"></span></a>
-              <a href="#" class="pl-3 pr-3"><span class="icon-linkedin"></span></a>
+              <a href="https://www.facebook.com/p/Royal-Beauty-100063223181002/" target="_blank" class="pl-0 pr-3"><span class="icon-facebook"></span></a>
+              <a href="https://booksy.com/pl-pl/91217_royal-beauty_brwi-i-rzesy_13750_wroclaw#ba_s=sr_1" target="_blank" class="pl-3 pr-3">
+                <img id="booksy-icon" src="{% static 'core/images/booksy2.png' %}" alt="Booksy" style="height: 25px; border-radius: 50%">
+              </a>
+              <a href="https://www.instagram.com/royalbeauty_studiourody_/#" target="_blank" class="pl-3 pr-3"><span class="icon-instagram"></span></a>
             </div>
 
             <p>
