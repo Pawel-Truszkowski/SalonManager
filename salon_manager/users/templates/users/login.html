@@ -3,8 +3,8 @@
 {% block content %}
     <div class="site-section">
         <div class="container">
-            <div class="row text-center">
-                <div class="col-md-12">
+            <div class="row m-5">
+                <div class="col-md-8 col-lg-8 mx-auto">
                     <form method="POST">
                         {% csrf_token %}
                         <fieldset class="form-group">
@@ -12,7 +12,7 @@
                             {{ form|crispy }}
                         </fieldset>
                         <div class="form-group">
-                            <button class="btn btn-outline-info" type="submit">Login</button>
+                            <button class="btn btn-primary text-white" type="submit">Login</button>
                         </div>
                     </form>
                     <div class="border-top pt-3">
