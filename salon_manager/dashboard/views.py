@@ -6,10 +6,6 @@ def home(request):
     return render(request, "dashboard/index.html")
 
 
-def offer(request):
-    return render(request, "dashboard/offer.html")
-
-
 def about(request):
     return render(request, "dashboard/about.html")
 

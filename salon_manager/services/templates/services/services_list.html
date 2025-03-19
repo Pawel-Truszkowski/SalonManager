@@ -15,115 +15,68 @@
     </div>
   </div>
 
+  <div class="site-section">
+    <div class="container">
+      {% for category in service_categories %}
 
-<div class="site-section">
-  <div class="container">
-    {% for category in service_categories %}
-
-    <!-- Nagłówek kategorii, wycentrowany -->
-    <div class="row">
-      <div class="col-12 text-center mb-4">
-        <h2 class="font-weight-bold">{{ category.name }}</h2>
+      <!-- Nagłówek kategorii, wycentrowany -->
+      <div class="row">
+        <div class="col-12 text-center mb-4">
+          <h2 class="font-weight-bold">{{ category.name }}</h2>
+        </div>
       </div>
-    </div>
 
-    <!-- Usługi w danej kategorii -->
-    <div class="row justify-content-center">
-      {% for service in services %}
-        {% if service.category == category %}
-        <div class="col-md-6 col-lg-4 text-center mb-5">
-          <div class="h-100 p-4 p-lg-5 bg-light site-block-feature-7">
-            <span class="icon flaticon-nails display-3 text-primary mb-4 d-block"></span>
-            <h3 class="text-black h4">{{ service.name }}</h3>
-            <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Rerum exercitationem quae id dolorum debitis.</p>
-            <p><strong class="font-weight-bold text-primary">{{ service.price }} PLN</strong></p>
-            <button class="btn btn-primary text-white" type="button">Zarezerwuj</button>
+      <!-- Usługi w danej kategorii -->
+      <div class="row justify-content-center">
+        {% for service in services %}
+          {% if service.category == category %}
+          <div class="col-md-6 col-lg-4 text-center mb-5">
+            <div class="h-100 p-4 p-lg-5 bg-light site-block-feature-7">
+              <span class="icon flaticon-nails display-3 text-primary mb-4 d-block"></span>
+              <h3 class="text-black h4">{{ service.name }}</h3>
+              <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Rerum exercitationem quae id dolorum debitis.</p>
+              <p><strong class="font-weight-bold text-primary">{{ service.price }} PLN</strong></p>
+              <button class="btn btn-primary text-white" type="button">Book Now</button>
+            </div>
           </div>
-        </div>
-        {% endif %}
+          {% endif %}
+        {% empty %}
+          <div class="col-12 text-center">
+            <p>No services available in this category.</p>
+          </div>
+        {% endfor %}
+      </div>
+
       {% empty %}
-        <div class="col-12 text-center">
-          <p>Brak dostępnych usług w tej kategorii.</p>
-        </div>
+        <p class="text-center">No categories available.</p>
       {% endfor %}
     </div>
-
-    {% empty %}
-      <p class="text-center">Brak dostępnych kategorii.</p>
-    {% endfor %}
   </div>
-</div>
 
-        <div class="row">
-          <div class="col-md-6 col-lg-4 text-center mb-5 mb-lg-5">
-            <div class="h-100 p-4 p-lg-5 bg-light site-block-feature-7">
-              <span class="icon flaticon-razor display-3 text-primary mb-4 d-block"></span>
-              <h3 class="text-black h4">Barber Razor</h3>
-              <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Rerum exercitationem quae id dolorum debitis.</p>
-              <p><strong class="font-weight-bold text-primary">$29</strong></p>
-            </div>
-          </div>
-          <div class="col-md-6 col-lg-4 text-center mb-5 mb-lg-5">
-            <div class="h-100 p-4 p-lg-5 bg-light site-block-feature-7">
-              <span class="icon flaticon-location-pin display-3 text-primary mb-4 d-block"></span>
-              <h3 class="text-black h4">Location Pin</h3>
-              <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Rerum exercitationem quae id dolorum debitis.</p>
-              <p><strong class="font-weight-bold text-primary">$46</strong></p>
-            </div>
-          </div>
-          <div class="col-md-6 col-lg-4 text-center mb-5 mb-lg-5">
-            <div class="h-100 p-4 p-lg-5 bg-light site-block-feature-7">
-              <span class="icon flaticon-shave display-3 text-primary mb-4 d-block"></span>
-              <h3 class="text-black h4">Barber Shave</h3>
-              <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Rerum exercitationem quae id dolorum debitis.</p>
-              <p><strong class="font-weight-bold text-primary">$24</strong></p>
-            </div>
-          </div>
-
-          <div class="col-md-6 col-lg-4 text-center mb-5 mb-lg-5">
-            <div class="h-100 p-4 p-lg-5 bg-light site-block-feature-7">
-              <span class="icon flaticon-barber display-3 text-primary mb-4 d-block"></span>
-              <h3 class="text-black h4">Barber Seat</h3>
-              <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Rerum exercitationem quae id dolorum debitis.</p>
-              <p><strong class="font-weight-bold text-primary">$40</strong></p>
-            </div>
-          </div>
-          <div class="col-md-6 col-lg-4 text-center mb-5 mb-lg-5">
-            <div class="h-100 p-4 p-lg-5 bg-light site-block-feature-7">
-              <span class="icon flaticon-hair-dryer display-3 text-primary mb-4 d-block"></span>
-              <h3 class="text-black h4">Hair Dryer</h3>
-              <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Rerum exercitationem quae id dolorum debitis.</p>
-              <p><strong class="font-weight-bold text-primary">$35</strong></p>
-            </div>
-          </div>
+  <div class="site-section bg-light">
+    <div class="container">
+      <div class="row">
+        <div class="col-lg-6 mb-5">
+          <img src="{% static 'core/images/pic4.jpg' %}" alt="Image" class="img-md-fluid">
+        </div>
+        <div class="col-lg-6 bg-white p-md-5 align-self-center">
+          <h2 class="display-1 text-black line-height-1 site-section-heading mb-4 pb-3">Because beauty is more than appearance</h2>
+          <p class="text-black lead"><em>&ldquo;Beauty begins the moment you decide to be yourself.&rdquo;</em>&mdash;<em> Coco Chanel</em></p>
+          <p class="text-black lead"><em>&ldquo;Skincare is more than beauty – it’s health..&rdquo;</em>&mdash; <em>Dr. Howard Murad</em></p>
         </div>
       </div>
     </div>
+  </div>
 
-    <div class="site-section bg-light">
-      <div class="container">
-        <div class="row">
-          <div class="col-lg-6 mb-5">
-            <img src="{% static 'core/images/person_1.jpg' %}" alt="Image" class="img-md-fluid">
-          </div>
-          <div class="col-lg-6 bg-white p-md-5 align-self-center">
-            <h2 class="display-1 text-black line-height-1 site-section-heading mb-4 pb-3">New hairstyle!</h2>
-            <p class="text-black lead"><em>&ldquo;Lorem ipsum dolor sit amet, consectetur adipisicing elit. Similique dolorem quisquam laudantium, incidunt id laborum, tempora aliquid labore minus. Nemo maxime, veniam! Fugiat odio nam eveniet ipsam atque, corrupti porro&rdquo;</em></p>
-            <p class="lead text-black">&mdash; <em>Stellla Martin</em></p>
-          </div>
+  <div class="site-section">
+    <div class="container">
+      <div class="row text-center">
+        <div class="col-md-12">
+          <h2 class="mb-4 text-black">We want your skin to look fabulous</h2>
+          <p class="mb-0"><a href="{% url 'reservation_wizard' %}" class="btn btn-primary py-3 px-5 text-white">Visit Our Salon Now</a></p>
         </div>
       </div>
     </div>
-
-    <div class="site-section">
-      <div class="container">
-        <div class="row text-center">
-          <div class="col-md-12">
-            <h2 class="mb-4 text-black">We want your skin to look fabulous</h2>
-            <p class="mb-0"><a href="{% url 'reservation_wizard' %}" class="btn btn-primary py-3 px-5 text-white">Visit Our Salon Now</a></p>
-          </div>
-        </div>
-      </div>
-    </div>
+  </div>
 
 {% endblock %}

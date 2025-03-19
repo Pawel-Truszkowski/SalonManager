@@ -70,15 +70,15 @@
                     </li>
                   </ul>
                 </li>
-                <li class="has-children {% if request.path == '/offer/' %}active{% endif %}">
-                  <a href="{% url 'offer' %}">Offer</a>
+                <li class="has-children {% if request.path == '/services/' %}active{% endif %}">
+                  <a href="{% url 'services_list' %}">Services</a>
                   <ul class="dropdown">
-                    <li><a href="#">Menu One</a></li>
-                    <li><a href="#">Menu Two</a></li>
-                    <li><a href="#">Menu Three</a></li>
+                    {% for category in service_categories %}
+                    <li><a href="#">{{ category.name }}</a></li>
+                    {% endfor %}
                   </ul>
                 </li>
-                <li class="{% if request.path == '/services/' %}active{% endif %}"><a href="{% url 'services_list' %}">Services</a></li>
+
                 <li class="{% if request.path == '/about/' %}active{% endif %}"><a href="{% url 'about' %}">About</a></li>
                 <li class="{% if request.path == '/reservations/book/' %}active{% endif %}"><a href="{% url 'reservation_wizard' %}">Book Online</a></li>
                 <li class="{% if request.path == '/contact/' %}active{% endif %}"><a href="{% url 'contact' %}">Contact</a></li>
@@ -157,8 +157,8 @@
               </div>
               <div class="col-md-6 col-lg-6">
                 <ul class="list-unstyled">
-                  <li><span class="icon-contact_mail"></span><a href="#"> E-mail: </a></li>
-                  <li><span class="icon-contact_phone"></span><a href="#"> Phone: </a></li>
+                  <li><span class="icon-contact_mail"></span><a href="#"> E-mail: royalbeauty.studiourody@gmail.com</a></li>
+                  <li><span class="icon-contact_phone"></span><a href="#"> Phone: +48793355756</a></li>
                 </ul>
               </div>
             </div>
@@ -167,7 +167,8 @@
           <div class="col-lg-4 mb-5 mb-lg-0">
             <div class="mb-5">
               <h3 class="footer-heading mb-4">Our Location</h3>
-              <p>Royal Beauty, al. Wiśniowa 41, 53-137 Wrocław</p>
+              <span class="icon-my_location"></span><p>Royal Beauty, </p>
+              <p>al. Wiśniowa 41, 53-137 Wrocław</p>
               <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d12088.393828358772!2d16.993136256891056!3d51.08474779978278!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x49caf574c0bde66b%3A0xde2e0ad18af18c63!2sRoyal%20Beauty%20Studio%20Urody!5e0!3m2!1spl!2spl!4v1742237924157!5m2!1spl!2spl" width="300" height="225" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
             </div>
 
