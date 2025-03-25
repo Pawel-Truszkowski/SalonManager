@@ -9,3 +9,6 @@ ignore = ["E501", "E741", "F401"]
 
 [tool.bandit]
 skips = ["B105"]
+
+[djlint]
+ignore="H006,H021"

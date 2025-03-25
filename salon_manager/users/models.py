@@ -6,7 +6,7 @@ from services.models import Service
 
 
 class CustomUser(AbstractUser):
-    ROLES = (("CUSTOMER", "Customer"), ("EMPLOYEE", "Employee"))
+    ROLES = (("OWNER", "Owner"), ("CUSTOMER", "Customer"), ("EMPLOYEE", "Employee"))
 
     phone_number = PhoneNumberField(blank=True)
     role = models.CharField(max_length=10, choices=ROLES, default="CUSTOMER")

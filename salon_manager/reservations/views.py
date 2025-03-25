@@ -2,9 +2,10 @@ import datetime
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import JsonResponse
 from django.shortcuts import redirect, render
-from django.utils.decorators import method_decorator
+from django.views.generic import TemplateView
 from formtools.wizard.views import SessionWizardView
 from services.models import Service
 from users.models import Employee
@@ -26,8 +27,7 @@ TEMPLATES = {
 }
 
 
-@method_decorator(login_required, name="dispatch")
-class ReservationWizard(SessionWizardView):
+class ReservationWizard(LoginRequiredMixin, SessionWizardView):
     def get_template_names(self):
         return [TEMPLATES[self.steps.current]]
 
@@ -187,3 +187,7 @@ def get_available_times(request):
 @login_required(redirect_field_name="login")
 def reservation_success(request):
     return render(request, "reservations/reservation_success.html")
+
+
+class ReservationSuccessView(TemplateView):
+    template_name = "reservations/reservation_success.html"

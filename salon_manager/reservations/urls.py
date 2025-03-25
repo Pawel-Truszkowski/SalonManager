@@ -4,7 +4,11 @@ from . import views
 
 urlpatterns = [
     path("", views.ReservationWizard.as_view(views.FORMS), name="reservation_wizard"),
-    path("booking-success/", views.reservation_success, name="reservation_success"),
+    path(
+        "booking-success/",
+        views.ReservationSuccessView.as_view(),
+        name="reservation_success",
+    ),
     # Ajax URLs
     path("ajax/get-employees/", views.get_employees, name="get_employees"),
     path("ajax/get-dates/", views.get_available_dates, name="get_available_dates"),

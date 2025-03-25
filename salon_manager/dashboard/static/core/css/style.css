@@ -1075,3 +1075,7 @@ h1, h2, h3, h4, h5,
   -webkit-transform: scale(1.2);
   -ms-transform: scale(1.2);
   transform: scale(1.2); }
+
+#booksy-icon {
+  border-radius: 50%;
+}

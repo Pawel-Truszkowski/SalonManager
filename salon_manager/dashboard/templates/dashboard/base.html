@@ -1,222 +1,281 @@
 {% load static %}
-
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-
-    {% if title %}
-        <title>Royal Beauty - {{ title }}</title>
-    {% else %}
-        <title>Royal Beauty</title>
-    {% endif %}
-
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Poppins:200,300,400,700,900|Display+Playfair:200,300,400,700">
-    <link rel="stylesheet" href="{% static 'core/fonts/icomoon/style.css' %}" />
-
-    <link rel="stylesheet" href="{% static 'core/css/bootstrap.min.css' %}" />
-    <link rel="stylesheet" href="{% static 'core/css/magnific-popup.css' %}" />
-    <link rel="stylesheet" href="{% static 'core/css/jquery-ui.css' %}" />
-    <link rel="stylesheet" href="{% static 'core/css/owl.carousel.min.css' %}" />
-    <link rel="stylesheet" href="{% static 'core/css/owl.theme.default.min.css' %}" />
-    <link rel="stylesheet" href="{% static 'core/css/bootstrap-datepicker.css' %}">
-    <link rel="stylesheet" href="{% static 'core/fonts/flaticon/font/flaticon.css' %}" />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/mediaelement@4.2.7/build/mediaelementplayer.min.css">
-    <link rel="stylesheet" href="{% static 'core/css/aos.css' %}">
-    <link rel="stylesheet" href="{% static 'core/css/style.css' %}">
-
-  </head>
-
-
-  <body>
-
-  <div class="site-wrap">
-    <div class="site-mobile-menu">
-      <div class="site-mobile-menu-header">
-        <div class="site-mobile-menu-close mt-3">
-          <span class="icon-close2 js-menu-toggle"></span>
-        </div>
-      </div>
-      <div class="site-mobile-menu-body"></div>
-    </div>
-
-    <header class="site-navbar py-1" role="banner">
-      <div class="container-fluid">
-        <div class="row align-items-center">
-
-          <div class="col-6 col-xl-2" data-aos="fade-down">
-            <h1 class="mb-0"><a href="{% url 'home' %}" class="text-green h2 mb-0">Royal Beauty</a></h1>
-          </div>
-
-          <div class="col-10 col-md-8 d-none d-xl-block" data-aos="fade-down">
-            <nav class="site-navigation position-relative text-right text-lg-center" role="navigation">
-
-              <ul class="site-menu js-clone-nav mx-auto d-none d-lg-block">
-                <li class="has-children {% if request.path == '/' %}active{% endif %}">
-                  <a href="{% url 'home' %}">Home</a>
-                  <ul class="dropdown">
-                    <li><a href="#">Menu One</a></li>
-                    <li><a href="#">Menu Two</a></li>
-                    <li><a href="#">Menu Three</a></li>
-                    <li class="has-children">
-                      <a href="#">Sub Menu</a>
-                      <ul class="dropdown">
-                        <li><a href="#">Menu One</a></li>
-                        <li><a href="#">Menu Two</a></li>
-                        <li><a href="#">Menu Three</a></li>
-                      </ul>
-                    </li>
-                  </ul>
-                </li>
-                <li class="has-children {% if request.path == '/services/' %}active{% endif %}">
-                  <a href="{% url 'services_list' %}">Services</a>
-                  <ul class="dropdown">
-                    {% for category in service_categories %}
-                    <li><a href="#">{{ category.name }}</a></li>
-                    {% endfor %}
-                  </ul>
-                </li>
-
-                <li class="{% if request.path == '/about/' %}active{% endif %}"><a href="{% url 'about' %}">About</a></li>
-                <li class="{% if request.path == '/reservations/book/' %}active{% endif %}"><a href="{% url 'reservation_wizard' %}">Book Online</a></li>
-                <li class="{% if request.path == '/contact/' %}active{% endif %}"><a href="{% url 'contact' %}">Contact</a></li>
-
-                {% if user.is_authenticated %}
-                  <li class="{% if request.path == '/profile/' %}active{% endif %}"><a href="{% url 'profile' %}">Profile</a></li>
-                  <li>
-                    <form method="post" action="{% url 'logout' %}">
-                        {% csrf_token %}
-                        <div class="form-group">
-                            <button class="btn btn-primary text-white" type="submit">Logout</button>
-                        </div>
-                    </form>
-                  </li>
-                    {% else %}
-                      <li class="{% if request.path == '/login/' %}active{% endif %}"><a href="{% url 'login' %}">Login</a></li>
-                      <li class="{% if request.path == '/register/' %}active{% endif %}"><a href="{% url 'register' %}">Register</a></li>
-                    {% endif %}
-              </ul>
-            </nav>
-          </div>
-
-          <div class="col-6 col-xl-2 text-right" data-aos="fade-down">
-            <div class="d-none d-xl-inline-block">
-              <ul class="site-menu js-clone-nav ml-auto list-unstyled d-flex text-right mb-0" data-class="social">
-                <li>
-                  <a href="https://www.facebook.com/p/Royal-Beauty-100063223181002/" target="_blank" class="pl-0 pr-3 text-black"><span class="icon-facebook"></span></a>
-                </li>
-                <li>
-                  <a href="https://booksy.com/pl-pl/91217_royal-beauty_brwi-i-rzesy_13750_wroclaw#ba_s=sr_1" target="_blank" class="pl-3 pr-3 text-black">
-                    <img src="{% static 'core/images/booksy.svg' %}" alt="Booksy" style="height: 22px;">
-                  </a>
-                </li>
-                <li>
-                  <a href="https://www.instagram.com/royalbeauty_studiourody_/#" target="_blank" class="pl-3 pr-3 text-black"><span class="icon-instagram"></span></a>
-                </li>
-              </ul>
-            </div>
-            <div class="d-inline-block d-xl-none ml-md-0 mr-auto py-3" style="position: relative; top: 3px;"><a href="#" class="site-menu-toggle js-menu-toggle text-black"><span class="icon-menu h3"></span></a></div>
-          </div>
-
-        </div>
-      </div>
-
-    </header>
-
-    <div class="row">
-      <div class="col">
-        {% if messages %}
-        {% for message in messages %}
-        <div class="alert alert-{{ message.tags }}">
-          {{ message }}
-        </div>
-        {% endfor %}
+    <head>
+        {% if title %}
+            <title>Royal Beauty - {{ title }}</title>
+        {% else %}
+            <title>Royal Beauty</title>
         {% endif %}
-      </div>
-    </div>
-
-    {% block content %}
-    {% endblock %}
-
-    <footer class="site-footer">
-      <div class="container">
-        <div class="row">
-          <div class="col-lg-4">
-            <div class="mb-5">
-              <h3 class="footer-heading mb-4">About Royal Beauty</h3>
-              <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Saepe pariatur reprehenderit vero atque, consequatur id ratione, et non dignissimos culpa? Ut veritatis, quos illum totam quis blanditiis, minima minus odio!</p>
+        <meta charset="utf-8">
+        <meta name="description"
+              content="Salon kosmetyczny - rezerwacje online i zarządzanie wizytami.">
+        <meta name="keywords"
+              content="salon, beauty, reservations, manicure, pedicure, nails, lashes">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="stylesheet"
+              href="https://fonts.googleapis.com/css?family=Poppins:200,300,400,700,900|Display+Playfair:200,300,400,700">
+        <link rel="stylesheet" href="{% static 'core/fonts/icomoon/style.css' %}" />
+        <link rel="stylesheet" href="{% static 'core/css/bootstrap.min.css' %}" />
+        <link rel="stylesheet" href="{% static 'core/css/magnific-popup.css' %}" />
+        <link rel="stylesheet" href="{% static 'core/css/jquery-ui.css' %}" />
+        <link rel="stylesheet" href="{% static 'core/css/owl.carousel.min.css' %}" />
+        <link rel="stylesheet"
+              href="{% static 'core/css/owl.theme.default.min.css' %}" />
+        <link rel="stylesheet"
+              href="{% static 'core/css/bootstrap-datepicker.css' %}">
+        <link rel="stylesheet"
+              href="{% static 'core/fonts/flaticon/font/flaticon.css' %}" />
+        <link rel="stylesheet"
+              href="https://cdn.jsdelivr.net/npm/mediaelement@4.2.7/build/mediaelementplayer.min.css">
+        <link rel="stylesheet" href="{% static 'core/css/aos.css' %}">
+        <link rel="stylesheet" href="{% static 'core/css/style.css' %}">
+        <!-- Add jQuery Timepicker CSS -->
+        <link rel="stylesheet"
+              href="https://cdnjs.cloudflare.com/ajax/libs/jquery-timepicker/1.10.0/jquery.timepicker.min.css">
+    </head>
+    <body>
+        <div class="site-wrap">
+            <div class="site-mobile-menu">
+                <div class="site-mobile-menu-header">
+                    <div class="site-mobile-menu-close mt-3">
+                        <span class="icon-close2 js-menu-toggle"></span>
+                    </div>
+                </div>
+                <div class="site-mobile-menu-body"></div>
             </div>
-
-          </div>
-          <div class="col-lg-4 mb-5 mb-lg-0">
-            <div class="row mb-5">
-              <div class="col-md-12">
-                <h3 class="footer-heading mb-4">Contact</h3>
-              </div>
-              <div class="col-md-6 col-lg-6">
-                <ul class="list-unstyled">
-                  <li><span class="icon-contact_mail"></span><a href="#"> E-mail: royalbeauty.studiourody@gmail.com</a></li>
-                  <li><span class="icon-contact_phone"></span><a href="#"> Phone: +48793355756</a></li>
-                </ul>
-              </div>
+            <header class="site-navbar py-1" role="banner">
+                <div class="container-fluid">
+                    <div class="row align-items-center">
+                        <div class="col-6 col-xl-2" data-aos="fade-down">
+                            <h1 class="mb-0">
+                                <a href="{% url 'home' %}" class="text-green h2 mb-0">Royal Beauty</a>
+                            </h1>
+                        </div>
+                        <div class="col-10 col-md-8 d-none d-xl-block" data-aos="fade-down">
+                            <nav class="site-navigation position-relative text-right text-lg-center"
+                                 role="navigation">
+                                <ul class="site-menu js-clone-nav mx-auto d-none d-lg-block">
+                                    <li class="has-children {% if request.path == '/' %}active{% endif %}">
+                                        <a href="{% url 'home' %}">Home</a>
+                                        <ul class="dropdown">
+                                            <li>
+                                                <a href="#">Menu One</a>
+                                            </li>
+                                            <li>
+                                                <a href="#">Menu Two</a>
+                                            </li>
+                                            <li>
+                                                <a href="#">Menu Three</a>
+                                            </li>
+                                            <li class="has-children">
+                                                <a href="#">Sub Menu</a>
+                                                <ul class="dropdown">
+                                                    <li>
+                                                        <a href="#">Menu One</a>
+                                                    </li>
+                                                    <li>
+                                                        <a href="#">Menu Two</a>
+                                                    </li>
+                                                    <li>
+                                                        <a href="#">Menu Three</a>
+                                                    </li>
+                                                </ul>
+                                            </li>
+                                        </ul>
+                                    </li>
+                                    <li class="has-children {% if request.path == '/services/' %}active{% endif %}">
+                                        <a href="{% url 'services_list' %}">Services</a>
+                                        <ul class="dropdown">
+                                            {% for category in service_categories %}
+                                                <li>
+                                                    <a href="#">{{ category.name }}</a>
+                                                </li>
+                                            {% endfor %}
+                                        </ul>
+                                    </li>
+                                    <li class="{% if request.path == '/about/' %}active{% endif %}">
+                                        <a href="{% url 'about' %}">About</a>
+                                    </li>
+                                    <li class="{% if request.path == '/reservations/book/' %}active{% endif %}">
+                                        <a href="{% url 'reservation_wizard' %}">Book Online</a>
+                                    </li>
+                                    <li class="{% if request.path == '/contact/' %}active{% endif %}">
+                                        <a href="{% url 'contact' %}">Contact</a>
+                                    </li>
+                                    {% if user.is_authenticated and user.role == "OWNER" %}
+                                        <li class="has-children {% if request.path == '/owner/' %}active{% endif %}">
+                                            <a href="#">Owner Panel</a>
+                                            <ul class="dropdown">
+                                                <li>
+                                                    <a href="{% url 'employee_list' %}">Manage Employees</a>
+                                                </li>
+                                                <li>
+                                                    <a href="{% url 'workday_list' %}">Manage Work Days</a>
+                                                </li>
+                                            </ul>
+                                        </li>
+                                    {% endif %}
+                                    {% if user.is_authenticated %}
+                                        <li class="{% if request.path == '/profile/' %}active{% endif %}">
+                                            <a href="{% url 'profile' %}">Profile</a>
+                                        </li>
+                                        <li>
+                                            <form method="post" action="{% url 'logout' %}">
+                                                {% csrf_token %}
+                                                <div class="form-group">
+                                                    <button class="btn btn-primary text-white" type="submit">Logout</button>
+                                                </div>
+                                            </form>
+                                        </li>
+                                    {% else %}
+                                        <li class="{% if request.path == '/login/' %}active{% endif %}">
+                                            <a href="{% url 'login' %}">Login</a>
+                                        </li>
+                                        <li class="{% if request.path == '/register/' %}active{% endif %}">
+                                            <a href="{% url 'register' %}">Register</a>
+                                        </li>
+                                    {% endif %}
+                                </ul>
+                            </nav>
+                        </div>
+                        <div class="col-6 col-xl-2 text-right" data-aos="fade-down">
+                            <div class="d-none d-xl-inline-block">
+                                <ul class="site-menu js-clone-nav ml-auto list-unstyled d-flex text-right mb-0"
+                                    data-class="social">
+                                    <li>
+                                        <a href="https://www.facebook.com/p/Royal-Beauty-100063223181002/"
+                                           target="_blank"
+                                           class="pl-0 pr-3 text-black"><span class="icon-facebook"></span></a>
+                                    </li>
+                                    <li>
+                                        <a href="https://booksy.com/pl-pl/91217_royal-beauty_brwi-i-rzesy_13750_wroclaw#ba_s=sr_1"
+                                           target="_blank"
+                                           class="pl-3 pr-3 text-black">
+                                            <img src="{% static 'core/images/booksy.svg' %}"
+                                                 alt="Booksy logo"
+                                                 style="height: 22px;
+                                                        width: 22px">
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="https://www.instagram.com/royalbeauty_studiourody_/#"
+                                           target="_blank"
+                                           class="pl-3 pr-3 text-black"><span class="icon-instagram"></span></a>
+                                    </li>
+                                </ul>
+                            </div>
+                            <div class="d-inline-block d-xl-none ml-md-0 mr-auto py-3"
+                                 style="position: relative;
+                                        top: 3px">
+                                <a href="#" class="site-menu-toggle js-menu-toggle text-black"><span class="icon-menu h3"></span></a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </header>
+            <div class="row">
+                <div class="col">
+                    {% if messages %}
+                        {% for message in messages %}<div class="alert alert-{{ message.tags }}">{{ message }}</div>{% endfor %}
+                    {% endif %}
+                </div>
             </div>
-          </div>
-
-          <div class="col-lg-4 mb-5 mb-lg-0">
-            <div class="mb-5">
-              <h3 class="footer-heading mb-4">Our Location</h3>
-              <span class="icon-my_location"></span><p>Royal Beauty, </p>
-              <p>al. Wiśniowa 41, 53-137 Wrocław</p>
-              <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d12088.393828358772!2d16.993136256891056!3d51.08474779978278!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x49caf574c0bde66b%3A0xde2e0ad18af18c63!2sRoyal%20Beauty%20Studio%20Urody!5e0!3m2!1spl!2spl!4v1742237924157!5m2!1spl!2spl" width="300" height="225" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
-            </div>
-
-          </div>
-
+            {% block content %}
+            {% endblock content %}
+            <footer class="site-footer">
+                <div class="container">
+                    <div class="row">
+                        <div class="col-lg-4">
+                            <div class="mb-5">
+                                <h3 class="footer-heading mb-4">About Royal Beauty</h3>
+                                <p>
+                                    Lorem ipsum dolor sit amet, consectetur adipisicing elit. Saepe pariatur reprehenderit vero atque, consequatur id ratione, et non dignissimos culpa? Ut veritatis, quos illum totam quis blanditiis, minima minus odio!
+                                </p>
+                            </div>
+                        </div>
+                        <div class="col-lg-4 mb-5 mb-lg-0">
+                            <div class="row mb-5">
+                                <div class="col-md-12">
+                                    <h3 class="footer-heading mb-4">Contact</h3>
+                                </div>
+                                <div class="col-md-6 col-lg-6">
+                                    <ul class="list-unstyled">
+                                        <li>
+                                            <span class="icon-contact_mail"></span><a href="#">E-mail: royalbeauty.studiourody@gmail.com</a>
+                                        </li>
+                                        <li>
+                                            <span class="icon-contact_phone"></span><a href="#">Phone: +48793355756</a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-4 mb-5 mb-lg-0">
+                            <div class="mb-5">
+                                <h3 class="footer-heading mb-4">Our Location</h3>
+                                <span class="icon-my_location"></span>
+                                <p>Royal Beauty,</p>
+                                <p>al. Wiśniowa 41, 53-137 Wrocław</p>
+                                <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d12088.393828358772!2d16.993136256891056!3d51.08474779978278!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x49caf574c0bde66b%3A0xde2e0ad18af18c63!2sRoyal%20Beauty%20Studio%20Urody!5e0!3m2!1spl!2spl!4v1742237924157!5m2!1spl!2spl"
+                                        width="300"
+                                        height="225"
+                                        style="border:0"
+                                        allowfullscreen=""
+                                        loading="lazy"
+                                        referrerpolicy="no-referrer-when-downgrade"></iframe>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row pt-5 mt-5 text-center">
+                        <div class="col-md-12">
+                            <div class="mb-5">
+                                <a href="https://www.facebook.com/p/Royal-Beauty-100063223181002/"
+                                   target="_blank"
+                                   class="pl-0 pr-3"><span class="icon-facebook"></span></a>
+                                <a href="https://booksy.com/pl-pl/91217_royal-beauty_brwi-i-rzesy_13750_wroclaw#ba_s=sr_1"
+                                   target="_blank"
+                                   class="pl-3 pr-3">
+                                    <img id="booksy-icon"
+                                         src="{% static 'core/images/booksy2.png' %}"
+                                         alt="Booksy"
+                                         width="30"
+                                         height="30"
+                                         style="border-radius: 50%">
+                                </a>
+                                <a href="https://www.instagram.com/royalbeauty_studiourody_/#"
+                                   target="_blank"
+                                   class="pl-3 pr-3"><span class="icon-instagram"></span></a>
+                            </div>
+                            <p>
+                                <!-- Link back to Colorlib can't be removed. Template is licensed under CC BY 3.0. -->
+                                <!-- Copyright &copy;<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>document.write(new Date().getFullYear());</script> All rights reserved | This template is made with <i class="icon-heart-o" aria-hidden="true"></i> by <a href="https://colorlib.com" target="_blank">Colorlib</a> -->
+                                <!-- Link back to Colorlib can't be removed. Template is licensed under CC BY 3.0. -->
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </footer>
         </div>
-        <div class="row pt-5 mt-5 text-center">
-          <div class="col-md-12">
-            <div class="mb-5">
-              <a href="https://www.facebook.com/p/Royal-Beauty-100063223181002/" target="_blank" class="pl-0 pr-3"><span class="icon-facebook"></span></a>
-              <a href="https://booksy.com/pl-pl/91217_royal-beauty_brwi-i-rzesy_13750_wroclaw#ba_s=sr_1" target="_blank" class="pl-3 pr-3">
-                <img id="booksy-icon" src="{% static 'core/images/booksy2.png' %}" alt="Booksy" style="height: 25px; border-radius: 50%">
-              </a>
-              <a href="https://www.instagram.com/royalbeauty_studiourody_/#" target="_blank" class="pl-3 pr-3"><span class="icon-instagram"></span></a>
-            </div>
-
-            <p>
-            <!-- Link back to Colorlib can't be removed. Template is licensed under CC BY 3.0. -->
-            <!-- Copyright &copy;<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>document.write(new Date().getFullYear());</script> All rights reserved | This template is made with <i class="icon-heart-o" aria-hidden="true"></i> by <a href="https://colorlib.com" target="_blank" >Colorlib</a> -->
-            <!-- Link back to Colorlib can't be removed. Template is licensed under CC BY 3.0. -->
-            </p>
-          </div>
-
-        </div>
-      </div>
-    </footer>
-  </div>
-
-  <script src="{% static 'core/js/jquery-3.3.1.min.js' %}"></script>
-  <script src="{% static 'core/js/jquery-migrate-3.0.1.min.js' %}"></script>
-  <script src="{% static 'core/js/jquery-ui.js' %}"></script>
-  <script src="{% static 'core/js/popper.min.js' %}"></script>
-  <script src="{% static 'core/js/bootstrap.min.js' %}"></script>
-  <script src="{% static 'core/js/owl.carousel.min.js' %}"></script>
-  <script src="{% static 'core/js/jquery.stellar.min.js' %}"></script>
-  <script src="{% static 'core/js/jquery.countdown.min.js' %}"></script>
-  <script src="{% static 'core/js/jquery.magnific-popup.min.js' %}"></script>
-  <script src="{% static 'core/js/bootstrap-datepicker.min.js' %}"></script>
-  <script src="{% static 'core/js/aos.js' %}"></script>
-
-  <script src="{% static 'core/js/main.js' %}"></script>
-
-  <!-- jQuery -->
-  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-
-  <!-- jQuery UI -->
-  <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/smoothness/jquery-ui.css">
-  <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
-  {% block extra_js %}{% endblock %}
-  </body>
+        <script src="{% static 'core/js/jquery-3.3.1.min.js' %}"></script>
+        <script src="{% static 'core/js/jquery-migrate-3.0.1.min.js' %}"></script>
+        <script src="{% static 'core/js/jquery-ui.js' %}"></script>
+        <script src="{% static 'core/js/popper.min.js' %}"></script>
+        <script src="{% static 'core/js/bootstrap.min.js' %}"></script>
+        <script src="{% static 'core/js/owl.carousel.min.js' %}"></script>
+        <script src="{% static 'core/js/jquery.stellar.min.js' %}"></script>
+        <script src="{% static 'core/js/jquery.countdown.min.js' %}"></script>
+        <script src="{% static 'core/js/jquery.magnific-popup.min.js' %}"></script>
+        <script src="{% static 'core/js/bootstrap-datepicker.min.js' %}"></script>
+        <script src="{% static 'core/js/aos.js' %}"></script>
+        <script src="{% static 'core/js/main.js' %}"></script>
+        <!-- jQuery -->
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+        <!-- jQuery UI -->
+        <link rel="stylesheet"
+              href="https://code.jquery.com/ui/1.12.1/themes/smoothness/jquery-ui.css">
+        <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+        {% block extra_js %}
+        {% endblock extra_js %}
+    </body>
 </html>
