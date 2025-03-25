@@ -1,27 +1,18 @@
-{% extends 'reservations/wizard/base_wizard.html' %}
+{% extends "reservations/wizard/base_wizard.html" %}
 {% load crispy_forms_tags %}
-
-{% block step_title %}Select Appointment Details{% endblock %}
-
+{% block step_title %}
+    Select Appointment Details
+{% endblock title %}
 {% block form_content %}
-<div class="row form-group">
-  <div class="col-md-12 mb-3 mb-md-0">
-    {{ wizard.form.service|as_crispy_field }}
-  </div>
-  <div class="col-md-12 mb-3 mb-md-0">
-    {{ wizard.form.employee|as_crispy_field }}
-  </div>
-  <div class="col-md-12 mb-3 mb-md-0">
-    {{ wizard.form.reservation_date|as_crispy_field }}
-  </div>
-  <div class="col-md-12 mb-3 mb-md-0">
-    {{ wizard.form.start_time|as_crispy_field }}
-  </div>
-</div>
-{% endblock %}
-
+    <div class="row form-group">
+        <div class="col-md-12 mb-3 mb-md-0">{{ wizard.form.service|as_crispy_field }}</div>
+        <div class="col-md-12 mb-3 mb-md-0">{{ wizard.form.employee|as_crispy_field }}</div>
+        <div class="col-md-12 mb-3 mb-md-0">{{ wizard.form.reservation_date|as_crispy_field }}</div>
+        <div class="col-md-12 mb-3 mb-md-0">{{ wizard.form.start_time|as_crispy_field }}</div>
+    </div>
+{% endblock form_content %}
 {% block extra_js %}
-<script>
+    <script>
 $(document).ready(function() {
     // When service changes, update employee options
     $('#id_service').on('change', function() {
@@ -83,18 +74,21 @@ $(document).ready(function() {
             dataType: 'json',
             success: function(data) {
                 const dateField = $('#id_reservation_date');
-                const availableDates = data.dates.map(item => item.date);
+                const availableDates = data.dates.map(item => item.date.trim());
+                console.log('Dostępne daty:', data);
                 dateField.prop('disabled', false);
                 dateField.next('.text-danger').remove();
 
                 if (data.dates.length === 0) {
                     dateField.after('<p class="text-danger">No available dates for this stylist</p>');
+                    dateField.error("No available dates for this stylist")
                 }
 
                 $('#id_reservation_date').datepicker('destroy').datepicker({
                 dateFormat: 'yy-mm-dd',
                 beforeShowDay: function (date) {
                   const dateString = $.datepicker.formatDate('yy-mm-dd', date);
+
                   return [availableDates.includes(dateString)];
                   }
                 });
@@ -128,5 +122,5 @@ $(document).ready(function() {
     });
 }
 });
-</script>
-{% endblock %}
+    </script>
+{% endblock extra_js %}
