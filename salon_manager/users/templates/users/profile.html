@@ -1,28 +1,45 @@
-{% extends 'dashboard/base.html' %}
+{% extends "dashboard/base.html" %}
 {% load crispy_forms_tags %}
 {% block content %}
-    <div class="row"></div>
-    <div class="container">
-        <div class="content-section">
-            <div class="media">
-                <img class="rounded-circle account-img" src="{{ user.profile.image.url }}">
-                <div class="media-body">
-                    <h2 class="account-heading">{{ user.username }}</h2>
-                    <p class="text-secondary">{{ user.email }}</p>
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card shadow-lg border-0">
+                    <div class="card-header bg-primary text-white text-center">
+                        <h3 class="mb-0">Your Profile</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col-md-4 text-center">
+                                <img class="rounded-circle img-fluid mb-3"
+                                     src="{{ user.profile.image.url }}"
+                                     alt="Profile Picture"
+                                     style="width: 150px;
+                                            height: 150px;
+                                            object-fit: cover">
+                            </div>
+                            <div class="col-md-8">
+                                <h4 class="account-heading">{{ user.username }}</h4>
+                                <p class="text-muted">{{ user.email }}</p>
+                            </div>
+                        </div>
+                        <hr>
+                        <form method="post" enctype="multipart/form-data">
+                            {% csrf_token %}
+                            <fieldset class="form-group">
+                                <legend class="border-bottom mb-4 text-center">Update Profile Info</legend>
+                                <div class="row">
+                                    <div class="col-md-6">{{ user_form|crispy }}</div>
+                                    <div class="col-md-6">{{ profile_form|crispy }}</div>
+                                </div>
+                            </fieldset>
+                            <div class="text-center mt-3">
+                                <button class="btn btn-success px-4 text-white" type="submit">Update</button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>
-        <form method="POST" enctype="multipart/form-data">
-            {% csrf_token %}
-            <fieldset class="form-group">
-                <legend class="border-bottom mb-4">Profile info!</legend>
-                {{ user_form|crispy }}
-                {{ profile_form|crispy }}
-            </fieldset>
-            <div class="form-group">
-                <button class="btn btn-outline-info" type="submit">Update</button>
-            </div>
-        </form>
     </div>
-</div>
 {% endblock content %}
