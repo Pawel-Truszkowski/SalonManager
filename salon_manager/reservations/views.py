@@ -189,5 +189,5 @@ def reservation_success(request):
     return render(request, "reservations/reservation_success.html")
 
 
-class ReservationSuccessView(TemplateView):
+class ReservationSuccessView(LoginRequiredMixin, TemplateView):
     template_name = "reservations/reservation_success.html"
