@@ -16,9 +16,10 @@ class WorkDay(models.Model):
 
 class Reservation(models.Model):
     RESERVATION_STATUS_CHOICES = (
-        ("PENDING", "Oczekujące"),
-        ("CONFIRMED", "Potwierdzone"),
-        ("CANCELLED", "Anulowane"),
+        ("PENDING", "pending"),
+        ("CONFIRMED", "confirmed"),
+        ("CANCELLED", "cancelled"),
+        ("PAST", "past"),
     )
 
     customer = models.ForeignKey(
@@ -40,7 +41,7 @@ class Reservation(models.Model):
     )
 
     def __str__(self) -> str:
-        return f"Rezerwacja {self.customer.username} na {self.reservation_date} o {self.start_time}"
+        return f"Reservation {self.customer.username} for {self.reservation_date} about {self.start_time}"
 
     @property
     def end_time(self) -> datetime.time:

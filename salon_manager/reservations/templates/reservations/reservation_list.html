@@ -5,45 +5,45 @@
         <div class="container">
             <div class="row mb-4">
                 <div class="col-md-7 mb-4">
-                    <h3 class="site-section-heading">Work Days Management</h3>
-                </div>
-                <div class="col-md-5 text-right">
-                    <a href="{% url 'workday_create' %}" class="btn btn-primary">Add New Work Day</a>
+                    <h2 class="site-section-heading">Your Visits</h2>
                 </div>
             </div>
-            <!-- Kalendarz FullCalendar -->
-            <div id="calendar"></div>
             <hr>
-            <!-- Stara tabela dla przejrzystości -->
             <div class="row mt-4">
                 <div class="col-md-12">
                     <table class="table table-striped">
                         <thead>
                             <tr>
                                 <th>Date</th>
-                                <th>Employee</th>
                                 <th>Start Time</th>
-                                <th>End Time</th>
+                                <th>Status</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {% for workday in workdays %}
+                            {% for reservation in reservations %}
                                 <tr>
-                                    <td>{{ workday.date }}</td>
-                                    <td>{{ workday.employee.name }}</td>
-                                    <td>{{ workday.start_time }}</td>
-                                    <td>{{ workday.end_time }}</td>
+                                    <td>{{ reservation.reservation_date }}</td>
+                                    <td>{{ reservation.start_time }}</td>
+                                    <td>{{ reservation.status }}</td>
                                     <td>
-                                        <a href="{% url 'workday_update' workday.pk %}"
-                                           class="btn btn-sm btn-info">Edit</a>
-                                        <a href="{% url 'workday_delete' workday.pk %}"
-                                           class="btn btn-sm btn-danger">Delete</a>
+                                        <form method="post" action="{% url 'cancel_reservation' reservation.id %}">
+                                            {% csrf_token %}
+                                            <button type="submit"
+                                                    class="btn-danger"
+                                                    {% if reservation.status == "CANCEL" %}disabled{% endif %}>
+                                                {% if reservation.status == "CANCEL" %}
+                                                    CANCELED
+                                                {% else %}
+                                                    CANCEL
+                                                {% endif %}
+                                            </button>
+                                        </form>
                                     </td>
                                 </tr>
                             {% empty %}
                                 <tr>
-                                    <td colspan="5" class="text-center">No work days found.</td>
+                                    <td colspan="5" class="text-center">No reservations found.</td>
                                 </tr>
                             {% endfor %}
                         </tbody>
