@@ -1,6 +1,7 @@
 from django.contrib import messages
 from django.contrib.auth.mixins import UserPassesTestMixin
-from django.shortcuts import render
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404, render
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, DeleteView, ListView, UpdateView
 from reservations.models import WorkDay
@@ -83,15 +84,31 @@ class WorkDayCreateView(OwnerRequiredMixin, CreateView):
         return super().form_valid(form)
 
 
-class WorkDayUpdateView(OwnerRequiredMixin, UpdateView):
-    model = WorkDay
-    form_class = WorkDayForm
-    template_name = "dashboard/workday_form.html"
-    success_url = reverse_lazy("workday_list")
+# class WorkDayUpdateView(OwnerRequiredMixin, UpdateView):
+#     model = WorkDay
+#     form_class = WorkDayForm
+#     template_name = "dashboard/workday_form.html"
+#     success_url = reverse_lazy("workday_list")
+#
+#     def form_valid(self, form):
+#         messages.success(self.request, "Work day updated successfully!")
+#         return super().form_valid(form)
 
-    def form_valid(self, form):
-        messages.success(self.request, "Work day updated successfully!")
-        return super().form_valid(form)
+
+class WorkDayUpdateView(UpdateView):
+    model = WorkDay
+    fields = ["date", "start_time", "end_time"]
+    template_name = "dashboard/workday_form.html"
+
+    def post(self, request, *args, **kwargs):
+        workday = get_object_or_404(WorkDay, pk=self.kwargs["pk"])
+
+        workday.date = request.POST.get("date")
+        workday.start_time = request.POST.get("start_time")
+        workday.end_time = request.POST.get("end_time")
+        workday.save()
+
+        return JsonResponse({"success": True})
 
 
 class WorkDayDeleteView(OwnerRequiredMixin, DeleteView):
