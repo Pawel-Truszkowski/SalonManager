@@ -39,7 +39,8 @@
                                     <p>
                                         <strong class="font-weight-bold text-primary">{{ service.price }} PLN</strong>
                                     </p>
-                                    <button class="btn btn-primary text-white" type="button">Book Now</button>
+                                    <a href="{% url 'reservation_create' service.id %}"
+                                       class="btn btn-primary text-white">Book Now!</a>
                                 </div>
                             </div>
                         {% endif %}

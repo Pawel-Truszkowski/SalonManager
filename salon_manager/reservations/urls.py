@@ -3,6 +3,11 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
+    path(
+        "reservations/<int:service_id>/",
+        views.reservation_create,
+        name="reservation_create",
+    ),
     path("", views.ReservationWizard.as_view(views.FORMS), name="reservation_wizard"),
     path(
         "booking-success/",
