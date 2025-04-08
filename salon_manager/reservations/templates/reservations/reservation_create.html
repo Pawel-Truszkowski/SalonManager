@@ -1,0 +1,134 @@
+{% extends "dashboard/base.html" %}
+{% load static %}
+{% load i18n %}
+{% block customCSS %}
+    <link rel="stylesheet"
+          type="text/css"
+          href="{% static 'core/css/reserv-common.css' %}" />
+    <link rel="stylesheet"
+          type="text/css"
+          href="{% static 'core/css/reservations.css' %}" />
+{% endblock %}
+{% block title %}{{ page_title }}{% endblock %}
+{% block body %}
+    <div class="container">
+        <div class="djangoAppt_main-container">
+            <div class="djangoAppt_body-container">
+                <h1 class="page-title">
+                    {% if page_header %}
+                        {{ page_header }}
+                    {% else %}
+                        {{ service.name }}
+                    {% endif %}
+                </h1>
+                <small class="page-description">
+                    {% trans "Check out our availability and book the date and time that works for you" %}
+                </small>
+                <hr>
+                <div class="djangoAppt_page-body">
+                    <div class="djangoAppt_appointment-calendar">
+                        <div class="djangoAppt_appointment-calendar-title-timezone">
+                            <div class="djangoAppt_title">{% trans "Select a date and time" %}</div>
+                            <div class="djangoAppt_timezone-details">{% trans "Timezone" %}:&nbsp;{{ timezoneTxt }}</div>
+                        </div>
+                        <hr class="djangoAppt_second-part">
+                        <div class="djangoAppt_calendar-and-slot">
+                            <div class="djangoAppt_calendar" id="calendar"></div>
+                            <div class="djangoAppt_slot">
+                                <div class="djangoAppt_date_chosen">{{ date_chosen }}</div>
+                                <div class="slot-container">
+                                    <div class="error-message"></div>
+                                    <ul id="slot-list" class="djangoAppt_slot-list">
+                                        <!-- Slot list will be updated dynamically by the AJAX request -->
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        {% if rescheduled_date %}
+                            <div class="form-group" style="margin-top: 10px">
+                                <label for="reason_for_rescheduling">{% trans "Reason for rescheduling" %}:</label>
+                                <textarea name="reason_for_rescheduling"
+                                          id="reason_for_rescheduling"
+                                          class="form-control"
+                                          rows="1"
+                                          required></textarea>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="djangoAppt_service-description">
+                        <form method="post"
+                              action="{% url 'appointment:appointment_request_submit' %}"
+                              class="appointment-form">
+                            {% csrf_token %}
+                            <div class="staff-members-list">
+                                <label class="djangoAppt_item-name" for="staff_id">{{ label }}</label>
+                                <select name="staff_member" id="staff_id">
+                                    {% if not staff_member %}
+                                        <option value="none" selected>{% trans 'Please select a staff member' %}</option>
+                                    {% endif %}
+                                    {% for sf in all_staff_members %}
+                                        <option value="{{ sf.id }}"
+                                                {% if staff_member and staff_member.id == sf.id %}selected{% endif %}>
+                                            {{ sf.get_staff_member_name }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div>{% trans "Service Details" %}</div>
+                            <hr class="djangoAppt_second-part">
+                            <div class="djangoAppt_service-description-content">
+                                <p class="djangoAppt_item-name">{{ service.name }}</p>
+                                <p id="service-datetime-chosen" class="service-datetime-chosen">{{ date_chosen }}</p>
+                                <p>{% trans 'Duration' %}: {{ service.duration }} min</p>
+                                <p>{% trans 'Price' %}: {{ service.price }} zł</p>
+                                <button type="submit" class="btn btn-primary btn-submit-appointment" disabled>{% trans 'Next' %}</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-dismissible {% if message.tags %}alert-{% if message.level == DEFAULT_MESSAGE_LEVELS.ERROR %}danger{% else %}{{ message.tags }}{% endif %}{% endif %}"
+                             role="alert">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+{% endblock %}
+{% block customJS %}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.30.1/moment.js"
+            integrity="sha512-3CuraBvy05nIgcoXjVN33mACRyI89ydVHg7y/HMN9wcTVbHeur0SeBzweSd/rxySapO7Tmfu68+JlKkLTnDFNg=="
+            crossorigin="anonymous"
+            referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment-timezone/0.5.45/moment-timezone-with-data.min.js"
+            integrity="sha512-t/mY3un180WRfsSkWy4Yi0tAxEDGcY2rAEx873hb5BrkvLA0QLk54+SjfYgFBBoCdJDV1H86M8uyZdJhAOHeyA=="
+            crossorigin="anonymous"
+            referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/6.1.10/index.global.min.js"
+            integrity="sha512-JCQkxdym6GmQ+AFVioDUq8dWaWN6tbKRhRyHvYZPupQ6DxpXzkW106FXS1ORgo/m3gxtt5lHRMqSdm2OfPajtg=="
+            crossorigin="anonymous"
+            referrerpolicy="no-referrer"></script>
+    <script>
+        const timezone = "{{ timezoneTxt }}";
+        const locale = "{{ locale }}";
+        const availableSlotsAjaxURL = "{% url 'appointment:available_slots_ajax' %}";
+        const requestNextAvailableSlotURLTemplate = "{% url 'appointment:request_next_available_slot' service_id=0 %}";
+        const getNonWorkingDaysURL = "{% url 'appointment:get_non_working_days_ajax' %}";
+        const serviceId = "{{ service.id }}";
+        console.log(serviceId);
+        const serviceDuration = parseInt("{{ service.duration.total_seconds }}") / 60;
+        const rescheduledDate = "{{ rescheduled_date }}";
+        const appointmentRequestId = "{{ ar_id_request }}";
+        const appointmentRequestSubmitURL = "{% url 'appointment:appointment_request_submit' %}";
+        const appointmentRescheduleURL = "{% url 'appointment:reschedule_appointment_submit' %}";
+    </script>
+    <script>
+        const requestNonAvailableSlotBtnTxt = "{% trans 'Request next available slot' %}";
+        const noStaffMemberSelectedTxt = "{% trans 'No staff member selected.' %}";
+        const selectTimeSlotWarningTxt = "{% trans 'Please select a time slot before submitting the appointment request.' %}";
+        const dateInPastErrorTxt = "{% trans 'Date is in the past.' %}";
+        const selectDateAndTimeAlertTxt = "{% trans 'Please select a date and time' %}";
+    </script>
+    <script src="{% static 'core/static/js/appointments.js' %}"></script>
+{% endblock %}
