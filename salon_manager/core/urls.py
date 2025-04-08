@@ -31,4 +31,5 @@ urlpatterns = [
     path("logout/", LogoutView.as_view(next_page="home"), name="logout"),
     path("register/", user_views.register, name="register"),
     path("profile/", user_views.profile, name="profile"),
+    path("appointment/", include("appointment.urls")),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -1,0 +1,17 @@
+.fc-scroller {
+    overflow: hidden !important;
+}
+
+@media (max-width: 450px) {
+    .fc-daygrid-day-events {
+        display: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        font-size: 0 !important;
+        height: 0 !important;
+    }
+
+    .fc, .fc-button {
+        padding: .3em .45em !important;
+    }
+}
