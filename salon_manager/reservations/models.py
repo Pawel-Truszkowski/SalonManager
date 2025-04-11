@@ -13,6 +13,9 @@ class WorkDay(models.Model):
         Employee, on_delete=models.CASCADE, related_name="work_day"
     )
 
+    def __str__(self):
+        return f"{self.employee} - {self.date}"
+
 
 class Reservation(models.Model):
     RESERVATION_STATUS_CHOICES = (

@@ -1,370 +1,367 @@
-const calendarEl = document.getElementById('calendar');
-let nextAvailableDateSelector = $('.djangoAppt_next-available-date')
-const body = $('body');
-let nonWorkingDays = [];
-let selectedDate = rescheduledDate || null;
-let staffId = $('#staff_id').val() || null;
-let previouslySelectedCell = null;
-let isRequestInProgress = false;
+document.addEventListener('DOMContentLoaded', function() {
+    // DOM Elements
+    const calendarEl = document.getElementById('calendar');
+    const slotList = document.getElementById('slot-list');
+    const dateChosen = document.querySelector('.djangoAppt_date_chosen');
+    const serviceDatetimeChosen = document.getElementById('service-datetime-chosen');
+    const staffSelect = document.getElementById('staff_id');
+    const appointmentForm = document.querySelector('.appointment-form');
+    const submitButton = document.querySelector('.btn-submit-appointment');
+    const errorMessage = document.querySelector('.error-message');
 
-const calendar = new FullCalendar.Calendar(calendarEl, {
-    initialView: 'dayGridMonth',
-    initialDate: selectedDate,
-    timeZone: timezone,
-    headerToolbar: {
-        left: 'title',
-        right: 'prev,today,next',
-    },
-    height: '400px',
-    themeSystem: 'bootstrap',
-    nowIndicator: true,
-    bootstrapFontAwesome: {
-        close: 'fa-times',
-        prev: 'fa-chevron-left',
-        next: 'fa-chevron-right',
-        prevYear: 'fa-angle-double-left',
-        nextYear: 'fa-angle-double-right'
-    },
-    selectable: true,
-    dateClick: function (info) {
-        const day = info.date.getDay();  // Get the day of the week (0 for Sunday, 6 for Saturday)
-        if (nonWorkingDays.includes(day)) {
+    // State variables
+    let selectedDate = null;
+    let selectedSlot = null;
+    let selectedStaffMember = staffSelect.value !== "none" ? staffSelect.value : null;
+    let nonWorkingDays = [];
+
+    // Initialize FullCalendar
+    const calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        initialDate: selectedDate,
+        locale: locale,
+        headerToolbar: {
+            left: 'title',
+            right: 'prev,today,next',
+        },
+        dayMaxEvents: 1,
+        selectable: true,
+        selectMirror: true,
+        unselectAuto: false,
+        select: handleDateSelect,
+        dateClick: handleDateClick,
+        validRange: {
+            start: new Date().toISOString().split('T')[0] // Only allow dates from today onwards
+        },
+        dayCellClassNames: function(info) {
+            // Add class to non-working days
+            if (nonWorkingDays.includes(info.dateStr)) {
+                return ['disabled-day'];
+            }
+            return [];
+        }
+    });
+
+    calendar.render();
+
+    // Fetch non-working days on initial load
+    fetchNonWorkingDays();
+
+    // Event Listeners
+    if (staffSelect) {
+        staffSelect.addEventListener('change', function() {
+            selectedStaffMember = this.value !== "none" ? this.value : null;
+            if (selectedDate) {
+                fetchAvailableSlots(selectedDate);
+            }
+            validateForm();
+        });
+    }
+
+    // If rescheduling, pre-select date
+    if (rescheduled_date) {
+        const date = new Date(rescheduled_date);
+        calendar.select(date);
+        fetchAvailableSlots(formatDate(date));
+    }
+
+    // Form submission handling
+    if (appointmentForm) {
+        appointmentForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            if (!validateForm()) {
+                return;
+            }
+
+            // Create form data
+            const formData = new FormData(this);
+            formData.append('service_id', serviceId);
+            formData.append('date_selected', selectedDate);
+            formData.append('time_selected', selectedSlot);
+            formData.append('timezone', timezone);
+
+            if (appointmentRequestId) {
+                formData.append('appointment_request_id', appointmentRequestId);
+
+                // If rescheduling, add reason
+                const reasonInput = document.getElementById('reason_for_rescheduling');
+                if (reasonInput) {
+                    formData.append('reason_for_rescheduling', reasonInput.value);
+                }
+
+                // Submit reschedule request
+                submitForm(appointmentRescheduleURL, formData);
+            } else {
+                // Submit new appointment request
+                submitForm(appointmentRequestSubmitURL, formData);
+            }
+        });
+    }
+
+    // Functions
+    function handleDateSelect(info) {
+        const clickedDate = info.startStr;
+
+        // Check if date is a non-working day
+        if (nonWorkingDays.includes(clickedDate)) {
+            calendar.unselect();
+            showError(dateInPastErrorTxt);
             return;
         }
 
-        // If there's a previously selected cell, remove the class
-        if (previouslySelectedCell) {
-            previouslySelectedCell.classList.remove('selected-cell');
+        // Clear previous selection
+        clearSlotSelection();
+
+        // Update selected date
+        selectedDate = clickedDate;
+        updateDateDisplay(clickedDate);
+
+        // Fetch available slots
+        fetchAvailableSlots(clickedDate);
+    }
+
+    function handleDateClick(info) {
+        const clickedDate = info.dateStr;
+
+        // Check if date is a non-working day
+        if (nonWorkingDays.includes(clickedDate)) {
+            showError(dateInPastErrorTxt);
+            return;
         }
 
-        // Add the class to the currently clicked cell
+        // Add selected class to the clicked cell
+        document.querySelectorAll('.selected-cell').forEach(el => {
+            el.classList.remove('selected-cell');
+        });
         info.dayEl.classList.add('selected-cell');
 
-        // Store the currently clicked cell
-        previouslySelectedCell = info.dayEl;
-
-        selectedDate = info.dateStr;
-        getAvailableSlots(info.dateStr, staffId);
-    },
-    datesSet: function (info) {
-        highlightSelectedDate();
-    },
-    selectAllow: function (info) {
-        const day = info.start.getDay();  // Get the day of the week (0 for Sunday, 6 for Saturday)
-        if (nonWorkingDays.includes(day)) {
-            return false;  // Disallow selection for non-working days
-        }
-        return (info.start >= getDateWithoutTime(new Date()));
-    },
-    dayCellClassNames: function (info) {
-        const day = info.date.getDay();
-        if (nonWorkingDays.includes(day)) {
-            return ['disabled-day'];
-        }
-        return [];
-    },
-});
-
-calendar.setOption('locale', locale);
-
-$(document).ready(function () {
-    staffId = $('#staff_id').val() || null;
-    calendar.render();
-    const currentDate = rescheduledDate || moment.tz(timezone).format('YYYY-MM-DD');
-    getAvailableSlots(currentDate, staffId);
-});
-
-function highlightSelectedDate() {
-    setTimeout(function () {
-        const dateCell = document.querySelector(`.fc-daygrid-day[data-date='${selectedDate}']`);
-        if (dateCell) {
-            dateCell.classList.add('selected-cell');
-            previouslySelectedCell = dateCell;
-        }
-    }, 10);
-}
-
-body.on('click', '.djangoAppt_btn-request-next-slot', function () {
-    const serviceId = $(this).data('service-id');
-    requestNextAvailableSlot(serviceId);
-})
-
-body.on('click', '.btn-submit-appointment', function () {
-    const selectedSlot = $('.djangoAppt_appointment-slot.selected').text();
-    const selectedDate = $('.djangoAppt_date_chosen').text();
-    if (!selectedSlot || !selectedDate) {
-        alert(selectDateAndTimeAlertTxt);
-        return;
+        // Select the date in the calendar
+        calendar.select(info.date);
     }
-    if (selectedSlot && selectedDate) {
-        const startTime = convertTo24Hour(selectedSlot);
-        const APPOINTMENT_BASE_TEMPLATE = localStorage.getItem('APPOINTMENT_BASE_TEMPLATE');
-        // Convert the selectedDate string to a valid format
-        const dateParts = selectedDate.split(', ');
-        const monthDayYear = dateParts[1] + "," + dateParts[2];
-        const formattedDate = new Date(monthDayYear + " " + startTime);
 
-        const date = formattedDate.toISOString().slice(0, 10);
-        const endTimeDate = new Date(formattedDate.getTime() + serviceDuration * 60000);
-        const endTime = formatTime(endTimeDate);
-        const reasonForRescheduling = $('#reason_for_rescheduling').val();
-        const form = $('.appointment-form');
-        let formAction = rescheduledDate ? appointmentRescheduleURL : appointmentRequestSubmitURL;
-        form.attr('action', formAction);
-        if (!form.find('input[name="appointment_request_id"]').length) {
-            form.append($('<input>', {
-                type: 'hidden',
-                name: 'appointment_request_id',
-                value: appointmentRequestId
-            }));
-        }
-        form.append($('<input>', {type: 'hidden', name: 'date', value: date}));
-        form.append($('<input>', {type: 'hidden', name: 'start_time', value: startTime}));
-        form.append($('<input>', {type: 'hidden', name: 'end_time', value: endTime}));
-        form.append($('<input>', {type: 'hidden', name: 'service', value: serviceId}));
-        form.append($('<input>', {type: 'hidden', name: 'reason_for_rescheduling', value: reasonForRescheduling}));
-        form.submit();
-    } else {
-        const warningContainer = $('.warning-message');
-        if (warningContainer.find('submit-warning') === 0) {
-            warningContainer.append('<p class="submit-warning">' + selectTimeSlotWarningTxt + '</p>');
-        }
-    }
-});
-
-$('#staff_id').on('change', function () {
-    staffId = $(this).val() || null;  // If staffId is an empty string, set it to null
-    let currentDate = null
-    if (selectedDate == null) {
-        currentDate = moment.tz(timezone).format('YYYY-MM-DD');
-    } else {
-        currentDate = selectedDate;
-    }
-    fetchNonWorkingDays(staffId, function (newNonWorkingDays) {
-        nonWorkingDays = newNonWorkingDays;  // Update the nonWorkingDays array
-        calendar.render();  // Re-render the calendar to apply changes
-
-        // Fetch available slots for the current date
-        getAvailableSlots(currentDate, staffId);
-    });
-});
-
-
-function fetchNonWorkingDays(staffId, callback) {
-    if (!staffId || staffId === 'none') {
-        nonWorkingDays = [];  // Reset nonWorkingDays
-        calendar.render();   // Re-render the calendar
-        callback([]);
-        return;  // Exit the function early
-    }
-    let ajaxData = {
-        'staff_member': staffId,
-    };
-
-    $.ajax({
-        url: getNonWorkingDaysURL,
-        data: ajaxData,
-        dataType: 'json',
-        success: function (data) {
-            if (data.error) {
-                console.error('Error fetching non-working days:', data.message);
-                callback([]);
-            } else {
+    function fetchNonWorkingDays() {
+        fetch(getNonWorkingDaysURL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({
+                staff_id: selectedStaffMember
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
                 nonWorkingDays = data.non_working_days;
-                calendar.render();
-                callback(data.non_working_days);
+                calendar.render(); // Re-render calendar with non-working days
             }
+        })
+        .catch(error => {
+            console.error('Error fetching non-working days:', error);
+        });
+    }
+
+    function fetchAvailableSlots(date) {
+        if (!selectedStaffMember) {
+            showError(noStaffMemberSelectedTxt);
+            return;
         }
-    });
-}
 
-function getDateWithoutTime(dt) {
-    dt.setHours(0, 0, 0, 0);
-    return dt;
-}
+        // Clear the slot list
+        slotList.innerHTML = '';
 
-function convertTo24Hour(time12h) {
-    const [time, modifier] = time12h.split(' ');
-    let [hours, minutes] = time.split(':');
+        // Show loading indicator
+        slotList.innerHTML = '<li class="loading">Loading...</li>';
 
-    if (hours === '12') {
-        hours = '00';
-    }
+        fetch(availableSlotsAjaxURL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({
+                date: date,
+                staff_id: selectedStaffMember,
+                service_id: serviceId,
+                duration: serviceDuration
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Clear loading indicator
+            slotList.innerHTML = '';
 
-    if (modifier.toUpperCase() === 'PM') {
-        hours = parseInt(hours, 10) + 12;
-    }
-
-    return `${hours}:${minutes}`;
-}
-
-function formatTime(date) {
-    const hours = date.getHours();
-    const minutes = date.getMinutes();
-    return (hours < 10 ? '0' + hours : hours) + ':' + (minutes < 10 ? '0' + minutes : minutes);
-}
-
-function getAvailableSlots(selectedDate, staffId = null) {
-    // Update the slot list with the available slots for the selected date
-    const slotList = $('#slot-list');
-    const slotContainer = $('.slot-container');
-    const errorMessageContainer = $('.error-message');
-
-    // Clear previous error messages and slots
-    slotList.empty();
-    errorMessageContainer.find('.djangoAppt_no-availability-text').remove();
-
-    // Remove the "Next available date" message
-    nextAvailableDateSelector = $('.djangoAppt_next-available-date'); // Update the selector
-    nextAvailableDateSelector.remove();
-
-    // Correctly check if staffId is 'none', null, or undefined and exit the function if true
-    // Check if 'staffId' is 'none', null, or undefined and display an error message
-    if (staffId === 'none' || staffId === null || staffId === undefined) {
-        console.log('No staff ID provided, displaying error message.');
-        const errorMessage = $('<p class="djangoAppt_no-availability-text">' + noStaffMemberSelectedTxt + '</p>');
-        errorMessageContainer.append(errorMessage);
-        // Optionally disable the "submit" button here
-        $('.btn-submit-appointment').attr('disabled', 'disabled');
-        return; // Exit the function early
-    }
-
-    let ajaxData = {
-        'selected_date': selectedDate,
-        'staff_member': staffId,
-    };
-    fetchNonWorkingDays(staffId, function (nonWorkingDays) {
-        // Check if nonWorkingDays is an array
-        if (Array.isArray(nonWorkingDays)) {
-            // Update the FullCalendar configuration
-            // calendar.setOption('hiddenDays', nonWorkingDays);
-        } else {
-            // Handle the case where there's an error or no data
-            // For now, we'll just log it, but you can handle it more gracefully if needed
-            console.error('Failed to get non-working days:', nonWorkingDays);
-        }
-    });
-
-    // Send an AJAX request to get the available slots for the selected date
-    if (isRequestInProgress) {
-        return; // Exit the function if a request is already in progress
-    }
-    isRequestInProgress = true;
-    $.ajax({
-        url: availableSlotsAjaxURL,
-        data: ajaxData,
-        dataType: 'json',
-        success: function (data) {
-            if (data.available_slots.length === 0) {
-                const selectedDateObj = moment.tz(selectedDate, timezone);
-                const selectedD = selectedDateObj.toDate();
-                const today = new Date();
-                today.setHours(0, 0, 0, 0);
-
-                if (selectedD < today) {
-                    // Show an error message
-                    errorMessageContainer.append('<p class="djangoAppt_no-availability-text">' + dateInPastErrorTxt + '</p>');
-                    if (slotContainer.find('.djangoAppt_btn-request-next-slot').length === 0) {
-                        slotContainer.append(`<button class="btn btn-danger djangoAppt_btn-request-next-slot" data-service-id="${serviceId}">` + requestNonAvailableSlotBtnTxt + `</button>`);
-                    }
-                    // Disable the 'submit' button
-                    $('.btn-submit-appointment').attr('disabled', 'disabled');
+            if (data.success) {
+                if (data.slots && data.slots.length > 0) {
+                    // Display available slots
+                    data.slots.forEach(slot => {
+                        const slotItem = document.createElement('li');
+                        const slotButton = document.createElement('div');
+                        slotButton.className = 'djangoAppt_appointment-slot';
+                        slotButton.textContent = slot;
+                        slotButton.addEventListener('click', () => selectTimeSlot(slot, slotButton));
+                        slotItem.appendChild(slotButton);
+                        slotList.appendChild(slotItem);
+                    });
                 } else {
-                    errorMessageContainer.find('.djangoAppt_no-availability-text').remove();
-                    if (errorMessageContainer.find('.djangoAppt_no-availability-text').length === 0) {
-                        errorMessageContainer.append(`<p class="djangoAppt_no-availability-text">${data.message}</p>`);
-                    }
-                    // Check if the returned message is 'No availability'
-                    if (data.message.toLowerCase() === 'no availability') {
-                        if (slotContainer.find('.djangoAppt_btn-request-next-slot').length === 0) {
-                            slotContainer.append(`<button class="btn btn-danger djangoAppt_btn-request-next-slot" data-service-id="${serviceId}">` + requestNonAvailableSlotBtnTxt + `</button>`);
-                        }
-                    } else {
-                        $('.djangoAppt_btn-request-next-slot').remove();
-                    }
+                    // No available slots
+                    showNoAvailability(date);
                 }
             } else {
-                // remove the button to request for next available slot
-                $('.djangoAppt_no-availability-text').remove();
-                $('.djangoAppt_btn-request-next-slot').remove();
-                const uniqueSlots = [...new Set(data.available_slots)]; // remove duplicates
-                for (let i = 0; i < uniqueSlots.length; i++) {
-                    slotList.append('<li class="djangoAppt_appointment-slot">' + uniqueSlots[i] + '</li>');
-                }
-
-                // Attach click event to the slots
-                $('.djangoAppt_appointment-slot').on('click', function () {
-                    // Remove the 'selected' class from all other appointment slots
-                    $('.djangoAppt_appointment-slot').removeClass('selected');
-
-                    // Add the 'selected' class to the clicked appointment slot
-                    $(this).addClass('selected');
-
-                    // Enable the submit button
-                    $('.btn-submit-appointment').removeAttr('disabled');
-
-                    // Continue with the existing logic
-                    const selectedSlot = $(this).text();
-                    $('#service-datetime-chosen').text(data.date_chosen + ' ' + selectedSlot);
-                });
+                showError(data.message || 'Error fetching available slots');
             }
-            // Update the date chosen
-            $('.djangoAppt_date_chosen').text(data.date_chosen);
-            $('#service-datetime-chosen').text(data.date_chosen);
-            isRequestInProgress = false;
-        },
-        error: function() {
-            isRequestInProgress = false; // Ensure the flag is reset even if the request fails
-        }
-    });
-}
-
-function requestNextAvailableSlot(serviceId) {
-    const requestNextAvailableSlotURL = requestNextAvailableSlotURLTemplate.replace('0', serviceId);
-    if (staffId === null) {
-        return;
+        })
+        .catch(error => {
+            console.error('Error fetching available slots:', error);
+            showError('Error connecting to server.');
+        });
     }
-    let ajaxData = {
-        'staff_member': staffId,
-    };
-    $.ajax({
-        url: requestNextAvailableSlotURL,
-        data: ajaxData,
-        dataType: 'json',
-        success: function (data) {
-            // If there's an error, just log it and return
-            let nextAvailableDateResponse = null;
-            let formattedDate = null;
-            if (data.error) {
-                nextAvailableDateResponse = data.message;
-            } else {
-                // Set the date in the calendar to the next available date
-                nextAvailableDateResponse = data.next_available_date;
-                const selectedDateObj = moment.tz(nextAvailableDateResponse, timezone);
-                const nextAvailableDate = selectedDateObj.toDate();
-                formattedDate = new Intl.DateTimeFormat('en-US', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                }).format(nextAvailableDate);
-            }
 
-            // Check if the .next-available-date element already exists
-            nextAvailableDateSelector = $('.djangoAppt_next-available-date'); // Update the selector
-            let nextAvailableDateText = null;
-            if (data.error) {
-                nextAvailableDateText = nextAvailableDateResponse;
-            } else {
-                nextAvailableDateText = `Next available date: ${formattedDate}`;
+    function selectTimeSlot(slot, buttonElement) {
+        // Clear previous selection
+        document.querySelectorAll('.djangoAppt_appointment-slot').forEach(btn => {
+            btn.classList.remove('selected');
+        });
+
+        // Mark selected
+        buttonElement.classList.add('selected');
+
+        // Update state
+        selectedSlot = slot;
+
+        // Update display
+        updateDateTimeDisplay();
+
+        // Enable submit button
+        validateForm();
+    }
+
+    function showNoAvailability(date) {
+        const messageItem = document.createElement('li');
+        messageItem.className = 'djangoAppt_slot-item no-slots';
+        messageItem.innerHTML = `<div class="djangoAppt_no-availability-text">No available slots for ${formatDateForDisplay(date)}</div>`;
+        slotList.appendChild(messageItem);
+    }
+
+    function updateDateDisplay(date) {
+        if (dateChosen) {
+            dateChosen.textContent = formatDateForDisplay(date);
+        }
+    }
+
+    function updateDateTimeDisplay() {
+        if (serviceDatetimeChosen && selectedDate && selectedSlot) {
+            serviceDatetimeChosen.textContent = `${formatDateForDisplay(selectedDate)} at ${selectedSlot}`;
+        }
+    }
+
+    function clearSlotSelection() {
+        selectedSlot = null;
+
+        // Remove selected class from slots
+        document.querySelectorAll('.djangoAppt_appointment-slot').forEach(btn => {
+            btn.classList.remove('selected');
+        });
+
+        // Disable submit button
+        submitButton.disabled = true;
+    }
+
+    function validateForm() {
+        if (!selectedStaffMember || selectedStaffMember === "none") {
+            submitButton.disabled = true;
+            showError(noStaffMemberSelectedTxt);
+            return false;
+        }
+
+        if (!selectedDate || !selectedSlot) {
+            submitButton.disabled = true;
+            showError(selectTimeSlotWarningTxt);
+            return false;
+        }
+
+        // All validations passed
+        submitButton.disabled = false;
+        clearError();
+        return true;
+    }
+
+    function showError(message) {
+        if (errorMessage) {
+            errorMessage.textContent = message;
+            errorMessage.style.display = 'block';
+        }
+    }
+
+    function clearError() {
+        if (errorMessage) {
+            errorMessage.textContent = '';
+            errorMessage.style.display = 'none';
+        }
+    }
+
+    function submitForm(url, formData) {
+        fetch(url, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
             }
-            if (nextAvailableDateSelector.length > 0) {
-                // Update the content of the existing .next-available-date element
-                nextAvailableDateSelector.text(nextAvailableDateText);
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                window.location.href = data.redirect_url;
             } else {
-                // If the .next-available-date element doesn't exist, create and append it
-                const nextDateText = `<p class="djangoAppt_next-available-date">${nextAvailableDateText}</p>`;
-                $('.djangoAppt_btn-request-next-slot').after(nextDateText);
+                showError(data.message || 'Error submitting appointment.');
+            }
+        })
+        .catch(error => {
+            console.error('Error submitting form:', error);
+            showError('Error connecting to server.');
+        });
+    }
+
+    // Helper functions
+    function formatDate(date) {
+        // Format date as YYYY-MM-DD
+        const d = new Date(date);
+        return d.getFullYear() + '-' +
+               String(d.getMonth() + 1).padStart(2, '0') + '-' +
+               String(d.getDate()).padStart(2, '0');
+    }
+
+    function formatDateForDisplay(dateStr) {
+        // Format date for display, e.g., "Monday, January 1, 2025"
+        const date = new Date(dateStr);
+        return date.toLocaleDateString(locale, {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+    }
+
+    // Make requestNextAvailableSlot available globally
+    window.requestNextAvailableSlot = function() {
+        window.location.href = requestNextAvailableSlotURLTemplate.replace('0', serviceId);
+    };
+});
+
+// Function to get CSRF token from cookies
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
             }
         }
-    });
+    }
+    return cookieValue;
 }

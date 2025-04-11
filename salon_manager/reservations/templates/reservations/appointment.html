@@ -44,16 +44,6 @@
                                 </div>
                             </div>
                         </div>
-                        {% if rescheduled_date %}
-                            <div class="form-group" style="margin-top: 10px">
-                                <label for="reason_for_rescheduling">{% trans "Reason for rescheduling" %}:</label>
-                                <textarea name="reason_for_rescheduling"
-                                          id="reason_for_rescheduling"
-                                          class="form-control"
-                                          rows="1"
-                                          required></textarea>
-                            </div>
-                        {% endif %}
                     </div>
                     <div class="djangoAppt_service-description">
                         <form method="post"
@@ -63,13 +53,13 @@
                             <div class="staff-members-list">
                                 <label class="djangoAppt_item-name" for="staff_id">{{ label }}</label>
                                 <select name="staff_member" id="staff_id">
-                                    {% if not staff_member %}
+                                    {% if not employees %}
                                         <option value="none" selected>{% trans 'Please select a staff member' %}</option>
                                     {% endif %}
-                                    {% for sf in all_staff_members %}
-                                        <option value="{{ sf.id }}"
-                                                {% if staff_member and staff_member.id == sf.id %}selected{% endif %}>
-                                            {{ sf.name }}
+                                    {% for employee in employees %}
+                                        <option value="{{ employee.id }}"
+                                                {% if employee and employee.id == sf.id %}selected{% endif %}>
+                                            {{ employee.name }}
                                         </option>
                                     {% endfor %}
                                 </select>
@@ -82,6 +72,8 @@
                                 <p id="service-datetime-chosen" class="service-datetime-chosen">{{ date_chosen }}</p>
                                 <p>{% trans 'Duration' %}: {{ service.duration }} min</p>
                                 <p>{% trans 'Price' %}: {{ service.price }} zł</p>
+                                <input type="hidden" name="start_time" id="selected_slot">
+                                <input type="hidden" name="reservation_date" id="selected_date">
                                 <button type="submit" class="btn btn-primary btn-submit-appointment" disabled>{% trans 'Next' %}</button>
                             </div>
                         </form>
@@ -96,40 +88,79 @@
             </div>
         </div>
     </div>
-{% endblock %}
+{% endblock body %}
 {% block customJS %}
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.30.1/moment.js"
-            integrity="sha512-3CuraBvy05nIgcoXjVN33mACRyI89ydVHg7y/HMN9wcTVbHeur0SeBzweSd/rxySapO7Tmfu68+JlKkLTnDFNg=="
-            crossorigin="anonymous"
-            referrerpolicy="no-referrer"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment-timezone/0.5.45/moment-timezone-with-data.min.js"
-            integrity="sha512-t/mY3un180WRfsSkWy4Yi0tAxEDGcY2rAEx873hb5BrkvLA0QLk54+SjfYgFBBoCdJDV1H86M8uyZdJhAOHeyA=="
-            crossorigin="anonymous"
-            referrerpolicy="no-referrer"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/6.1.10/index.global.min.js"
-            integrity="sha512-JCQkxdym6GmQ+AFVioDUq8dWaWN6tbKRhRyHvYZPupQ6DxpXzkW106FXS1ORgo/m3gxtt5lHRMqSdm2OfPajtg=="
-            crossorigin="anonymous"
-            referrerpolicy="no-referrer"></script>
     <script>
-        const timezone = "{{ timezoneTxt }}";
-        const locale = "{{ locale }}";
-        const availableSlotsAjaxURL = "{% url 'available_slots_ajax' %}";
-        const requestNextAvailableSlotURLTemplate = "{% url 'request_next_available_slot' service_id=0 %}";
-        const getNonWorkingDaysURL = "{% url 'get_non_working_days_ajax' %}";
-        const serviceId = "{{ service.id }}";
-        const serviceDuration = parseInt("{{ service.duration.total_seconds }}") / 60;
-        const rescheduledDate = "{{ rescheduled_date }}";
-        const appointmentRequestId = "{{ ar_id_request }}";
-        const appointmentRequestSubmitURL = "{% url 'appointment_request_submit' %}";
-        const appointmentRescheduleURL = "{% url 'reschedule_appointment_submit' %}";
+        document.addEventListener('DOMContentLoaded', function () {
+            const calendarEl = document.getElementById('calendar');
+            const slotList = document.getElementById('slot-list');
+            const staffSelect = document.getElementById('staff_id');
+
+            let selectedDate = null;
+            let selectedEmployeeId = null;
+
+            const calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'dayGridMonth',
+                locale: 'pl',
+                selectable: true,
+                validateRange: {
+                    start: new Date().toISOString().split('T')[0]
+                },
+                dateClick: function (info) {
+                    if (!selectedEmployeeId || serviceId) {
+                        alert("Please choose employee first!");
+                        return;
+                    }
+
+                   const selectedDate = info.startStr;
+
+                   fetch("{% url 'get_available_times' %}?employee_id=" + selectedEmployeeId + "&service_id=" + serviceId + "&date=" + selectedDate)
+                       .then(response => response.json())
+                       .then(data => {
+                           slotList.innerHTML = "";
+
+                           if (data.times.length === 0) {
+                               slotList.innerHTML = "<p class='text-danger'>No available slots. </p>";
+                           } else {
+                               data.times.forEach(slot => {
+                                   const btn = document.createElement("button");
+                                   btn.classList.add("btn", "btn-outline-primary", "m-1");
+                                   btn.textContent = slot.display;
+                                   btn.dataset.time = slot.value;
+                                   btn.onclick = () => {
+                                        document.getElementById("selected_slot").value = slot.value;
+                                        document.getElementById("selected_date").value = selectedDate;
+                                        document.querySelector(".btn-submit-appointment").disabled = false;
+                                   };
+                                   slotList.appendChild(btn);
+                               });
+                           }
+                       });
+               }
+           });
+
+           calendar.render();
+
+           staffSelect.addEventListener('change', function() {
+               selectedEmployeeId = this.value;
+
+               fetch(`{% url 'get_available_dates' %}?employee_id=${selectedEmployeeId}`)
+                   .then(response => response.json())
+                   .then(data => {
+                       const availableDates = data.dates.map(d => d.date);
+                       calendar.setOption("validRange", {
+                           start: new Date().toISOString().split('T')[0],
+                       });
+
+                       calendar.setOption("dateClick", function (info) {
+                           if (availableDates.includes(info.dateStr)) {
+                               calendar.trigger('dateClick', info);
+                           } else {
+                               alert("This day is not available for this employee.");
+                           }
+                       });
+                   });
+            });
+        });
     </script>
-    <script>
-        const requestNonAvailableSlotBtnTxt = "{% trans 'Request next available slot' %}";
-        const noStaffMemberSelectedTxt = "{% trans 'No staff member selected.' %}";
-        const selectTimeSlotWarningTxt = "{% trans 'Please select a time slot before submitting the appointment request.' %}";
-        const dateInPastErrorTxt = "{% trans 'Date is in the past.' %}";
-        const selectDateAndTimeAlertTxt = "{% trans 'Please select a date and time' %}";
-    </script>
-    <script src="{% static 'core/js/reservations.js' %}"></script>
-    <script src="{% static 'core/js/js-utils.js' %}"></script>
-{% endblock %}
+{% endblock customJS %}
