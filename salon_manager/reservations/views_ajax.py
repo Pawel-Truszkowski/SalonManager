@@ -67,7 +67,8 @@ def available_slots_ajax(request):
             )
 
         # Convert date string to date object
-        selected_date = datetime.datetime.strptime(date_str, "%Y-%m-%d").date()
+        date_only = date_str[:10]
+        selected_date = datetime.datetime.strptime(date_only, "%Y-%m-%d").date()
 
         # Check if date is in past
         if selected_date < timezone.now().date():
@@ -122,7 +123,7 @@ def available_slots_ajax(request):
     except json.JSONDecodeError:
         return JsonResponse({"success": False, "message": "Invalid JSON"})
     except Exception as e:
-        return JsonResponse({"success": False, "message": str(e)})
+        return JsonResponse({"success": False, "message": f"error: {str(e)}"})
 
 
 @require_POST
@@ -168,7 +169,7 @@ def get_non_working_days_ajax(request):
         return JsonResponse({"success": False, "message": str(e)})
 
 
-@login_required
+# @login_required
 @require_POST
 def appointment_request_submit(request):
     """Handle appointment request submission"""
@@ -177,6 +178,8 @@ def appointment_request_submit(request):
     staff_id = request.POST.get("staff_member")
     date_selected = request.POST.get("date_selected")
     time_selected = request.POST.get("time_selected")
+
+    date_selected = date_selected.split("T")[0]
 
     # Validate required fields
     if not all([service_id, staff_id, date_selected, time_selected]):
@@ -216,10 +219,10 @@ def appointment_request_submit(request):
 
         # Return success with redirect URL
         return JsonResponse(
-            {"success": True, "redirect_url": reverse("your_reservation_list")}
+            {"success": True, "redirect_url": reverse("reservation_success")}
         )
 
-    except (Service.DoesNotExist, Employee.DoesNotExist) as e:
+    except (Service.DoesNotExist, Employee.DoesNotExist):
         return JsonResponse(
             {"success": False, "message": "Invalid service or staff member"}
         )

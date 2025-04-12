@@ -59,11 +59,11 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // If rescheduling, pre-select date
-    if (rescheduled_date) {
-        const date = new Date(rescheduled_date);
-        calendar.select(date);
-        fetchAvailableSlots(formatDate(date));
-    }
+    // if (rescheduled_date) {
+    //     const date = new Date(rescheduled_date);
+    //     calendar.select(date);
+    //     fetchAvailableSlots(formatDate(date));
+    // }
 
     // Form submission handling
     if (appointmentForm) {
@@ -209,6 +209,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     // No available slots
                     showNoAvailability(date);
                 }
+                clearError();
             } else {
                 showError(data.message || 'Error fetching available slots');
             }
@@ -313,7 +314,8 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                window.location.href = data.redirect_url;
+                window.location.href = appointmentSuccessURL;
+                clearError();
             } else {
                 showError(data.message || 'Error submitting appointment.');
             }
