@@ -24,6 +24,16 @@ document.addEventListener('DOMContentLoaded', function() {
             left: 'title',
             right: 'prev,today,next',
         },
+        height: '400px',
+        themeSystem: 'bootstrap',
+        nowIndicator: true,
+        bootstrapFontAwesome: {
+            close: 'fa-times',
+            prev: 'fa-chevron-left',
+            next: 'fa-chevron-right',
+            prevYear: 'fa-angle-double-left',
+            nextYear: 'fa-angle-double-right'
+        },
         dayMaxEvents: 1,
         selectable: true,
         selectMirror: true,
@@ -35,26 +45,36 @@ document.addEventListener('DOMContentLoaded', function() {
         },
         dayCellClassNames: function(info) {
             // Add class to non-working days
-            if (nonWorkingDays.includes(info.dateStr)) {
+            const dateStr = info.date.toISOString().split('T')[0];
+            if (nonWorkingDays.includes(dateStr)) {
                 return ['disabled-day'];
             }
             return [];
-        }
+        },
+        // dayCellClassNames: function (info) {
+        // const day = info.date.getDay();
+        // if (nonWorkingDays.includes(day)) {
+        //     return ['disabled-day'];
+        // }
+        // return [];
+        // },
     });
 
-    calendar.render();
-
     // Fetch non-working days on initial load
-    fetchNonWorkingDays();
+    // fetchNonWorkingDays();
+
+    calendar.render();
 
     // Event Listeners
     if (staffSelect) {
         staffSelect.addEventListener('change', function() {
             selectedStaffMember = this.value !== "none" ? this.value : null;
+            fetchNonWorkingDays();
             if (selectedDate) {
                 fetchAvailableSlots(selectedDate);
             }
             validateForm();
+            clearError();
         });
     }
 
@@ -155,6 +175,7 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(data => {
             if (data.success) {
                 nonWorkingDays = data.non_working_days;
+                console.log(nonWorkingDays);
                 calendar.render(); // Re-render calendar with non-working days
             }
         })

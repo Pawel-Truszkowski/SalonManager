@@ -213,3 +213,6 @@ class CancelReservationView(LoginRequiredMixin, UserPassesTestMixin, View):
             messages.warning(request, "The reservation has already been canceled")
 
         return redirect("your_reservation_list")
+
+    def test_func(self):
+        return self.request.user.is_authenticated

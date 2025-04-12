@@ -160,7 +160,7 @@ def get_non_working_days_ajax(request):
         non_working_days = [
             d.strftime("%Y-%m-%d") for d in date_range if d not in working_days
         ]
-
+        # print(non_working_days)
         return JsonResponse({"success": True, "non_working_days": non_working_days})
 
     except json.JSONDecodeError:
@@ -376,7 +376,7 @@ def generate_available_slots(
 
 def check_for_conflicting_reservation(
     employee, date, start_time, duration, exclude_id=None
-):
+) -> bool:
     """Check if there's a conflicting reservation"""
     # Calculate end time
     start_datetime = datetime.datetime.combine(date, start_time)
