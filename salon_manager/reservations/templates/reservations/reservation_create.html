@@ -61,7 +61,7 @@
                               class="appointment-form">
                             {% csrf_token %}
                             <div class="staff-members-list">
-                                <label class="djangoAppt_item-name" for="staff_id">{{ label }}</label>
+                                <label class="djangoAppt_item-name" for="staff_id">{% trans 'Offered By' %}</label>
                                 <select name="staff_member" id="staff_id">
                                     {% if not staff_member %}
                                         <option value="none" selected>{% trans 'Please select a staff member' %}</option>
@@ -129,6 +129,7 @@
         const noStaffMemberSelectedTxt = "{% trans 'No staff member selected.' %}";
         const selectTimeSlotWarningTxt = "{% trans 'Please select a time slot before submitting the appointment request.' %}";
         const dateInPastErrorTxt = "{% trans 'Date is in the past.' %}";
+        const dateUnavailableTxt = "{% trans 'This date is unavailable! Please select available date.' %}";
         const selectDateAndTimeAlertTxt = "{% trans 'Please select a date and time' %}";
     </script>
     <script src="{% static 'core/js/reservations.js' %}"></script>

@@ -40,6 +40,9 @@ document.addEventListener('DOMContentLoaded', function() {
         unselectAuto: false,
         select: handleDateSelect,
         dateClick: handleDateClick,
+        datesSet: function (info) {
+            highlightSelectedDate();
+        },
         validRange: {
             start: new Date().toISOString().split('T')[0] // Only allow dates from today onwards
         },
@@ -51,17 +54,10 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             return [];
         },
-        // dayCellClassNames: function (info) {
-        // const day = info.date.getDay();
-        // if (nonWorkingDays.includes(day)) {
-        //     return ['disabled-day'];
-        // }
-        // return [];
-        // },
     });
 
     // Fetch non-working days on initial load
-    // fetchNonWorkingDays();
+    fetchNonWorkingDays();
 
     calendar.render();
 
@@ -126,19 +122,21 @@ document.addEventListener('DOMContentLoaded', function() {
         // Check if date is a non-working day
         if (nonWorkingDays.includes(clickedDate)) {
             calendar.unselect();
-            showError(dateInPastErrorTxt);
+            showError(dateUnavailableTxt);
+            clearError();
             return;
         }
 
         // Clear previous selection
         clearSlotSelection();
 
+        // Fetch available slots
+        fetchAvailableSlots(clickedDate);
+
         // Update selected date
         selectedDate = clickedDate;
         updateDateDisplay(clickedDate);
 
-        // Fetch available slots
-        fetchAvailableSlots(clickedDate);
     }
 
     function handleDateClick(info) {
@@ -146,7 +144,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Check if date is a non-working day
         if (nonWorkingDays.includes(clickedDate)) {
-            showError(dateInPastErrorTxt);
+            showError(dateUnavailableTxt);
+            clearError();
             return;
         }
 
@@ -289,6 +288,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Disable submit button
         submitButton.disabled = true;
+    }
+
+    function highlightSelectedDate() {
+        setTimeout(function () {
+            const dateCell = document.querySelector(`.fc-daygrid-day[data-date='${selectedDate}']`);
+            if (dateCell) {
+                dateCell.classList.add('selected-cell');
+                previouslySelectedCell = dateCell;
+            }
+        }, 10);
     }
 
     function validateForm() {

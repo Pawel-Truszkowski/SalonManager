@@ -40,14 +40,6 @@ def reservation_wizard(request, service_id):
     # Get employees who provide this service
     context["all_staff_members"] = Employee.objects.filter(services=service)
 
-    # Handle staff_id parameter if provided
-    staff_id = request.GET.get("staff_id")
-    if staff_id:
-        try:
-            context["staff_member"] = Employee.objects.get(id=staff_id)
-        except Employee.DoesNotExist:
-            pass
-
     return render(request, "reservations/reservation_create.html", context)
 
 
