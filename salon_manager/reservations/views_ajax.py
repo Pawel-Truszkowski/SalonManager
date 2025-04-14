@@ -115,6 +115,7 @@ def available_slots_ajax(request):
     except json.JSONDecodeError:
         return JsonResponse({"success": False, "message": "Invalid JSON"})
     except Exception as e:
+        print(e)
         return JsonResponse({"success": False, "message": f"error: {str(e)}"})
 
 

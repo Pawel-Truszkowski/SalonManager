@@ -14,6 +14,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let selectedSlot = null;
     let selectedStaffMember = staffSelect.value !== "none" ? staffSelect.value : null;
     let nonWorkingDays = [];
+    let previouslySelectedCell = null;
 
     // Initialize FullCalendar
     const calendar = new FullCalendar.Calendar(calendarEl, {
@@ -34,11 +35,8 @@ document.addEventListener('DOMContentLoaded', function() {
             prevYear: 'fa-angle-double-left',
             nextYear: 'fa-angle-double-right'
         },
-        dayMaxEvents: 1,
         selectable: true,
-        selectMirror: true,
-        unselectAuto: false,
-        select: handleDateSelect,
+        // select: handleDateSelect,
         dateClick: handleDateClick,
         datesSet: function (info) {
             highlightSelectedDate();
@@ -75,11 +73,11 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // If rescheduling, pre-select date
-    // if (rescheduled_date) {
-    //     const date = new Date(rescheduled_date);
-    //     calendar.select(date);
-    //     fetchAvailableSlots(formatDate(date));
-    // }
+    if (rescheduled_date) {
+        const date = new Date(rescheduled_date);
+        calendar.select(date);
+        fetchAvailableSlots(formatDate(date));
+    }
 
     // Form submission handling
     if (appointmentForm) {
