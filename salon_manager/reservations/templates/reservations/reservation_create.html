@@ -80,6 +80,7 @@
                             <div>{% trans "Service Details" %}</div>
                             <hr class="djangoAppt_second-part">
                             <div class="djangoAppt_service-description-content">
+                                <div id="djangoAppt-wrapper" data-service-id="{{ service.id }}"></div>
                                 <p class="djangoAppt_item-name">{{ service.name }}</p>
                                 <p id="service-datetime-chosen" class="service-datetime-chosen">{{ date_chosen }}</p>
                                 <p>{% trans 'Duration' %}: {{ service.duration }} min</p>
@@ -115,7 +116,7 @@
     <script>
         const timezone = "{{ timezoneTxt }}";
         const locale = "{{ locale }}";
-        const availableSlotsAjaxURL = "{% url 'available_slots_ajax' %}";
+        const availableSlotsAjaxURL = "{% url 'get_available_slots_ajax' %}";
         const requestNextAvailableSlotURLTemplate = "{% url 'request_next_available_slot' service_id=0 %}";
         const getNonWorkingDaysURL = "{% url 'get_non_working_days_ajax' %}";
         const serviceId = "{{ service.id }}";
@@ -134,6 +135,6 @@
         const dateUnavailableTxt = "{% trans 'This date is unavailable! Please select available date.' %}";
         const selectDateAndTimeAlertTxt = "{% trans 'Please select a date and time' %}";
     </script>
-    <script src="{% static 'core/js/reservations.js' %}"></script>
+    <script src="{% static 'core/js/appointments.js' %}"></script>
     <script src="{% static 'core/js/js-utils.js' %}"></script>
 {% endblock %}

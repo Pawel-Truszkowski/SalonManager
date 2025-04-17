@@ -1,5 +1,5 @@
-import datetime
 import json
+from datetime import date, datetime, timedelta
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -7,16 +7,24 @@ from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.translation import gettext as _
 from django.views.decorators.http import require_POST
 from services.models import Service
 from users.models import Employee
+from utils.db_helpers import get_weekday_num_from_date, json_response
+from utils.error_codes import ErrorCode
 
+from .forms import SlotForm
 from .models import Reservation, WorkDay
 
 
 def reservation_wizard(request, service_id):
     """Reservation wizard page with calendar and available slots"""
     service_categories = Service.objects.values("category__name").distinct()
+
+    service = None
+    staff_member = None
+    all_staff_members = None
 
     context = {
         "service_categories": service_categories,
@@ -37,20 +45,24 @@ def reservation_wizard(request, service_id):
         messages.error(request, "No service selected.")
         return redirect("services_list")
 
-    # Get employees who provide this service
-    context["all_staff_members"] = Employee.objects.filter(services=service)
+    all_staff_members = Employee.objects.filter(services=service)
+
+    if all_staff_members.count() == 1:
+        staff_member = all_staff_members.first()
+
+    context["all_staff_members"] = all_staff_members
+    context["staff_member"] = staff_member
+    context["date_chosen"] = date.today().strftime("%a, %B %d, %Y")
 
     return render(request, "reservations/reservation_create.html", context)
 
 
-@require_POST
 def available_slots_ajax(request):
     """AJAX endpoint to get available time slots for a specific date and staff member"""
     try:
-        data = json.loads(request.body)
-        date_str = data.get("date")
-        staff_id = data.get("staff_id")
-        service_id = data.get("service_id")
+        date_str = request.GET.get("selected_date")
+        staff_id = request.GET.get("staff_member")
+        service_id = request.GET.get("service_id")
 
         # Validate required parameters
         if not all([date_str, staff_id, service_id]):
@@ -60,7 +72,7 @@ def available_slots_ajax(request):
 
         # Convert date string to date object
         date_only = date_str[:10]
-        selected_date = datetime.datetime.strptime(date_only, "%Y-%m-%d").date()
+        selected_date = datetime.strptime(date_only, "%Y-%m-%d").date()
 
         # Check if date is in past
         if selected_date < timezone.now().date():
@@ -77,6 +89,8 @@ def available_slots_ajax(request):
                 {"success": False, "message": "Invalid staff member or service"}
             )
 
+        print(employee, service)
+
         # Check if employee provides this service
         if service not in employee.services.all():
             return JsonResponse(
@@ -88,13 +102,18 @@ def available_slots_ajax(request):
 
         # Get work day for the employee on the selected date
         try:
-            work_day = WorkDay.objects.get(employee=employee, date=selected_date)
+            work_day = WorkDay.objects.get(employee=employee.id, date=selected_date)
+            print(work_day)
         except WorkDay.DoesNotExist:
-            return JsonResponse({"success": True, "slots": []})
+            return JsonResponse(
+                {"success": False, "no availability": [], "error": True}
+            )
+
+        print(work_day)
 
         # Get existing reservations for the date
         existing_reservations = Reservation.objects.filter(
-            employee=employee,
+            employee=employee.id,
             reservation_date=selected_date,
             status__in=["PENDING", "CONFIRMED"],
         )
@@ -102,6 +121,7 @@ def available_slots_ajax(request):
         # Calculate service duration in minutes
         service_duration = service.duration
 
+        print(service_duration)
         # Generate time slots based on work hours
         available_slots = generate_available_slots(
             work_day.start_time,
@@ -109,22 +129,116 @@ def available_slots_ajax(request):
             service_duration,
             existing_reservations,
         )
+        print(available_slots)
 
-        return JsonResponse({"success": True, "slots": available_slots})
+        return JsonResponse({"success": True, "available_slots": available_slots})
 
-    except json.JSONDecodeError:
-        return JsonResponse({"success": False, "message": "Invalid JSON"})
     except Exception as e:
         print(e)
         return JsonResponse({"success": False, "message": f"error: {str(e)}"})
 
 
-@require_POST
+def get_available_slots_ajax(request):
+    """This view function handles AJAX requests to get available slots for a selected date.
+
+    :param request: The request instance.
+    :return: A JSON response containing available slots, selected date, an error flag, and an optional error message.
+    """
+
+    slot_form = SlotForm(request.GET)
+    error_code = 0
+    if not slot_form.is_valid():
+        custom_data = {"error": True, "available_slots": [], "date_chosen": ""}
+        if "selected_date" in slot_form.errors:
+            error_code = ErrorCode.PAST_DATE
+        elif "staff_member" in slot_form.errors:
+            error_code = ErrorCode.STAFF_ID_REQUIRED
+        message = list(slot_form.errors.as_data().items())[0][1][0].messages[
+            0
+        ]  # dirty way to keep existing behavior
+        return json_response(
+            message=message,
+            custom_data=custom_data,
+            success=False,
+            error_code=error_code,
+        )
+
+    selected_date = slot_form.cleaned_data["selected_date"]
+    sm = slot_form.cleaned_data["staff_member"]
+    date_chosen = selected_date.strftime("%a, %B %d, %Y")
+    custom_data = {"date_chosen": date_chosen}
+    service_id = slot_form.cleaned_data["service_id"]
+
+    # days_off_exist = check_day_off_for_staff(staff_member=sm, date=selected_date)
+    working_day_exists = WorkDay.objects.filter(
+        employee=sm.id, date=selected_date
+    ).exists()
+    if not working_day_exists:
+        message = _("Day off. Please select another date!")
+        custom_data["available_slots"] = []
+        return json_response(
+            message=message,
+            custom_data=custom_data,
+            success=False,
+            error_code=ErrorCode.INVALID_DATE,
+        )
+    # if selected_date is not a working day for the staff, return an empty list of slots and 'message' is Day Off
+    weekday_num = get_weekday_num_from_date(selected_date)
+
+    # is_working_day_ = is_working_day(staff_member=sm, day=weekday_num)
+
+    custom_data["staff_member"] = sm.name
+
+    # if not day_off_exist:
+    #     message = _("Not a working day for {staff_member}. Please select another date!").format(
+    #             staff_member=sm.name)
+    #     custom_data['available_slots'] = []
+    #     return json_response(message=message, custom_data=custom_data, success=False, error_code=ErrorCode.INVALID_DATE)
+
+    service = Service.objects.get(id=service_id)
+    service_duration = service.duration
+    existing_reservations = Reservation.objects.filter(
+        employee=sm.id,
+        reservation_date=selected_date,
+        status__in=["PENDING", "CONFIRMED"],
+    )
+    work_day = WorkDay.objects.get(employee=sm.id, date=selected_date)
+
+    available_slots = generate_available_slots(
+        work_day.start_time, work_day.end_time, service_duration, existing_reservations
+    )
+    # available_slots = get_available_slots_for_staff(selected_date, sm)
+
+    # Check if the selected_date is today and filter out past slots
+    if selected_date == date.today():
+        current_time = timezone.now().time()
+        available_slots = [
+            slot for slot in available_slots if slot.time() > current_time
+        ]
+
+    # custom_data['available_slots'] = [slot.strftime('%I:%M %p') for slot in available_slots]
+    custom_data["available_slots"] = available_slots
+    if len(available_slots) == 0:
+        custom_data["error"] = True
+        message = _("No availability")
+        return json_response(
+            message=message,
+            custom_data=custom_data,
+            success=False,
+            error_code=ErrorCode.INVALID_DATE,
+        )
+    custom_data["error"] = False
+    return json_response(
+        message="Successfully retrieved available slots",
+        custom_data=custom_data,
+        success=True,
+    )
+
+
 def get_non_working_days_ajax(request):
     """AJAX endpoint to get days when staff member is not working"""
     try:
-        data = json.loads(request.body)
-        staff_id = data.get("staff_id")
+        staff_id = int(request.GET.get("staff_id"))
 
         # If no staff selected, return empty list
         if not staff_id or staff_id == "none":
@@ -140,24 +254,25 @@ def get_non_working_days_ajax(request):
         today = timezone.now().date()
 
         # Get next 60 days
-        date_range = [today + datetime.timedelta(days=i) for i in range(60)]
+        date_range = [today + timedelta(days=i) for i in range(60)]
 
         # Get days employee is working
         working_days = WorkDay.objects.filter(
-            employee=employee,
+            employee_id=employee.id,
             date__gte=today,
-            date__lte=today + datetime.timedelta(days=60),
+            date__lte=today + timedelta(days=60),
         ).values_list("date", flat=True)
 
         # Calculate non-working days
         non_working_days = [
             d.strftime("%Y-%m-%d") for d in date_range if d not in working_days
         ]
-        # print(non_working_days)
+
         return JsonResponse({"success": True, "non_working_days": non_working_days})
 
     except json.JSONDecodeError:
         return JsonResponse({"success": False, "message": "Invalid JSON"})
+
     except Exception as e:
         return JsonResponse({"success": False, "message": str(e)})
 
@@ -184,8 +299,8 @@ def appointment_request_submit(request):
         employee = Employee.objects.get(id=staff_id)
 
         # Convert date and time strings to datetime objects
-        reservation_date = datetime.datetime.strptime(date_selected, "%Y-%m-%d").date()
-        start_time = datetime.datetime.strptime(time_selected, "%H:%M").time()
+        reservation_date = datetime.strptime(date_selected, "%Y-%m-%d").date()
+        start_time = datetime.strptime(time_selected, "%H:%M").time()
 
         # Check if there's a conflicting reservation
         conflicting_reservation = check_for_conflicting_reservation(
@@ -269,8 +384,8 @@ def reschedule_appointment_submit(request):
             )
 
         # Convert date and time strings to datetime objects
-        new_date = datetime.datetime.strptime(date_selected, "%Y-%m-%d").date()
-        new_time = datetime.datetime.strptime(time_selected, "%H:%M").time()
+        new_date = datetime.strptime(date_selected, "%Y-%m-%d").date()
+        new_time = datetime.strptime(time_selected, "%H:%M").time()
 
         # Check for conflicting reservations
         conflicting_reservation = check_for_conflicting_reservation(
@@ -316,13 +431,13 @@ def generate_available_slots(
 ):
     """Generate available time slots based on work hours and existing reservations"""
     # Convert times to datetime for easier manipulation
-    base_date = datetime.datetime.now().date()
-    start_datetime = datetime.datetime.combine(base_date, start_time)
-    end_datetime = datetime.datetime.combine(base_date, end_time)
+    base_date = datetime.now().date()
+    start_datetime = datetime.combine(base_date, start_time)
+    end_datetime = datetime.combine(base_date, end_time)
 
     # Calculate slot duration in minutes
     # Adding 15 minutes buffer between appointments
-    slot_duration = datetime.timedelta(minutes=service_duration + 15)
+    slot_duration = timedelta(minutes=service_duration + 15)
 
     # Create a list of existing reservation times
     booked_slots = []
@@ -336,21 +451,16 @@ def generate_available_slots(
     available_slots = []
     current_slot_start = start_datetime
 
-    while (
-        current_slot_start + datetime.timedelta(minutes=service_duration)
-        <= end_datetime
-    ):
+    while current_slot_start + timedelta(minutes=service_duration) <= end_datetime:
         # Calculate slot end time
-        current_slot_end = current_slot_start + datetime.timedelta(
-            minutes=service_duration
-        )
+        current_slot_end = current_slot_start + timedelta(minutes=service_duration)
 
         # Check if slot overlaps with any existing reservation
         is_available = True
         for start, end in booked_slots:
             # Convert all times to comparable format
-            res_start = datetime.datetime.combine(base_date, start)
-            res_end = datetime.datetime.combine(base_date, end)
+            res_start = datetime.combine(base_date, start)
+            res_end = datetime.combine(base_date, end)
 
             # Check for overlap
             if current_slot_start <= res_end and current_slot_end >= res_start:
@@ -363,7 +473,6 @@ def generate_available_slots(
 
         # Move to next potential slot (15-minute intervals)
         current_slot_start += slot_duration
-
     return available_slots
 
 
@@ -372,8 +481,8 @@ def check_for_conflicting_reservation(
 ) -> bool:
     """Check if there's a conflicting reservation"""
     # Calculate end time
-    start_datetime = datetime.datetime.combine(date, start_time)
-    end_datetime = start_datetime + datetime.timedelta(minutes=duration)
+    start_datetime = datetime.combine(date, start_time)
+    end_datetime = start_datetime + timedelta(minutes=duration)
     end_time = end_datetime.time()
 
     # Query for conflicting reservations

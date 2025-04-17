@@ -64,3 +64,4 @@ class SlotForm(forms.Form):
         Employee.objects.all(),
         error_messages={"invalid_choice": "Staff member does not exist"},
     )
+    service_id = forms.IntegerField(required=True)

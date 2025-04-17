@@ -46,7 +46,9 @@ urlpatterns = [
         name="reschedule_appointment_submit",
     ),
     path(
-        "available_slots/", views_ajax.available_slots_ajax, name="available_slots_ajax"
+        "available_slots/",
+        views_ajax.get_available_slots_ajax,
+        name="get_available_slots_ajax",
     ),
     path(
         "request_next_available_slot/<int:service_id>/",
