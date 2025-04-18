@@ -27,7 +27,7 @@ const calendar = new FullCalendar.Calendar(calendarEl, {
         prevYear: 'fa-angle-double-left',
         nextYear: 'fa-angle-double-right'
     },
-    selectable: true,
+    selectable: false,
     validRange: {
         start: new Date().toISOString().split('T')[0]
     },
@@ -56,7 +56,6 @@ const calendar = new FullCalendar.Calendar(calendarEl, {
         highlightSelectedDate();
     },
     selectAllow: function (info) {
-        // const day = info.start.getDay();  // Get the day of the week (0 for Sunday, 6 for Saturday)
         const day = info.start.toISOString().split('T')[0];
         if (nonWorkingDays.includes(day)) {
             return false;  // Disallow selection for non-working days
@@ -64,7 +63,6 @@ const calendar = new FullCalendar.Calendar(calendarEl, {
         return (info.start >= getDateWithoutTime(new Date()));
     },
     dayCellClassNames: function (info) {
-        // const day = info.date.getDay();
         const dateStr = info.date.toISOString().split('T')[0];
         if (nonWorkingDays.includes(dateStr)) {
             return ['disabled-day'];
@@ -80,7 +78,6 @@ $(document).ready(function () {
     calendar.render();
     const currentDate = rescheduledDate || moment.tz(timezone).format('YYYY-MM-DD');
     getAvailableSlots(currentDate, staffId);
-    console.log(nonWorkingDays);
 });
 
 function highlightSelectedDate() {
@@ -207,6 +204,12 @@ function convertTo24Hour(time12h) {
     return `${hours}:${minutes}`;
 }
 
+// Convert time string to minutes since midnight
+function timeToMinutes(timeStr) {
+    const [hours, minutes] = timeStr.split(':').map(Number);
+    return hours * 60 + minutes;
+}
+
 function formatTime(date) {
     const hours = date.getHours();
     const minutes = date.getMinutes();
@@ -331,7 +334,7 @@ function getAvailableSlots(selectedDate, staffId = null) {
 }
 
 function requestNextAvailableSlot(serviceId) {
-    const requestNextAvailableSlotURL = requestNextAvailableSlotURLTemplate.replace('0', serviceId);
+    const requestNextAvailableSlotURL = requestNextAvailableSlotURLTemplate;
     if (staffId === null) {
         return;
     }

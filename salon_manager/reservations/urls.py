@@ -51,9 +51,9 @@ urlpatterns = [
         name="get_available_slots_ajax",
     ),
     path(
-        "request_next_available_slot/<int:service_id>/",
-        views_ajax.request_next_available_slot,
-        name="request_next_available_slot",
+        "request_next_available_slot/",
+        views_ajax.get_next_available_date_ajax,
+        name="get_next_available_date_ajax",
     ),
     path(
         "request_staff_info/",

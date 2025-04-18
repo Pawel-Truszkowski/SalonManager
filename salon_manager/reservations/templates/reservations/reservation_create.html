@@ -8,8 +8,10 @@
     <link rel="stylesheet"
           type="text/css"
           href="{% static 'core/css/reservations.css' %}" />
-{% endblock %}
-{% block title %}{{ page_title }}{% endblock %}
+{% endblock customCSS %}
+{% block title %}
+    {{ page_title }}
+{% endblock title %}
 {% block head %}
 {% endblock head %}
 {% block body %}
@@ -63,10 +65,10 @@
                               class="appointment-form">
                             {% csrf_token %}
                             <div class="staff-members-list">
-                                <label class="djangoAppt_item-name" for="staff_id">{% trans 'Offered By' %}</label>
+                                <label class="djangoAppt_item-name" for="staff_id">{% trans "Offered By" %}</label>
                                 <select name="staff_member" id="staff_id">
                                     {% if not staff_member %}
-                                        <option value="none" selected>{% trans 'Please select a staff member' %}</option>
+                                        <option value="none" selected>{% trans "Please select a staff member" %}</option>
                                     {% endif %}
                                     {% for sf in all_staff_members %}
                                         <option value="{{ sf.id }}"
@@ -83,9 +85,9 @@
                                 <div id="djangoAppt-wrapper" data-service-id="{{ service.id }}"></div>
                                 <p class="djangoAppt_item-name">{{ service.name }}</p>
                                 <p id="service-datetime-chosen" class="service-datetime-chosen">{{ date_chosen }}</p>
-                                <p>{% trans 'Duration' %}: {{ service.duration }} min</p>
-                                <p>{% trans 'Price' %}: {{ service.price }} zł</p>
-                                <button type="submit" class="btn btn-primary btn-submit-appointment" disabled>{% trans 'Next' %}</button>
+                                <p>{% trans "Duration" %}: {{ service.duration }} min</p>
+                                <p>{% trans "Price" %}: {{ service.price }} zł</p>
+                                <button type="submit" class="btn btn-primary btn-submit-appointment" disabled>{% trans "Next" %}</button>
                             </div>
                         </form>
                     </div>
@@ -99,7 +101,7 @@
             </div>
         </div>
     </div>
-{% endblock %}
+{% endblock body %}
 {% block customJS %}
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.30.1/moment.js"
             integrity="sha512-3CuraBvy05nIgcoXjVN33mACRyI89ydVHg7y/HMN9wcTVbHeur0SeBzweSd/rxySapO7Tmfu68+JlKkLTnDFNg=="
@@ -117,7 +119,7 @@
         const timezone = "{{ timezoneTxt }}";
         const locale = "{{ locale }}";
         const availableSlotsAjaxURL = "{% url 'get_available_slots_ajax' %}";
-        const requestNextAvailableSlotURLTemplate = "{% url 'request_next_available_slot' service_id=0 %}";
+        const requestNextAvailableSlotURLTemplate = "{% url 'get_next_available_date_ajax' %}";
         const getNonWorkingDaysURL = "{% url 'get_non_working_days_ajax' %}";
         const serviceId = "{{ service.id }}";
         const serviceDuration = parseInt("{{ service.duration.total_seconds }}") / 60;
@@ -136,5 +138,4 @@
         const selectDateAndTimeAlertTxt = "{% trans 'Please select a date and time' %}";
     </script>
     <script src="{% static 'core/js/appointments.js' %}"></script>
-    <script src="{% static 'core/js/js-utils.js' %}"></script>
-{% endblock %}
+{% endblock customJS %}

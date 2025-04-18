@@ -3,6 +3,7 @@ from datetime import date, datetime, timedelta
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.db.models import Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -57,87 +58,6 @@ def reservation_wizard(request, service_id):
     return render(request, "reservations/reservation_create.html", context)
 
 
-def available_slots_ajax(request):
-    """AJAX endpoint to get available time slots for a specific date and staff member"""
-    try:
-        date_str = request.GET.get("selected_date")
-        staff_id = request.GET.get("staff_member")
-        service_id = request.GET.get("service_id")
-
-        # Validate required parameters
-        if not all([date_str, staff_id, service_id]):
-            return JsonResponse(
-                {"success": False, "message": "Missing required parameters"}
-            )
-
-        # Convert date string to date object
-        date_only = date_str[:10]
-        selected_date = datetime.strptime(date_only, "%Y-%m-%d").date()
-
-        # Check if date is in past
-        if selected_date < timezone.now().date():
-            return JsonResponse(
-                {"success": False, "message": "Selected date is in the past"}
-            )
-
-        # Get staff member and service
-        try:
-            employee = Employee.objects.get(id=staff_id)
-            service = Service.objects.get(id=service_id)
-        except (Employee.DoesNotExist, Service.DoesNotExist):
-            return JsonResponse(
-                {"success": False, "message": "Invalid staff member or service"}
-            )
-
-        print(employee, service)
-
-        # Check if employee provides this service
-        if service not in employee.services.all():
-            return JsonResponse(
-                {
-                    "success": False,
-                    "message": "This staff member does not provide the selected service",
-                }
-            )
-
-        # Get work day for the employee on the selected date
-        try:
-            work_day = WorkDay.objects.get(employee=employee.id, date=selected_date)
-            print(work_day)
-        except WorkDay.DoesNotExist:
-            return JsonResponse(
-                {"success": False, "no availability": [], "error": True}
-            )
-
-        print(work_day)
-
-        # Get existing reservations for the date
-        existing_reservations = Reservation.objects.filter(
-            employee=employee.id,
-            reservation_date=selected_date,
-            status__in=["PENDING", "CONFIRMED"],
-        )
-
-        # Calculate service duration in minutes
-        service_duration = service.duration
-
-        print(service_duration)
-        # Generate time slots based on work hours
-        available_slots = generate_available_slots(
-            work_day.start_time,
-            work_day.end_time,
-            service_duration,
-            existing_reservations,
-        )
-        print(available_slots)
-
-        return JsonResponse({"success": True, "available_slots": available_slots})
-
-    except Exception as e:
-        print(e)
-        return JsonResponse({"success": False, "message": f"error: {str(e)}"})
-
-
 def get_available_slots_ajax(request):
     """This view function handles AJAX requests to get available slots for a selected date.
 
@@ -153,9 +73,7 @@ def get_available_slots_ajax(request):
             error_code = ErrorCode.PAST_DATE
         elif "staff_member" in slot_form.errors:
             error_code = ErrorCode.STAFF_ID_REQUIRED
-        message = list(slot_form.errors.as_data().items())[0][1][0].messages[
-            0
-        ]  # dirty way to keep existing behavior
+        message = list(slot_form.errors.as_data().items())[0][1][0].messages[0]
         return json_response(
             message=message,
             custom_data=custom_data,
@@ -182,18 +100,8 @@ def get_available_slots_ajax(request):
             success=False,
             error_code=ErrorCode.INVALID_DATE,
         )
-    # if selected_date is not a working day for the staff, return an empty list of slots and 'message' is Day Off
-    weekday_num = get_weekday_num_from_date(selected_date)
-
-    # is_working_day_ = is_working_day(staff_member=sm, day=weekday_num)
 
     custom_data["staff_member"] = sm.name
-
-    # if not day_off_exist:
-    #     message = _("Not a working day for {staff_member}. Please select another date!").format(
-    #             staff_member=sm.name)
-    #     custom_data['available_slots'] = []
-    #     return json_response(message=message, custom_data=custom_data, success=False, error_code=ErrorCode.INVALID_DATE)
 
     service = Service.objects.get(id=service_id)
     service_duration = service.duration
@@ -207,16 +115,13 @@ def get_available_slots_ajax(request):
     available_slots = generate_available_slots(
         work_day.start_time, work_day.end_time, service_duration, existing_reservations
     )
-    # available_slots = get_available_slots_for_staff(selected_date, sm)
 
-    # Check if the selected_date is today and filter out past slots
     if selected_date == date.today():
         current_time = timezone.now().time()
         available_slots = [
             slot for slot in available_slots if slot.time() > current_time
         ]
 
-    # custom_data['available_slots'] = [slot.strftime('%I:%M %p') for slot in available_slots]
     custom_data["available_slots"] = available_slots
     if len(available_slots) == 0:
         custom_data["error"] = True
@@ -233,6 +138,45 @@ def get_available_slots_ajax(request):
         custom_data=custom_data,
         success=True,
     )
+
+
+def get_next_available_date_ajax(request):
+    """This view function handles AJAX requests to get the next available date for a service.
+
+    :param request: The request instance.
+    :return: A JSON response containing the next available date.
+    """
+    staff_id = request.GET.get("staff_member")
+
+    # If staff_id is not provided, you should handle it accordingly.
+    if staff_id and staff_id != "none":
+        staff_member = get_object_or_404(Employee, pk=staff_id)
+
+        current_date = date.today()
+        working_days = WorkDay.objects.filter(employee=staff_member).filter(
+            Q(date__gt=current_date)
+        )
+        next_available_date = None
+
+        if not working_days:
+            message = _("No available dates.")
+            data = {"next_available_date": next_available_date}
+            return json_response(message=message, custom_data=data, success=True)
+
+        next_available_date = working_days[0].date
+
+        message = _("Successfully retrieved next available date")
+        data = {"next_available_date": next_available_date.isoformat()}
+        return json_response(message=message, custom_data=data, success=True)
+    else:
+        data = {"error": True}
+        message = _("No staff member selected")
+        return json_response(
+            message=message,
+            custom_data=data,
+            success=False,
+            error_code=ErrorCode.STAFF_ID_REQUIRED,
+        )
 
 
 def get_non_working_days_ajax(request):
@@ -286,7 +230,7 @@ def appointment_request_submit(request):
     staff_id = request.POST.get("staff_member")
     date_selected = request.POST.get("date_selected")
     time_selected = request.POST.get("time_selected")
-
+    print(date_selected)
     date_selected = date_selected.split("T")[0]
 
     # Validate required fields
@@ -316,7 +260,7 @@ def appointment_request_submit(request):
             )
 
         # Create the reservation
-        reservation = Reservation.objects.create(
+        Reservation.objects.create(
             customer=request.user,
             employee=employee,
             service=service,
@@ -341,30 +285,13 @@ def appointment_request_submit(request):
 
 
 @login_required
-def request_next_available_slot(request, service_id):
-    """Redirect to reservation page with next available slot info"""
-    try:
-        service = Service.objects.get(id=service_id)
-
-        # You could implement logic here to find the next available slot
-        # For now, we'll just redirect to the reservation wizard
-
-        messages.info(request, "Please contact us for the next available slot.")
-        return redirect(reverse("reservation_wizard") + f"?service_id={service_id}")
-
-    except Service.DoesNotExist:
-        messages.error(request, "Service not found.")
-        return redirect("services_list")
-
-
-@login_required
 @require_POST
 def reschedule_appointment_submit(request):
     """Handle appointment rescheduling"""
     appointment_id = request.POST.get("appointment_request_id")
     date_selected = request.POST.get("date_selected")
     time_selected = request.POST.get("time_selected")
-    reason = request.POST.get("reason_for_rescheduling", "")
+    # reason = request.POST.get("reason_for_rescheduling", "")
 
     # Validate required fields
     if not all([appointment_id, date_selected, time_selected]):
@@ -437,7 +364,7 @@ def generate_available_slots(
 
     # Calculate slot duration in minutes
     # Adding 15 minutes buffer between appointments
-    slot_duration = timedelta(minutes=service_duration + 15)
+    # slot_duration = timedelta(minutes=service_duration + 15)
 
     # Create a list of existing reservation times
     booked_slots = []
@@ -472,7 +399,7 @@ def generate_available_slots(
             available_slots.append(current_slot_start.strftime("%H:%M"))
 
         # Move to next potential slot (15-minute intervals)
-        current_slot_start += slot_duration
+        current_slot_start += timedelta(minutes=15)
     return available_slots
 
 

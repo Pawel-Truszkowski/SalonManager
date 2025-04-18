@@ -11,7 +11,6 @@ from services.models import Service
 from users.models import Employee
 
 from . import forms
-from .forms import SlotForm
 from .models import Reservation, WorkDay
 
 FORMS = [
