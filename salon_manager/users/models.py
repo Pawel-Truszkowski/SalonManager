@@ -6,7 +6,11 @@ from services.models import Service
 
 
 class CustomUser(AbstractUser):
-    ROLES = (("OWNER", "Owner"), ("CUSTOMER", "Customer"), ("EMPLOYEE", "Employee"))
+    ROLES = (
+        ("OWNER", "Owner"),
+        ("CUSTOMER", "Customer"),
+        ("EMPLOYEE", "Employee"),
+    )
 
     phone_number = PhoneNumberField(blank=True)
     role = models.CharField(max_length=10, choices=ROLES, default="CUSTOMER")
@@ -14,6 +18,10 @@ class CustomUser(AbstractUser):
     @property
     def is_customer(self) -> bool:
         return self.role == "CUSTOMER"
+
+    @property
+    def is_owner(self) -> bool:
+        return self.role == "OWNER"
 
 
 class Employee(models.Model):
@@ -24,6 +32,7 @@ class Employee(models.Model):
         return self.name
 
 
+# Do wywalenia Profile
 class Profile(models.Model):
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE)
     image = models.ImageField(default="default.jpg", upload_to="profile_pics")

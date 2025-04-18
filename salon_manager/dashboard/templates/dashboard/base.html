@@ -7,6 +7,8 @@
         {% else %}
             <title>Royal Beauty</title>
         {% endif %}
+        {% block description %}
+        {% endblock description %}
         <meta charset="utf-8">
         <meta name="description"
               content="Salon kosmetyczny - rezerwacje online i zarządzanie wizytami.">
@@ -36,6 +38,10 @@
         <!-- FullCalendar CSS -->
         <link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.5/main.min.css"
               rel="stylesheet">
+        {% block customCSS %}
+        {% endblock customCSS %}
+        {% block head %}
+        {% endblock head %}
     </head>
     <body>
         <div class="site-wrap">
@@ -194,6 +200,8 @@
             </div>
             {% block content %}
             {% endblock content %}
+            {% block body %}
+            {% endblock body %}
             <footer class="site-footer">
                 <div class="container">
                     <div class="row">
@@ -292,5 +300,7 @@
         <script src="{% static 'core/js/main.js' %}"></script>
         {% block extra_js %}
         {% endblock extra_js %}
+        {% block customJS %}
+        {% endblock customJS %}
     </body>
 </html>

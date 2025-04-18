@@ -94,6 +94,7 @@ class ReservationWizard(LoginRequiredMixin, SessionWizardView):
         return redirect("reservation_success")
 
 
+# Przerobic na CBV
 @login_required
 def get_employees(request):
     service_id = request.GET.get("service_id")
@@ -193,11 +194,14 @@ class ReservationsListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
     model = Reservation
     context_object_name = "reservations"
 
+    def get_queryset(self):
+        return Reservation.objects.filter(customer=self.request.user)
+
     def test_func(self):
         return self.request.user.is_authenticated
 
 
-class CancelReservationView(LoginRequiredMixin, View):
+class CancelReservationView(LoginRequiredMixin, UserPassesTestMixin, View):
     def post(self, request, *args, **kwargs):
         reservation = get_object_or_404(Reservation, id=self.kwargs["pk"])
         if reservation.status != "CANCEL":
@@ -208,3 +212,6 @@ class CancelReservationView(LoginRequiredMixin, View):
             messages.warning(request, "The reservation has already been canceled")
 
         return redirect("your_reservation_list")
+
+    def test_func(self):
+        return self.request.user.is_authenticated
