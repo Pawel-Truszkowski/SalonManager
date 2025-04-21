@@ -32,7 +32,6 @@ const calendar = new FullCalendar.Calendar(calendarEl, {
         start: new Date().toISOString().split('T')[0]
     },
     dateClick: function (info) {
-        // const day = info.date.getDay();  // Get the day of the week (0 for Sunday, 6 for Saturday)
         const day = info.date.toISOString().split('T')[0];
         if (nonWorkingDays.includes(day)) {
             return;
@@ -97,23 +96,37 @@ body.on('click', '.djangoAppt_btn-request-next-slot', function () {
 
 body.on('click', '.btn-submit-appointment', function () {
     const selectedSlot = $('.djangoAppt_appointment-slot.selected').text();
+    console.log(selectedSlot);
     const selectedDate = $('.djangoAppt_date_chosen').text();
+    console.log(selectedDate);
+
     if (!selectedSlot || !selectedDate) {
         alert(selectDateAndTimeAlertTxt);
+        console.log("Not ok")
         return;
     }
     if (selectedSlot && selectedDate) {
-        const startTime = convertTo24Hour(selectedSlot);
+        const startTime = selectedSlot;
         const APPOINTMENT_BASE_TEMPLATE = localStorage.getItem('APPOINTMENT_BASE_TEMPLATE');
         // Convert the selectedDate string to a valid format
         const dateParts = selectedDate.split(', ');
         const monthDayYear = dateParts[1] + "," + dateParts[2];
         const formattedDate = new Date(monthDayYear + " " + startTime);
 
+        console.log("formattedDate: ", formattedDate);
+
         const date = formattedDate.toISOString().slice(0, 10);
+
+        console.log("serviceDuration: ", serviceDuration);
+
         const endTimeDate = new Date(formattedDate.getTime() + serviceDuration * 60000);
+
+        console.log("formattedDate.getTime(): ", formattedDate.getTime());
+
         const endTime = formatTime(endTimeDate);
-        const reasonForRescheduling = $('#reason_for_rescheduling').val();
+        console.log("endTimeDate:", endTimeDate);
+        // const reasonForRescheduling = $('#reason_for_rescheduling').val();
+        console.log("Data:", date, startTime, endTime, serviceId, staffId)
         const form = $('.appointment-form');
         let formAction = rescheduledDate ? appointmentRescheduleURL : appointmentRequestSubmitURL;
         form.attr('action', formAction);
@@ -128,7 +141,9 @@ body.on('click', '.btn-submit-appointment', function () {
         form.append($('<input>', {type: 'hidden', name: 'start_time', value: startTime}));
         form.append($('<input>', {type: 'hidden', name: 'end_time', value: endTime}));
         form.append($('<input>', {type: 'hidden', name: 'service', value: serviceId}));
-        form.append($('<input>', {type: 'hidden', name: 'reason_for_rescheduling', value: reasonForRescheduling}));
+        form.append($('<input>', {type: 'hidden', name: 'employee', value: staffId}));
+        // form.append($('<input>', {type: 'hidden', name: 'reason_for_rescheduling', value: reasonForRescheduling}));
+        console.log(form);
         form.submit();
     } else {
         const warningContainer = $('.warning-message');

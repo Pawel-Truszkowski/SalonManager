@@ -1,15 +1,25 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
+from phonenumber_field.modelfields import PhoneNumberField
 
 from .models import CustomUser, Profile
 
 
 class UserRegisterForm(UserCreationForm):
     email = forms.EmailField()
+    phone_number = PhoneNumberField(blank=True)
 
     class Meta:
         model = CustomUser
-        fields = ["username", "email", "password1", "password2", "phone_number"]
+        fields = [
+            "username",
+            "first_name",
+            "last_name",
+            "phone_number",
+            "email",
+            "password1",
+            "password2",
+        ]
 
 
 class UserUpdateForm(forms.ModelForm):
@@ -17,7 +27,7 @@ class UserUpdateForm(forms.ModelForm):
 
     class Meta:
         model = CustomUser
-        fields = ["username", "email", "phone_number"]
+        fields = "__all__"
 
 
 class ProfileUpdateForm(forms.ModelForm):
