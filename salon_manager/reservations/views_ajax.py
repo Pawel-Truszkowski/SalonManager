@@ -10,52 +10,14 @@ from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import gettext as _
 from django.views.decorators.http import require_POST
+from formtools.wizard.views import SessionWizardView
 from services.models import Service
 from users.models import Employee
 from utils.db_helpers import get_weekday_num_from_date, json_response
 from utils.error_codes import ErrorCode
 
-from .forms import SlotForm
-from .models import Reservation, WorkDay
-
-
-def reservation_wizard(request, service_id):
-    """Reservation wizard page with calendar and available slots"""
-    service_categories = Service.objects.values("category__name").distinct()
-
-    service = None
-    staff_member = None
-    all_staff_members = None
-
-    context = {
-        "service_categories": service_categories,
-        "timezoneTxt": str(timezone.get_current_timezone()),
-        "locale": "en",  # You can make this dynamic based on user preferences
-    }
-
-    # Get service id from URL parameters
-    # service_id = request.GET.get('service_id')
-    if service_id:
-        try:
-            service = Service.objects.get(id=service_id)
-            context["service"] = service
-        except Service.DoesNotExist:
-            messages.error(request, "Service not found.")
-            return redirect("services_list")
-    else:
-        messages.error(request, "No service selected.")
-        return redirect("services_list")
-
-    all_staff_members = Employee.objects.filter(services=service)
-
-    if all_staff_members.count() == 1:
-        staff_member = all_staff_members.first()
-
-    context["all_staff_members"] = all_staff_members
-    context["staff_member"] = staff_member
-    context["date_chosen"] = date.today().strftime("%a, %B %d, %Y")
-
-    return render(request, "reservations/reservation_create.html", context)
+from .forms import ReservationRequestForm, SlotForm
+from .models import Reservation, ReservationRequest, WorkDay
 
 
 def get_available_slots_ajax(request):
@@ -105,10 +67,11 @@ def get_available_slots_ajax(request):
 
     service = Service.objects.get(id=service_id)
     service_duration = service.duration
-    existing_reservations = Reservation.objects.filter(
+
+    existing_reservations = ReservationRequest.objects.filter(
         employee=sm.id,
-        reservation_date=selected_date,
-        status__in=["PENDING", "CONFIRMED"],
+        date=selected_date,
+        # status__in=["PENDING", "CONFIRMED"],
     )
     work_day = WorkDay.objects.get(employee=sm.id, date=selected_date)
 
@@ -221,67 +184,159 @@ def get_non_working_days_ajax(request):
         return JsonResponse({"success": False, "message": str(e)})
 
 
-# @login_required
-@require_POST
-def appointment_request_submit(request):
-    """Handle appointment request submission"""
-    # Get form data
-    service_id = request.POST.get("service_id")
-    staff_id = request.POST.get("staff_member")
-    date_selected = request.POST.get("date_selected")
-    time_selected = request.POST.get("time_selected")
-    print(date_selected)
-    date_selected = date_selected.split("T")[0]
+def reservation_request(request, service_id):
+    """Reservation wizard page with calendar and available slots"""
+    service_categories = Service.objects.values("category__name").distinct()
 
-    # Validate required fields
-    if not all([service_id, staff_id, date_selected, time_selected]):
-        return JsonResponse({"success": False, "message": "Missing required fields"})
+    service = None
+    staff_member = None
+    all_staff_members = None
 
-    try:
-        # Get service and employee
-        service = Service.objects.get(id=service_id)
-        employee = Employee.objects.get(id=staff_id)
+    context = {
+        "service_categories": service_categories,
+        "timezoneTxt": str(timezone.get_current_timezone()),
+        "locale": "en",  # You can make this dynamic based on user preferences
+    }
 
-        # Convert date and time strings to datetime objects
-        reservation_date = datetime.strptime(date_selected, "%Y-%m-%d").date()
-        start_time = datetime.strptime(time_selected, "%H:%M").time()
+    # Get service id from URL parameters
+    # service_id = request.GET.get('service_id')
+    if service_id:
+        try:
+            service = Service.objects.get(id=service_id)
+            context["service"] = service
+        except Service.DoesNotExist:
+            messages.error(request, "Service not found.")
+            return redirect("services_list")
+    else:
+        messages.error(request, "No service selected.")
+        return redirect("services_list")
 
-        # Check if there's a conflicting reservation
-        conflicting_reservation = check_for_conflicting_reservation(
-            employee, reservation_date, start_time, service.duration
-        )
+    all_staff_members = Employee.objects.filter(services=service)
 
-        if conflicting_reservation:
-            return JsonResponse(
-                {
-                    "success": False,
-                    "message": "This time slot is no longer available. Please select another time.",
-                }
+    if all_staff_members.count() == 1:
+        staff_member = all_staff_members.first()
+
+    context["all_staff_members"] = all_staff_members
+    context["staff_member"] = staff_member
+    context["date_chosen"] = date.today().strftime("%a, %B %d, %Y")
+
+    return render(request, "reservations/reservation_create.html", context)
+
+
+# @require_POST
+# def appointment_request_submit(request):
+#     """Handle appointment request submission"""
+#     # Get form data
+#     service_id = request.POST.get("service_id")
+#     staff_id = request.POST.get("staff_member")
+#     date_selected = request.POST.get("date_selected")
+#     time_selected = request.POST.get("time_selected")
+#     print(date_selected, time_selected)
+#     date_selected = date_selected.split("T")[0]
+#
+#     # Validate required fields
+#     if not all([service_id, staff_id, date_selected, time_selected]):
+#         return JsonResponse({"success": False, "message": "Missing required fields"})
+#
+#     try:
+#         # Get service and employee
+#         service = Service.objects.get(id=service_id)
+#         employee = Employee.objects.get(id=staff_id)
+#
+#         # Convert date and time strings to datetime objects
+#         reservation_date = datetime.strptime(date_selected, "%Y-%m-%d").date()
+#         start_time = datetime.strptime(time_selected, "%H:%M").time()
+#
+#         # Check if there's a conflicting reservation
+#         conflicting_reservation = check_for_conflicting_reservation(
+#             employee, reservation_date, start_time, service.duration
+#         )
+#
+#         if conflicting_reservation:
+#             return JsonResponse(
+#                 {
+#                     "success": False,
+#                     "message": "This time slot is no longer available. Please select another time.",
+#                 }
+#             )
+#
+#         # Create the reservation
+#         Reservation.objects.create(
+#             customer=request.user,
+#             employee=employee,
+#             service=service,
+#             reservation_date=reservation_date,
+#             start_time=start_time,
+#             status="PENDING",
+#         )
+#
+#         # Return success with redirect URL
+#         return JsonResponse(
+#             {"success": True, "redirect_url": reverse("reservation_success")}
+#         )
+#
+#     except (Service.DoesNotExist, Employee.DoesNotExist):
+#         return JsonResponse(
+#             {"success": False, "message": "Invalid service or staff member"}
+#         )
+#     except Exception as e:
+#         return JsonResponse(
+#             {"success": False, "message": f"An error occurred: {str(e)}"}
+#         )
+
+
+def reservation_request_submit(request):
+    if request.method == "POST":
+        print(request.POST.dict())
+        form = ReservationRequestForm(request.POST)
+        if form.is_valid():
+            employee = form.cleaned_data["employee"]
+            employee_exists = Employee.objects.filter(id=employee.id).exists()
+            if not employee_exists:
+                messages.error(request, _("Selected staff member does not exist."))
+            else:
+                ar = form.save()
+                request.session[f"reservation_completed_{ar.id_request}"] = False
+                return redirect(
+                    "reservation_client_information",
+                    reservation_request_id=ar.id,
+                    id_request=ar.id_request,
+                )
+        else:
+            print("Error: ", form.errors)
+            messages.error(
+                request,
+                _(
+                    "There was an error in your submission. Please check the form and try again."
+                ),
             )
+    else:
+        form = ReservationRequestForm()
 
-        # Create the reservation
-        Reservation.objects.create(
-            customer=request.user,
-            employee=employee,
-            service=service,
-            reservation_date=reservation_date,
-            start_time=start_time,
-            status="PENDING",
-        )
+    return render(
+        request, "reservations/reservation_create.html", context={"form": form}
+    )
 
-        # Return success with redirect URL
-        return JsonResponse(
-            {"success": True, "redirect_url": reverse("reservation_success")}
-        )
 
-    except (Service.DoesNotExist, Employee.DoesNotExist):
-        return JsonResponse(
-            {"success": False, "message": "Invalid service or staff member"}
-        )
-    except Exception as e:
-        return JsonResponse(
-            {"success": False, "message": f"An error occurred: {str(e)}"}
-        )
+def reservation_client_information(request, reservation_request_id, id_request):
+    """This view function handles client information submission for an appointment.
+
+    :param request: The request instance.
+    :param reservation_request_id: The ID of the appointment request.
+    :param id_request: The unique ID of the appointment request.
+    :return: The rendered HTML page.
+    """
+
+    ar = ReservationRequest.objects.get(id_request=id_request)
+
+    context = {
+        "reservation_request_id": reservation_request_id,
+        "id_request": id_request,
+        "ar": ar,
+    }
+    return render(
+        request, "reservations/reservation_client_information.html", context=context
+    )
 
 
 @login_required
