@@ -25,12 +25,6 @@ from .models import Reservation, ReservationRequest, WorkDay
 
 
 def get_available_slots_ajax(request):
-    """This view function handles AJAX requests to get available slots for a selected date.
-
-    :param request: The request instance.
-    :return: A JSON response containing available slots, selected date, an error flag, and an optional error message.
-    """
-
     slot_form = SlotForm(request.GET)
     error_code = 0
     if not slot_form.is_valid():
@@ -108,8 +102,6 @@ def get_available_slots_ajax(request):
 
 
 def get_next_available_date_ajax(request):
-    """This view function handles AJAX requests to get the next available date for a service."""
-
     staff_id = request.GET.get("staff_member")
 
     # If staff_id is not provided, you should handle it accordingly.
@@ -144,7 +136,6 @@ def get_next_available_date_ajax(request):
 
 
 def get_non_working_days_ajax(request):
-    """AJAX endpoint to get days when staff member is not working"""
     try:
         staff_id = int(request.GET.get("staff_id"))
 

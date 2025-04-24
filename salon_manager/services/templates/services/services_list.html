@@ -11,7 +11,7 @@
                     <div class="col-md-8" data-aos="fade-up" data-aos-delay="400">
                         <h2 class="text-white font-weight-light mb-2 display-1">See Our Services!</h2>
                         <p>
-                            <a href="{% url 'reservation_wizard' %}" class="btn btn-black py-3 px-5">Book Now!</a>
+                            <a href="{% url 'services_list' %}" class="btn btn-black py-3 px-5">Book Now!</a>
                         </p>
                     </div>
                 </div>
@@ -39,7 +39,7 @@
                                     <p>
                                         <strong class="font-weight-bold text-primary">{{ service.price }} PLN</strong>
                                     </p>
-                                    <a href="{% url 'reservation_wizard' service.id %}"
+                                    <a href="{% url 'reservation_request' service.id %}"
                                        class="btn btn-primary text-white">Book Now!</a>
                                 </div>
                             </div>
@@ -83,7 +83,7 @@
                 <div class="col-md-12">
                     <h2 class="mb-4 text-black">We want your skin to look fabulous</h2>
                     <p class="mb-0">
-                        <a href="{% url 'reservation_wizard' %}"
+                        <a href="{% url 'services_list' %}"
                            class="btn btn-primary py-3 px-5 text-white">Visit Our Salon Now</a>
                     </p>
                 </div>

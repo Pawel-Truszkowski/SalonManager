@@ -2,7 +2,7 @@ const calendarEl = document.getElementById('calendar');
 let nextAvailableDateSelector = $('.djangoAppt_next-available-date')
 const body = $('body');
 let nonWorkingDays = [];
-let selectedDate = rescheduledDate || null;
+let selectedDate = null;
 let staffId = $('#staff_id').val() || null;
 const service_id = $('#djangoAppt-wrapper').data('service-id');
 let previouslySelectedCell = null;
@@ -75,7 +75,7 @@ calendar.setOption('locale', locale);
 $(document).ready(function () {
     staffId = $('#staff_id').val() || null;
     calendar.render();
-    const currentDate = rescheduledDate || moment.tz(timezone).format('YYYY-MM-DD');
+    const currentDate = moment.tz(timezone).format('YYYY-MM-DD');
     getAvailableSlots(currentDate, staffId);
 });
 
@@ -125,10 +125,9 @@ body.on('click', '.btn-submit-appointment', function () {
 
         const endTime = formatTime(endTimeDate);
         console.log("endTimeDate:", endTimeDate);
-        // const reasonForRescheduling = $('#reason_for_rescheduling').val();
         console.log("Data:", date, startTime, endTime, serviceId, staffId)
         const form = $('.appointment-form');
-        let formAction = rescheduledDate ? appointmentRescheduleURL : appointmentRequestSubmitURL;
+        let formAction = appointmentRequestSubmitURL;
         form.attr('action', formAction);
         if (!form.find('input[name="appointment_request_id"]').length) {
             form.append($('<input>', {
@@ -142,8 +141,7 @@ body.on('click', '.btn-submit-appointment', function () {
         form.append($('<input>', {type: 'hidden', name: 'end_time', value: endTime}));
         form.append($('<input>', {type: 'hidden', name: 'service', value: serviceId}));
         form.append($('<input>', {type: 'hidden', name: 'employee', value: staffId}));
-        // form.append($('<input>', {type: 'hidden', name: 'reason_for_rescheduling', value: reasonForRescheduling}));
-        console.log(form);
+
         form.submit();
     } else {
         const warningContainer = $('.warning-message');
