@@ -88,7 +88,6 @@ class Reservation(models.Model):
         ReservationRequest, on_delete=models.CASCADE, related_name="reservations"
     )
     id_request = models.CharField(max_length=100, blank=True, null=True)
-    want_reminder = models.BooleanField(default=False)
     additional_info = models.TextField(blank=True, null=True)
 
     created_at = models.DateTimeField(auto_now_add=True)

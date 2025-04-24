@@ -12,11 +12,15 @@ from django.utils.translation import gettext as _
 from django.views.decorators.http import require_POST
 from formtools.wizard.views import SessionWizardView
 from services.models import Service
-from users.models import Employee
-from utils.db_helpers import get_weekday_num_from_date, json_response
+from users.models import CustomUser, Employee
+from utils.db_helpers import (
+    check_for_conflicting_reservation,
+    generate_available_slots,
+    json_response,
+)
 from utils.error_codes import ErrorCode
 
-from .forms import ReservationRequestForm, SlotForm
+from .forms import ClientDataForm, ReservationForm, ReservationRequestForm, SlotForm
 from .models import Reservation, ReservationRequest, WorkDay
 
 
@@ -104,11 +108,8 @@ def get_available_slots_ajax(request):
 
 
 def get_next_available_date_ajax(request):
-    """This view function handles AJAX requests to get the next available date for a service.
+    """This view function handles AJAX requests to get the next available date for a service."""
 
-    :param request: The request instance.
-    :return: A JSON response containing the next available date.
-    """
     staff_id = request.GET.get("staff_member")
 
     # If staff_id is not provided, you should handle it accordingly.
@@ -198,8 +199,6 @@ def reservation_request(request, service_id):
         "locale": "en",  # You can make this dynamic based on user preferences
     }
 
-    # Get service id from URL parameters
-    # service_id = request.GET.get('service_id')
     if service_id:
         try:
             service = Service.objects.get(id=service_id)
@@ -221,68 +220,6 @@ def reservation_request(request, service_id):
     context["date_chosen"] = date.today().strftime("%a, %B %d, %Y")
 
     return render(request, "reservations/reservation_create.html", context)
-
-
-# @require_POST
-# def appointment_request_submit(request):
-#     """Handle appointment request submission"""
-#     # Get form data
-#     service_id = request.POST.get("service_id")
-#     staff_id = request.POST.get("staff_member")
-#     date_selected = request.POST.get("date_selected")
-#     time_selected = request.POST.get("time_selected")
-#     print(date_selected, time_selected)
-#     date_selected = date_selected.split("T")[0]
-#
-#     # Validate required fields
-#     if not all([service_id, staff_id, date_selected, time_selected]):
-#         return JsonResponse({"success": False, "message": "Missing required fields"})
-#
-#     try:
-#         # Get service and employee
-#         service = Service.objects.get(id=service_id)
-#         employee = Employee.objects.get(id=staff_id)
-#
-#         # Convert date and time strings to datetime objects
-#         reservation_date = datetime.strptime(date_selected, "%Y-%m-%d").date()
-#         start_time = datetime.strptime(time_selected, "%H:%M").time()
-#
-#         # Check if there's a conflicting reservation
-#         conflicting_reservation = check_for_conflicting_reservation(
-#             employee, reservation_date, start_time, service.duration
-#         )
-#
-#         if conflicting_reservation:
-#             return JsonResponse(
-#                 {
-#                     "success": False,
-#                     "message": "This time slot is no longer available. Please select another time.",
-#                 }
-#             )
-#
-#         # Create the reservation
-#         Reservation.objects.create(
-#             customer=request.user,
-#             employee=employee,
-#             service=service,
-#             reservation_date=reservation_date,
-#             start_time=start_time,
-#             status="PENDING",
-#         )
-#
-#         # Return success with redirect URL
-#         return JsonResponse(
-#             {"success": True, "redirect_url": reverse("reservation_success")}
-#         )
-#
-#     except (Service.DoesNotExist, Employee.DoesNotExist):
-#         return JsonResponse(
-#             {"success": False, "message": "Invalid service or staff member"}
-#         )
-#     except Exception as e:
-#         return JsonResponse(
-#             {"success": False, "message": f"An error occurred: {str(e)}"}
-#         )
 
 
 def reservation_request_submit(request):
@@ -327,162 +264,50 @@ def reservation_client_information(request, reservation_request_id, id_request):
     :return: The rendered HTML page.
     """
 
-    ar = ReservationRequest.objects.get(id_request=id_request)
+    ar = get_object_or_404(ReservationRequest, pk=reservation_request_id)
+
+    if request.session.get(f"reservation_submitted_{id_request}", False):
+        context = {"user": request.user, "service_id": ar.service_id}
+        return redirect(
+            request, "reservations/304_already_submitted.html", context=context
+        )
+
+    if request.method == "POST":
+        reservation_form = ReservationForm(request.POST)
+        client_data_form = ClientDataForm(request.POST)
+
+        if reservation_form.is_valid() and client_data_form.is_valid():
+            client_data = client_data_form.cleaned_data
+            reservation_data = reservation_form.cleaned_data
+
+            response = create_reservation(ar, client_data, reservation_data)
+
+            return response
+    else:
+        reservation_form = ReservationForm()
+        client_data_form = ClientDataForm(request.POST)
 
     context = {
         "reservation_request_id": reservation_request_id,
         "id_request": id_request,
         "ar": ar,
+        "form": reservation_form,
+        "client_data_form": client_data_form,
+        "service_name": ar.service.name,
     }
     return render(
         request, "reservations/reservation_client_information.html", context=context
     )
 
 
-@login_required
-@require_POST
-def reschedule_appointment_submit(request):
-    """Handle appointment rescheduling"""
-    appointment_id = request.POST.get("appointment_request_id")
-    date_selected = request.POST.get("date_selected")
-    time_selected = request.POST.get("time_selected")
-    # reason = request.POST.get("reason_for_rescheduling", "")
+def create_reservation(reservation_request_obj, client_data, reservation_data):
+    date = reservation_request_obj["date"]
+    start_time = reservation_request_obj["start_time"]
+    end_time = reservation_request_obj["end_time"]
 
-    # Validate required fields
-    if not all([appointment_id, date_selected, time_selected]):
-        return JsonResponse({"success": False, "message": "Missing required fields"})
+    email = client_data["email"]
+    customer = CustomUser.objects.get(email=email)
 
-    try:
-        # Get the reservation
-        reservation = get_object_or_404(Reservation, id=appointment_id)
+    reservation = Reservation(date=date)
 
-        # Check if user owns this reservation
-        if reservation.customer != request.user:
-            return JsonResponse(
-                {
-                    "success": False,
-                    "message": "You do not have permission to reschedule this appointment",
-                }
-            )
-
-        # Convert date and time strings to datetime objects
-        new_date = datetime.strptime(date_selected, "%Y-%m-%d").date()
-        new_time = datetime.strptime(time_selected, "%H:%M").time()
-
-        # Check for conflicting reservations
-        conflicting_reservation = check_for_conflicting_reservation(
-            reservation.employee,
-            new_date,
-            new_time,
-            reservation.service.duration,
-            exclude_id=reservation.id,
-        )
-
-        if conflicting_reservation:
-            return JsonResponse(
-                {
-                    "success": False,
-                    "message": "This time slot is no longer available. Please select another time.",
-                }
-            )
-
-        # Update the reservation
-        reservation.reservation_date = new_date
-        reservation.start_time = new_time
-        reservation.save()
-
-        # Record rescheduling reason (you might want to create a model for this)
-        # RescheduleReason.objects.create(reservation=reservation, reason=reason)
-
-        # Return success with redirect URL
-        return JsonResponse(
-            {"success": True, "redirect_url": reverse("your_reservation_list")}
-        )
-
-    except Reservation.DoesNotExist:
-        return JsonResponse({"success": False, "message": "Appointment not found"})
-    except Exception as e:
-        return JsonResponse(
-            {"success": False, "message": f"An error occurred: {str(e)}"}
-        )
-
-
-# Helper functions
-def generate_available_slots(
-    start_time, end_time, service_duration, existing_reservations
-):
-    """Generate available time slots based on work hours and existing reservations"""
-    # Convert times to datetime for easier manipulation
-    base_date = datetime.now().date()
-    start_datetime = datetime.combine(base_date, start_time)
-    end_datetime = datetime.combine(base_date, end_time)
-
-    # Calculate slot duration in minutes
-    # Adding 15 minutes buffer between appointments
-    # slot_duration = timedelta(minutes=service_duration + 15)
-
-    # Create a list of existing reservation times
-    booked_slots = []
-    for reservation in existing_reservations:
-        start = reservation.start_time
-        # Calculate end time using the property from the model
-        end = reservation.end_time
-        booked_slots.append((start, end))
-
-    # Generate potential slots
-    available_slots = []
-    current_slot_start = start_datetime
-
-    while current_slot_start + timedelta(minutes=service_duration) <= end_datetime:
-        # Calculate slot end time
-        current_slot_end = current_slot_start + timedelta(minutes=service_duration)
-
-        # Check if slot overlaps with any existing reservation
-        is_available = True
-        for start, end in booked_slots:
-            # Convert all times to comparable format
-            res_start = datetime.combine(base_date, start)
-            res_end = datetime.combine(base_date, end)
-
-            # Check for overlap
-            if current_slot_start <= res_end and current_slot_end >= res_start:
-                is_available = False
-                break
-
-        # If slot is available, add to list
-        if is_available:
-            available_slots.append(current_slot_start.strftime("%H:%M"))
-
-        # Move to next potential slot (15-minute intervals)
-        current_slot_start += timedelta(minutes=15)
-    return available_slots
-
-
-def check_for_conflicting_reservation(
-    employee, date, start_time, duration, exclude_id=None
-) -> bool:
-    """Check if there's a conflicting reservation"""
-    # Calculate end time
-    start_datetime = datetime.combine(date, start_time)
-    end_datetime = start_datetime + timedelta(minutes=duration)
-    end_time = end_datetime.time()
-
-    # Query for conflicting reservations
-    conflicting_query = Reservation.objects.filter(
-        employee=employee, reservation_date=date, status__in=["PENDING", "CONFIRMED"]
-    )
-
-    # Exclude current reservation if updating
-    if exclude_id:
-        conflicting_query = conflicting_query.exclude(id=exclude_id)
-
-    # Check for time conflicts
-    for reservation in conflicting_query:
-        res_start = reservation.start_time
-        res_end = reservation.end_time
-
-        # Check if slots overlap
-        if start_time < res_end and end_time > res_start:
-            return True
-
-    return False
+    return redirect("reservation_success")

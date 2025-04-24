@@ -1,9 +1,10 @@
 from django import forms
+from phonenumber_field.formfields import SplitPhoneNumberField
 from services.models import Service
 from users.models import Employee
 from utils.validators import not_in_the_past
 
-from .models import ReservationRequest
+from .models import Reservation, ReservationRequest
 
 
 class CustomerInfoForm(forms.Form):
@@ -73,3 +74,56 @@ class ReservationRequestForm(forms.ModelForm):
     class Meta:
         model = ReservationRequest
         fields = ("date", "start_time", "end_time", "service", "employee")
+
+
+class ReservationForm(forms.ModelForm):
+    phone = SplitPhoneNumberField()
+
+    class Meta:
+        model = Reservation
+        fields = ("phone", "additional_info")
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["phone"].widget.attrs.update({"placeholder": "123456789"})
+        self.fields["additional_info"].widget.attrs.update(
+            {
+                "rows": 2,
+                "class": "form-control",
+                "placeholder": "Would you like to tell somthing for us?",
+            }
+        )
+
+
+class ClientDataForm(forms.Form):
+    name = forms.CharField(
+        max_length=50, widget=forms.TextInput(attrs={"class": "form-control"})
+    )
+    email = forms.EmailField(widget=forms.EmailInput(attrs={"class": "form-control"}))
+
+
+class PersonalInformationForm(forms.Form):
+    # first_name, last_name, email
+    first_name = forms.CharField(
+        max_length=50, widget=forms.TextInput(attrs={"class": "form-control"})
+    )
+    last_name = forms.CharField(
+        max_length=50, widget=forms.TextInput(attrs={"class": "form-control"})
+    )
+    email = forms.EmailField(widget=forms.EmailInput(attrs={"class": "form-control"}))
+
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop("user", None)  # pop the user from the kwargs
+        super().__init__(*args, **kwargs)
+
+    def clean_email(self):
+        email = self.cleaned_data.get("email")
+        if self.user:
+            if self.user.email == email:
+                return email
+            queryset = get_user_model().objects.exclude(pk=self.user.pk)
+        else:
+            queryset = get_user_model().objects.all()
+
+        if queryset.filter(email=email).exists():
+            raise forms.ValidationError(_("This email is already taken."))

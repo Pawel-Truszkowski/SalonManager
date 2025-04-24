@@ -36,11 +36,6 @@ urlpatterns = [
         name="reservation_request_submit",
     ),
     path(
-        "appointment-reschedule-submit/",
-        views_ajax.reschedule_appointment_submit,
-        name="reschedule_appointment_submit",
-    ),
-    path(
         "available_slots/",
         views_ajax.get_available_slots_ajax,
         name="get_available_slots_ajax",
