@@ -79,6 +79,8 @@ class Reservation(models.Model):
         on_delete=models.CASCADE,
         related_name="reservations",
         limit_choices_to={"is_customer": True},
+        null=True,
+        blank=True,
     )
     phone = PhoneNumberField(blank=True)
     status = models.CharField(
@@ -94,24 +96,27 @@ class Reservation(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self) -> str:
-        return f"Reservation {self.customer.username} for {self.reservation_date} about {self.start_time}"
+        return f"Reservation {self.customer.username} for {self.reservation_request.date} at {self.reservation_request.start_time}"
 
     def save(self, *args, **kwargs):
-        if self.start_time and self.service:
-            start_datetime = datetime.datetime.combine(
-                self.reservation_date, self.start_time
-            )
-            duration = datetime.timedelta(minutes=self.service.duration)
+        if not hasattr(self, "reservation_request"):
+            raise ValidationError("Reservation request is required")
+
+        if self.get_start_time() and self.get_service():
+            start_datetime = self.get_start_time()
+            duration = datetime.timedelta(minutes=self.get_service_duration())
             end_datetime = start_datetime + duration
             self.end_time = end_datetime
+
+        if self.id_request is None:
+            self.id_request = f"{get_timestamp()}{self.reservation_request.service.id}{generate_random_id()}"
+
         return super().save(*args, **kwargs)
 
     @property
     def calculate_end_time(self) -> datetime.time:
-        start_datetime = datetime.datetime.combine(
-            self.reservation_date, self.start_time
-        )
-        duration = datetime.timedelta(minutes=self.service.duration)
+        start_datetime = self.get_start_time()
+        duration = datetime.timedelta(minutes=self.get_service_duration())
         end_datetime = start_datetime + duration
         return end_datetime.time()
 

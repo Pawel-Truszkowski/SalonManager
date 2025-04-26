@@ -2,15 +2,12 @@ import json
 from datetime import date, datetime, timedelta
 
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import gettext as _
-from django.views.decorators.http import require_POST
-from formtools.wizard.views import SessionWizardView
 from services.models import Service
 from users.models import CustomUser, Employee
 from utils.db_helpers import (
@@ -104,7 +101,6 @@ def get_available_slots_ajax(request):
 def get_next_available_date_ajax(request):
     staff_id = request.GET.get("staff_member")
 
-    # If staff_id is not provided, you should handle it accordingly.
     if staff_id and staff_id != "none":
         staff_member = get_object_or_404(Employee, pk=staff_id)
 
@@ -139,30 +135,24 @@ def get_non_working_days_ajax(request):
     try:
         staff_id = int(request.GET.get("staff_id"))
 
-        # If no staff selected, return empty list
         if not staff_id or staff_id == "none":
             return JsonResponse({"success": True, "non_working_days": []})
 
-        # Get staff member
         try:
             employee = Employee.objects.get(id=staff_id)
         except Employee.DoesNotExist:
             return JsonResponse({"success": False, "message": "Invalid staff member"})
 
-        # Get current date
         today = timezone.now().date()
 
-        # Get next 60 days
         date_range = [today + timedelta(days=i) for i in range(60)]
 
-        # Get days employee is working
         working_days = WorkDay.objects.filter(
             employee_id=employee.id,
             date__gte=today,
             date__lte=today + timedelta(days=60),
         ).values_list("date", flat=True)
 
-        # Calculate non-working days
         non_working_days = [
             d.strftime("%Y-%m-%d") for d in date_range if d not in working_days
         ]
@@ -177,7 +167,6 @@ def get_non_working_days_ajax(request):
 
 
 def reservation_request(request, service_id):
-    """Reservation wizard page with calendar and available slots"""
     service_categories = Service.objects.values("category__name").distinct()
 
     service = None
@@ -187,7 +176,7 @@ def reservation_request(request, service_id):
     context = {
         "service_categories": service_categories,
         "timezoneTxt": str(timezone.get_current_timezone()),
-        "locale": "en",  # You can make this dynamic based on user preferences
+        "locale": "en",
     }
 
     if service_id:
@@ -215,7 +204,6 @@ def reservation_request(request, service_id):
 
 def reservation_request_submit(request):
     if request.method == "POST":
-        print(request.POST.dict())
         form = ReservationRequestForm(request.POST)
         if form.is_valid():
             employee = form.cleaned_data["employee"]
@@ -231,7 +219,6 @@ def reservation_request_submit(request):
                     id_request=ar.id_request,
                 )
         else:
-            print("Error: ", form.errors)
             messages.error(
                 request,
                 _(
@@ -247,14 +234,6 @@ def reservation_request_submit(request):
 
 
 def reservation_client_information(request, reservation_request_id, id_request):
-    """This view function handles client information submission for an appointment.
-
-    :param request: The request instance.
-    :param reservation_request_id: The ID of the appointment request.
-    :param id_request: The unique ID of the appointment request.
-    :return: The rendered HTML page.
-    """
-
     ar = get_object_or_404(ReservationRequest, pk=reservation_request_id)
 
     if request.session.get(f"reservation_submitted_{id_request}", False):
@@ -268,15 +247,33 @@ def reservation_client_information(request, reservation_request_id, id_request):
         client_data_form = ClientDataForm(request.POST)
 
         if reservation_form.is_valid() and client_data_form.is_valid():
+            print("OK")
             client_data = client_data_form.cleaned_data
             reservation_data = reservation_form.cleaned_data
 
-            response = create_reservation(ar, client_data, reservation_data)
+            response = create_reservation(ar, id_request, client_data, reservation_data)
 
-            return response
+            if response:
+                return redirect("reservation_success")
+            else:
+                messages.error(
+                    request,
+                    _(
+                        "There was an error in your submission. Please check the form and try again."
+                    ),
+                )
+        else:
+            print(reservation_form.errors, client_data_form.errors)
+            messages.error(
+                request,
+                _(
+                    "There was an error in your submission. Please check the form and try again."
+                ),
+            )
+
     else:
         reservation_form = ReservationForm()
-        client_data_form = ClientDataForm(request.POST)
+        client_data_form = ClientDataForm()
 
     context = {
         "reservation_request_id": reservation_request_id,
@@ -291,14 +288,36 @@ def reservation_client_information(request, reservation_request_id, id_request):
     )
 
 
-def create_reservation(reservation_request_obj, client_data, reservation_data):
-    date = reservation_request_obj["date"]
-    start_time = reservation_request_obj["start_time"]
-    end_time = reservation_request_obj["end_time"]
-
+def create_reservation(
+    reservation_request_obj, id_request, client_data, reservation_data
+):
     email = client_data["email"]
-    customer = CustomUser.objects.get(email=email)
+    phone = reservation_data["phone"]
+    additional_info = reservation_data["additional_info"]
+    reservation_request_obj = reservation_request_obj
+    id_request = id_request
 
-    reservation = Reservation(date=date)
+    try:
+        customer = CustomUser.objects.get(email=email)
+    except CustomUser.DoesNotExist:
+        customer = None
 
-    return redirect("reservation_success")
+    if customer:
+        reservation = Reservation(
+            customer=customer,
+            phone=phone,
+            reservation_request=reservation_request_obj,
+            id_request=id_request,
+            additional_info=additional_info,
+        )
+    else:
+        reservation = Reservation(
+            phone=phone,
+            reservation_request=reservation_request_obj,
+            id_request=id_request,
+            additional_info=additional_info,
+        )
+
+    reservation.save()
+
+    return True

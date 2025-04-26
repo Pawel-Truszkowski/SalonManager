@@ -12,7 +12,7 @@ from . import forms
 from .models import Reservation, WorkDay
 
 
-class ReservationSuccessView(LoginRequiredMixin, TemplateView):
+class ReservationSuccessView(TemplateView):
     template_name = "reservations/reservation_success.html"
 
 

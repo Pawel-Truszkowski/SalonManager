@@ -13,6 +13,11 @@ urlpatterns = [
         views.CancelReservationView.as_view(),
         name="cancel_reservation",
     ),
+    path(
+        "reservation-success/",
+        views.ReservationSuccessView.as_view(),
+        name="reservation_success",
+    ),
     # New Reservations
     path(
         "<int:service_id>/",
