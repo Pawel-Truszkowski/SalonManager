@@ -56,3 +56,4 @@ typer==0.15.2
 typing_extensions==4.12.2
 urllib3==2.3.0
 virtualenv==20.29.2
+Babel>=2.9
