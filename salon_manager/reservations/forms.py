@@ -1,5 +1,7 @@
 from django import forms
+from django.utils.translation import gettext as _
 from phonenumber_field.formfields import SplitPhoneNumberField
+
 from services.models import Service
 from users.models import Employee
 from utils.validators import not_in_the_past
@@ -100,30 +102,3 @@ class ClientDataForm(forms.Form):
         max_length=50, widget=forms.TextInput(attrs={"class": "form-control"})
     )
     email = forms.EmailField(widget=forms.EmailInput(attrs={"class": "form-control"}))
-
-
-class PersonalInformationForm(forms.Form):
-    # first_name, last_name, email
-    first_name = forms.CharField(
-        max_length=50, widget=forms.TextInput(attrs={"class": "form-control"})
-    )
-    last_name = forms.CharField(
-        max_length=50, widget=forms.TextInput(attrs={"class": "form-control"})
-    )
-    email = forms.EmailField(widget=forms.EmailInput(attrs={"class": "form-control"}))
-
-    def __init__(self, *args, **kwargs):
-        self.user = kwargs.pop("user", None)  # pop the user from the kwargs
-        super().__init__(*args, **kwargs)
-
-    def clean_email(self):
-        email = self.cleaned_data.get("email")
-        if self.user:
-            if self.user.email == email:
-                return email
-            queryset = get_user_model().objects.exclude(pk=self.user.pk)
-        else:
-            queryset = get_user_model().objects.all()
-
-        if queryset.filter(email=email).exists():
-            raise forms.ValidationError(_("This email is already taken."))

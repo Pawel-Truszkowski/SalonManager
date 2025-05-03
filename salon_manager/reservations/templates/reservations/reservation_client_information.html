@@ -5,9 +5,9 @@
     <link rel="stylesheet"
           type="text/css"
           href="{% static 'core/css/reservations-user-details.css' %}" />
-{% endblock %}
+{% endblock customCSS %}
 {% block title %}
-    {% translate 'Client Information' %} - {{ ar.get_service_name }}
+    {% translate "Client Information" %} - {{ ar.get_service_name }}
 {% endblock title %}
 {% block body %}
     {% block description %}
@@ -34,8 +34,8 @@
                             <h1 class="description-title">{% trans "Tell us a bit about yourself" %}</h1>
                             <div class="already-have-account">
                                 <div>
-                                    {% trans 'Already have an account?' %}
-                                    <a href="{% url 'login' %}">{% trans 'Log in' %}</a> {% trans 'for faster booking.' %}
+                                    {% trans "Already have an account?" %}
+                                    <a href="{% url 'login' %}?next={% url 'reservation_client_information' ar.id ar.id_request %}">{% trans "Log in" %}</a> {% trans "for faster booking." %}
                                 </div>
                             </div>
                             <div class="name-email">
@@ -67,7 +67,7 @@
                             </div>
                             <div class="additional-information">
                                 <label for="{{ form.additional_info.id_for_label }}">
-                                    {% trans 'Additional Information' %}
+                                    {% trans "Additional Information" %}
                                     <br>
                                     {{ form.additional_info }}
                                 </label>
@@ -94,7 +94,7 @@
             </form>
         </div>
     </div>
-{% endblock %}
+{% endblock body %}
 {% block customJS %}
     <script>
         document.addEventListener('DOMContentLoaded', function () {
@@ -125,4 +125,4 @@
             });
         });
     </script>
-{% endblock %}
+{% endblock customJS %}

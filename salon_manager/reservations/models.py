@@ -9,6 +9,7 @@ from django.core.validators import (
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from phonenumber_field.modelfields import PhoneNumberField
+
 from services.models import Service
 from users.models import CustomUser, Employee
 from utils.db_helpers import generate_random_id, get_timestamp, time_difference
