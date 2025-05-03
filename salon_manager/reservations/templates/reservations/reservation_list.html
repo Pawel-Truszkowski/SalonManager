@@ -16,6 +16,7 @@
                             <tr>
                                 <th>Date</th>
                                 <th>Start Time</th>
+                                <th>Service</th>
                                 <th>Status</th>
                                 <th>Actions</th>
                             </tr>
@@ -23,8 +24,9 @@
                         <tbody>
                             {% for reservation in reservations %}
                                 <tr>
-                                    <td>{{ reservation.reservation_date }}</td>
-                                    <td>{{ reservation.start_time }}</td>
+                                    <td>{{ reservation.get_reservation_date }}</td>
+                                    <td>{{ reservation.get_start_time }}</td>
+                                    <td>{{ reservation.get_service_name }}</td>
                                     <td>{{ reservation.status }}</td>
                                     <td>
                                         <form method="post" action="{% url 'cancel_reservation' reservation.id %}">
@@ -52,137 +54,4 @@
             </div>
         </div>
     </div>
-    <!-- Modal do edycji -->
-    <div class="modal fade"
-         id="editWorkdayModal"
-         tabindex="-1"
-         aria-labelledby="editWorkdayModalLabel"
-         aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="editWorkdayModalLabel">Edit Work Day</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <form id="editWorkdayForm" method="post">
-                        {% csrf_token %}
-                        <div class="form-group">
-                            <label for="edit_date">Date</label>
-                            <input type="date" id="edit_date" name="date" class="form-control">
-                        </div>
-                        <div class="form-group">
-                            <label for="edit_start_time">Start Time</label>
-                            <input type="time"
-                                   id="edit_start_time"
-                                   name="start_time"
-                                   class="form-control">
-                        </div>
-                        <div class="form-group">
-                            <label for="edit_end_time">End Time</label>
-                            <input type="time" id="edit_end_time" name="end_time" class="form-control">
-                        </div>
-                        <input type="hidden" id="edit_workday_id" name="workday_id">
-                        <button type="submit" class="btn btn-primary">Save Changes</button>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
 {% endblock content %}
-{% block extra_js %}
-    <!-- Skrypt do FullCalendar -->
-    <script>
-document.addEventListener('DOMContentLoaded', function() {
-    var calendarEl = document.getElementById('calendar');
-
-    var calendar = new FullCalendar.Calendar(calendarEl, {
-        initialView: 'dayGridMonth',
-        locale: 'pl',
-        headerToolbar: {
-            left: 'prev,next today',
-            center: 'title',
-            right: 'dayGridMonth,timeGridWeek'
-        },
-        events: [
-            {% for workday in workdays %}
-            {
-                title: "{{ workday.employee.name }}: {{ workday.start_time }} - {{ workday.end_time }}",
-                start: "{{ workday.date|date:'Y-m-d' }}",
-                allDay: true,
-                color: "#007bff",
-                extendedProps: {
-                    workday_id: "{{ workday.pk }}",
-                    start_time: "{{ workday.start_time }}",
-                    end_time: "{{ workday.end_time }}",
-                    date: "{{ workday.date }}"
-                }
-            },
-            {% endfor %}
-        ],
-        eventClick: function(info) {
-            var event = info.event.extendedProps;
-
-            // Wypełniamy formularz danymi dnia pracy
-            document.getElementById("edit_date").value = event.date;
-            document.getElementById("edit_start_time").value = event.start_time;
-            document.getElementById("edit_end_time").value = event.end_time;
-            document.getElementById("edit_workday_id").value = event.workday_id;
-
-            // Otwieramy modal
-            $('#editWorkdayModal').modal('show');
-        }
-    });
-
-    console.log("Event data:", [
-        {% for workday in workdays %}
-    {
-        workday_id: "{{ workday.pk }}",
-            start_time: "{{ workday.start_time }}",
-        end_time: "{{ workday.end_time }}",
-        date: "{{ workday.date }}"
-    },
-    {% endfor %}
-    ]);
-
-    console.log("Event data:", [
-    {% for workday in workdays %}
-    {
-        title: "{{ workday.employee.name }}: {{ workday.start_time }} - {{ workday.end_time }}",
-        start: "{{ workday.date }}",
-        allDay: true,
-    },
-    {% endfor %}
-    ]);
-
-    calendar.render();
-
-    // Obsługa formularza edycji
-    document.getElementById("editWorkdayForm").addEventListener("submit", function(event) {
-        event.preventDefault();
-
-        var workdayId = document.getElementById("edit_workday_id").value;
-        var formData = new FormData(this);
-
-        fetch(`/workdays/${workdayId}/edit/`, {
-            method: "POST",
-            body: formData,
-            headers: {
-                "X-CSRFToken": document.querySelector("[name=csrfmiddlewaretoken]").value
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                location.reload();  // Przeładowanie strony po zapisaniu
-            } else {
-                alert("Error updating workday!");
-            }
-        })
-        .catch(error => console.error("Error:", error));
-    });
-});
-    </script>
-{% endblock extra_js %}

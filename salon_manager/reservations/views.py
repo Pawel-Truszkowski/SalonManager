@@ -23,7 +23,9 @@ class ReservationsListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
     context_object_name = "reservations"
 
     def get_queryset(self):
-        return Reservation.objects.filter(customer=self.request.user)
+        return Reservation.objects.filter(customer=self.request.user).order_by(
+            "reservation_request__date"
+        )
 
     def test_func(self):
         return self.request.user.is_authenticated

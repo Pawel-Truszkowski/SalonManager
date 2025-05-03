@@ -43,27 +43,22 @@
                                     {% trans "Full Name" %} *
                                     <br>
                                     {{ client_data_form.name }}
+                                    {% if client_data_form.name.errors %}<div class="field-error">{{ client_data_form.name.errors.0 }}</div>{% endif %}
                                 </label>
                                 <label for="{{ form.email.id_for_label }}" class="email">
                                     {% trans "Email" %} *
                                     <br>
                                     {{ client_data_form.email }}
+                                    {% if client_data_form.email.errors %}<div class="field-error">{{ client_data_form.email.errors.0 }}</div>{% endif %}
                                 </label>
                             </div>
-                            {% if has_required_email_reminder_config %}
-                                <div class="receive-email">
-                                    <label for="{{ form.want_reminder.id_for_label }}">
-                                        {{ form.want_reminder }}
-                                        {% trans "I want to receive an EMAIL reminder 24 hours before this session starts" %}
-                                    </label>
-                                </div>
-                            {% endif %}
                             <div class="phone-number">
                                 <label for="{{ form.phone.id_for_label }}">
                                     {% trans "Phone" %} *
                                     <br>
                                 </label>
                                 <div class="phone-input-container">{{ form.phone }}</div>
+                                {% if form.phone.errors %}<div class="field-error">{{ form.phone.errors.0 }}</div>{% endif %}
                             </div>
                             <div class="additional-information">
                                 <label for="{{ form.additional_info.id_for_label }}">

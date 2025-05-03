@@ -73,6 +73,9 @@ class WorkDayListView(OwnerRequiredMixin, ListView):
     template_name = "dashboard/workday_list.html"
     context_object_name = "workdays"
 
+    def get_queryset(self):
+        return WorkDay.objects.all().order_by("-date")
+
 
 class WorkDayCreateView(OwnerRequiredMixin, CreateView):
     model = WorkDay

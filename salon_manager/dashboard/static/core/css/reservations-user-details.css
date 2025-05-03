@@ -167,6 +167,13 @@ a {
     margin-bottom: 15px;
 }
 
+
+.field-error {
+    color: red !important;
+    font-size: 0.9rem;
+    margin-top: 4px;
+}
+
 /* Set width, margin and border */
 .user-info-input input[type="text"],
 .user-info-input input[type="email"],
