@@ -1,9 +1,12 @@
 from django import forms
+from django.utils.translation import gettext as _
+from phonenumber_field.formfields import SplitPhoneNumberField
+
 from services.models import Service
 from users.models import Employee
 from utils.validators import not_in_the_past
 
-from .models import ReservationRequest
+from .models import Reservation, ReservationRequest
 
 
 class CustomerInfoForm(forms.Form):
@@ -73,3 +76,29 @@ class ReservationRequestForm(forms.ModelForm):
     class Meta:
         model = ReservationRequest
         fields = ("date", "start_time", "end_time", "service", "employee")
+
+
+class ReservationForm(forms.ModelForm):
+    phone = SplitPhoneNumberField()
+
+    class Meta:
+        model = Reservation
+        fields = ("phone", "additional_info")
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["phone"].widget.attrs.update({"placeholder": "123456789"})
+        self.fields["additional_info"].widget.attrs.update(
+            {
+                "rows": 2,
+                "class": "form-control",
+                "placeholder": "Would you like to tell somthing for us?",
+            }
+        )
+
+
+class ClientDataForm(forms.Form):
+    name = forms.CharField(
+        max_length=50, widget=forms.TextInput(attrs={"class": "form-control"})
+    )
+    email = forms.EmailField(widget=forms.EmailInput(attrs={"class": "form-control"}))

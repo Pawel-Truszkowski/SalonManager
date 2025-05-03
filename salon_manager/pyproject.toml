@@ -3,6 +3,9 @@ target-version = "py313"
 [tool.black]
 target-version = ["py313"]
 
+[tool.isort]
+profile = "black"
+
 [tool.ruff.lint]
 select = ["E", "F", "W"]
 ignore = ["E501", "E741", "F401"]

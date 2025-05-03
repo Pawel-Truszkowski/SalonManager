@@ -3,13 +3,6 @@ from django.urls import path
 from . import views, views_ajax
 
 urlpatterns = [
-    ######## Stara rezerwacja ##############
-    path("", views.ReservationWizard.as_view(views.FORMS), name="reservation_wizard"),
-    path(
-        "booking-success/",
-        views.ReservationSuccessView.as_view(),
-        name="reservation_success",
-    ),
     path(
         "your-reservations/",
         views.ReservationsListView.as_view(),
@@ -20,15 +13,16 @@ urlpatterns = [
         views.CancelReservationView.as_view(),
         name="cancel_reservation",
     ),
-    # Ajax URLs
-    path("ajax/get-employees/", views.get_employees, name="get_employees"),
-    path("ajax/get-dates/", views.get_available_dates, name="get_available_dates"),
-    path("ajax/get-times/", views.get_available_times, name="get_available_times"),
-    # Ajax for New Reservations
+    path(
+        "reservation-success/",
+        views.ReservationSuccessView.as_view(),
+        name="reservation_success",
+    ),
+    # New Reservations
     path(
         "<int:service_id>/",
         views_ajax.reservation_request,
-        name="reservation_wizard",
+        name="reservation_request",
     ),
     path(
         "request-submit/",
@@ -36,10 +30,11 @@ urlpatterns = [
         name="reservation_request_submit",
     ),
     path(
-        "appointment-reschedule-submit/",
-        views_ajax.reschedule_appointment_submit,
-        name="reschedule_appointment_submit",
+        "client-info/<int:reservation_request_id>/<str:id_request>/",
+        views_ajax.reservation_client_information,
+        name="reservation_client_information",
     ),
+    # Ajax for New Reservations
     path(
         "available_slots/",
         views_ajax.get_available_slots_ajax,
@@ -54,10 +49,5 @@ urlpatterns = [
         "request_staff_info/",
         views_ajax.get_non_working_days_ajax,
         name="get_non_working_days_ajax",
-    ),
-    path(
-        "client-info/<int:reservation_request_id>/<str:id_request>/",
-        views_ajax.reservation_client_information,
-        name="reservation_client_information",
     ),
 ]
