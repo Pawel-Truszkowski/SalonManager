@@ -1,5 +1,4 @@
 from django import forms
-from django.utils.translation import gettext as _
 from phonenumber_field.formfields import SplitPhoneNumberField
 
 from services.models import Service

@@ -1,5 +1,6 @@
 import uuid
 from datetime import date, datetime, time, timedelta
+from typing import List
 
 from django.http import JsonResponse
 from django.utils import timezone
@@ -7,7 +8,7 @@ from django.utils import timezone
 
 def generate_available_slots(
     start_time, end_time, service_duration, existing_reservations
-):
+) -> List[str]:
     """Generate available time slots based on work hours and existing reservations"""
     # Convert times to datetime for easier manipulation
     base_date = datetime.now().date()
@@ -56,25 +57,25 @@ def generate_available_slots(
 
 
 def check_for_conflicting_reservation(
-    employee, date, start_time, duration, exclude_id=None
+    employee,
+    reservation_date,
+    start_time,
+    duration,
+    conflicting_reservations,
+    exclude_id=None,
 ) -> bool:
     """Check if there's a conflicting reservation"""
     # Calculate end time
-    start_datetime = datetime.combine(date, start_time)
+    start_datetime = datetime.combine(reservation_date, start_time)
     end_datetime = start_datetime + timedelta(minutes=duration)
     end_time = end_datetime.time()
 
-    # Query for conflicting reservations
-    conflicting_query = Reservation.objects.filter(
-        employee=employee, reservation_date=date, status__in=["PENDING", "CONFIRMED"]
-    )
-
     # Exclude current reservation if updating
     if exclude_id:
-        conflicting_query = conflicting_query.exclude(id=exclude_id)
+        conflicting_reservations = conflicting_reservations.exclude(id=exclude_id)
 
     # Check for time conflicts
-    for reservation in conflicting_query:
+    for reservation in conflicting_reservations:
         res_start = reservation.start_time
         res_end = reservation.end_time
 
@@ -97,36 +98,9 @@ def json_response(
     return JsonResponse(response_data, status=status, **kwargs)
 
 
-def get_weekday_num_from_date(date: datetime.date = None) -> int:
-    """Get the number of the weekday from the given date."""
-    if date is None:
-        date = datetime.date.today()
-    return get_weekday_num(date.strftime("%A"))
-
-
-def get_weekday_num(weekday: str) -> int:
-    """Get the number of the weekday.
-
-    :param weekday: The weekday (e.g. "Monday", "Tuesday", etc.)
-    :return: The number of the weekday (0 for Sunday, 1 for Monday, etc.)
-    """
-    weekdays = {
-        "monday": 1,
-        "tuesday": 2,
-        "wednesday": 3,
-        "thursday": 4,
-        "friday": 5,
-        "saturday": 6,
-        "sunday": 0,
-    }
-    return weekdays.get(weekday.lower(), -1)
-
-
 def generate_random_id() -> str:
-    """Generate a random UUID and return it as a hexadecimal string.
+    """Generate a random UUID and return it as a hexadecimal string."""
 
-    :return: The randomly generated UUID as a hex string
-    """
     return uuid.uuid4().hex
 
 

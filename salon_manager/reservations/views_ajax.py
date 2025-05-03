@@ -9,12 +9,12 @@ from django.utils.translation import gettext as _
 
 from services.models import Service
 from users.models import CustomUser, Employee
-from utils.db_helpers import (
+from utils.error_codes import ErrorCode
+from utils.support_functions import (
     check_for_conflicting_reservation,
     generate_available_slots,
     json_response,
 )
-from utils.error_codes import ErrorCode
 
 from .forms import ClientDataForm, ReservationForm, ReservationRequestForm, SlotForm
 from .models import Reservation, ReservationRequest, WorkDay

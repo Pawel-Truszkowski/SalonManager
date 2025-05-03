@@ -1,18 +1,13 @@
 import datetime
 
 from django.core.exceptions import ValidationError
-from django.core.validators import (
-    MaxLengthValidator,
-    MinLengthValidator,
-    MinValueValidator,
-)
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from phonenumber_field.modelfields import PhoneNumberField
 
 from services.models import Service
 from users.models import CustomUser, Employee
-from utils.db_helpers import generate_random_id, get_timestamp, time_difference
+from utils.support_functions import generate_random_id, get_timestamp, time_difference
 
 
 class WorkDay(models.Model):
