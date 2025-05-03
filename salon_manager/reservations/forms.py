@@ -78,7 +78,7 @@ class ReservationRequestForm(forms.ModelForm):
 
 
 class ReservationForm(forms.ModelForm):
-    phone = SplitPhoneNumberField()
+    phone = SplitPhoneNumberField(required=True, region="PL")
 
     class Meta:
         model = Reservation
@@ -98,6 +98,10 @@ class ReservationForm(forms.ModelForm):
 
 class ClientDataForm(forms.Form):
     name = forms.CharField(
-        max_length=50, widget=forms.TextInput(attrs={"class": "form-control"})
+        max_length=50,
+        required=True,
+        widget=forms.TextInput(attrs={"class": "form-control"}),
     )
-    email = forms.EmailField(widget=forms.EmailInput(attrs={"class": "form-control"}))
+    email = forms.EmailField(
+        required=True, widget=forms.EmailInput(attrs={"class": "form-control"})
+    )

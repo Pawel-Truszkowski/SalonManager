@@ -120,9 +120,7 @@ class Reservation(models.Model):
         return self.reservation_request.date
 
     def get_start_time(self):
-        return datetime.datetime.combine(
-            self.get_date(), self.reservation_request.start_time
-        )
+        return self.reservation_request.start_time
 
     def get_end_time(self):
         return datetime.datetime.combine(
