@@ -70,6 +70,9 @@
                     <form id="editWorkdayForm" method="post">
                         {% csrf_token %}
                         <div class="form-group">
+                            <input type="hidden" id="edit_employee" name="employee" class="form-control">
+                        </div>
+                        <div class="form-group">
                             <label for="edit_date">Date</label>
                             <input type="date" id="edit_date" name="date" class="form-control">
                         </div>
@@ -93,96 +96,118 @@
     </div>
 {% endblock content %}
 {% block extra_js %}
-    <!-- Skrypt do FullCalendar -->
     <script>
-document.addEventListener('DOMContentLoaded', function() {
-    var calendarEl = document.getElementById('calendar');
+    document.addEventListener('DOMContentLoaded', function() {
+        // Get CSRF token for AJAX requests
+        const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
 
-    var calendar = new FullCalendar.Calendar(calendarEl, {
-        initialView: 'dayGridMonth',
-        locale: 'pl',
-        headerToolbar: {
-            left: 'prev,next today',
-            center: 'title',
-            right: 'dayGridMonth,timeGridWeek'
-        },
-        events: [
-            {% for workday in workdays %}
-            {
-                title: "{{ workday.employee.name }}: {{ workday.start_time }} - {{ workday.end_time }}",
-                start: "{{ workday.date|date:'Y-m-d' }}",
-                allDay: true,
-                color: "#007bff",
-                extendedProps: {
-                    workday_id: "{{ workday.pk }}",
-                    start_time: "{{ workday.start_time }}",
-                    end_time: "{{ workday.end_time }}",
-                    date: "{{ workday.date }}"
-                }
+        // Initialize FullCalendar
+        const calendarEl = document.getElementById('calendar');
+        const calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'dayGridMonth',
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'dayGridMonth,timeGridWeek,timeGridDay'
             },
-            {% endfor %}
-        ],
-        eventClick: function(info) {
-            var event = info.event.extendedProps;
+            events: '{% url "workday_api" %}',  // Endpoint to fetch workday data as JSON
+            eventClick: function(info) {
+                // Open the edit modal when an event is clicked
+                const workdayId = info.event.id;
+                const date = info.event.start.toISOString().substring(0, 10);
+                const employeeId = info.event.extendedProps.employeeId;
 
-            // Wypełniamy formularz danymi dnia pracy
-            document.getElementById("edit_date").value = event.date;
-            document.getElementById("edit_start_time").value = event.start_time;
-            document.getElementById("edit_end_time").value = event.end_time;
-            document.getElementById("edit_workday_id").value = event.workday_id;
+                // Get event details
+                const startTime = info.event.extendedProps.startTime;
+                const endTime = info.event.extendedProps.endTime;
 
-            // Otwieramy modal
-            $('#editWorkdayModal').modal('show');
-        }
-    });
+                // Populate modal form
+                document.getElementById('edit_date').value = date;
+                document.getElementById('edit_employee').value = employeeId;
+                document.getElementById('edit_start_time').value = startTime;
+                document.getElementById('edit_end_time').value = endTime;
+                document.getElementById('edit_workday_id').value = workdayId;
 
-    console.log("Event data:", [
-        {% for workday in workdays %}
-    {
-        workday_id: "{{ workday.pk }}",
-            start_time: "{{ workday.start_time }}",
-        end_time: "{{ workday.end_time }}",
-        date: "{{ workday.date }}"
-    },
-    {% endfor %}
-    ]);
+                // Set form action
+                document.getElementById('editWorkdayForm').action = `/workdays/${workdayId}/update/`;
 
-    console.log("Event data:", [
-    {% for workday in workdays %}
-    {
-        title: "{{ workday.employee.name }}: {{ workday.start_time }} - {{ workday.end_time }}",
-        start: "{{ workday.date }}",
-        allDay: true,
-    },
-    {% endfor %}
-    ]);
+                // Show modal
+                $('#editWorkdayModal').modal('show');
+            },
+            editable: true,
+            eventDrop: function(info) {
+                // Handle event drag and drop
+                const workdayId = info.event.id;
+                const newDate = info.event.start.toISOString().substr(0, 10);
 
-    calendar.render();
-
-    // Obsługa formularza edycji
-    document.getElementById("editWorkdayForm").addEventListener("submit", function(event) {
-        event.preventDefault();
-
-        var workdayId = document.getElementById("edit_workday_id").value;
-        var formData = new FormData(this);
-
-        fetch(`/workdays/${workdayId}/edit/`, {
-            method: "POST",
-            body: formData,
-            headers: {
-                "X-CSRFToken": document.querySelector("[name=csrfmiddlewaretoken]").value
+                // Send AJAX request to update date
+                fetch(`/workdays/${workdayId}/update-date/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrftoken
+                    },
+                    body: JSON.stringify({
+                        date: newDate
+                    })
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        info.revert();
+                        throw new Error('Failed to update workday');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Show success message
+                    alert('Workday updated successfully!');
+                })
+                .catch(error => {
+                    alert(error.message);
+                });
             }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                location.reload();  // Przeładowanie strony po zapisaniu
-            } else {
-                alert("Error updating workday!");
-            }
-        })
-        .catch(error => console.error("Error:", error));
+        });
+
+        calendar.render();
+
+        document.getElementById('editWorkdayForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const workdayId = document.getElementById('edit_workday_id').value;
+
+            const payload = {
+                date: document.getElementById('edit_date').value,
+                employee: document.getElementById('edit_employee').value,
+                start_time: document.getElementById('edit_start_time').value,
+                end_time: document.getElementById('edit_end_time').value
+            };
+
+            fetch(`/workdays/${workdayId}/update/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrftoken,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payload)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(data => {
+                        throw new Error(data.message || 'Failed to update workday');
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                $('#editWorkdayModal').modal('hide');
+                calendar.refetchEvents();
+                window.location.reload();
+            })
+            .catch(error => {
+                alert(error.message);
+            });
+        });
+
     });
-});
     </script>
 {% endblock extra_js %}

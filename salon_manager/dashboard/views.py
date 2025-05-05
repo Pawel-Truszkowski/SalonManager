@@ -1,8 +1,12 @@
+import json
+from datetime import datetime
+
 from django.contrib import messages
 from django.contrib.auth.mixins import UserPassesTestMixin
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse_lazy
+from django.views.decorators.http import require_POST
 from django.views.generic import CreateView, DeleteView, ListView, UpdateView
 
 from reservations.models import WorkDay
@@ -88,31 +92,56 @@ class WorkDayCreateView(OwnerRequiredMixin, CreateView):
         return super().form_valid(form)
 
 
-# class WorkDayUpdateView(OwnerRequiredMixin, UpdateView):
-#     model = WorkDay
-#     form_class = WorkDayForm
-#     template_name = "dashboard/workday_form.html"
-#     success_url = reverse_lazy("workday_list")
-#
-#     def form_valid(self, form):
-#         messages.success(self.request, "Work day updated successfully!")
-#         return super().form_valid(form)
-
-
-class WorkDayUpdateView(UpdateView):
+class WorkDayUpdateView(OwnerRequiredMixin, UpdateView):
     model = WorkDay
-    fields = ["date", "start_time", "end_time"]
+    form_class = WorkDayForm
     template_name = "dashboard/workday_form.html"
+    success_url = reverse_lazy("workday_list")
+
+    def form_valid(self, form):
+        messages.success(self.request, "Work day updated successfully!")
+        return super().form_valid(form)
+
+        # Add AJAX support with proper content type checking
 
     def post(self, request, *args, **kwargs):
-        workday = get_object_or_404(WorkDay, pk=self.kwargs["pk"])
+        is_ajax = (
+            request.headers.get("x-requested-with") == "XMLHttpRequest"
+            or request.content_type == "application/json"
+        )
+        print(is_ajax)
+        if is_ajax:
+            # Handle AJAX request
+            self.object = self.get_object()
 
-        workday.date = request.POST.get("date")
-        workday.start_time = request.POST.get("start_time")
-        workday.end_time = request.POST.get("end_time")
-        workday.save()
+            # We need to manually process the form data for AJAX requests
+            try:
+                # Get the form data either from request.POST or request.body
+                if request.content_type == "application/json":
+                    data = json.loads(request.body)
+                    print("Dane otrzymane w JSON:", data)
+                    form = self.form_class(data, instance=self.object)
+                else:
+                    form = self.form_class(request.POST, instance=self.object)
 
-        return JsonResponse({"success": True})
+                if form.is_valid():
+                    self.object = form.save()
+                    return JsonResponse(
+                        {
+                            "status": "success",
+                            "message": "Work day updated successfully!",
+                        }
+                    )
+                else:
+                    print(form.errors)
+                    return JsonResponse(
+                        {"status": "error", "errors": form.errors}, status=400
+                    )
+            except Exception as e:
+                return JsonResponse({"status": "error", "message": str(e)}, status=500)
+        else:
+            # Handle normal form submission
+            return super().post(request, *args, **kwargs)
 
 
 class WorkDayDeleteView(OwnerRequiredMixin, DeleteView):
@@ -123,3 +152,56 @@ class WorkDayDeleteView(OwnerRequiredMixin, DeleteView):
     def delete(self, request, *args, **kwargs):
         messages.success(request, "Work day deleted successfully!")
         return super().delete(request, *args, **kwargs)
+
+
+# New API views for FullCalendar
+def workday_api(request):
+    """API endpoint to provide workday data for FullCalendar"""
+    workdays = WorkDay.objects.all()
+    events = []
+
+    for workday in workdays:
+        events.append(
+            {
+                "id": workday.pk,
+                "title": f"{workday.employee.name}: {workday.start_time.strftime('%H:%M')} - {workday.end_time.strftime('%H:%M')}",
+                "start": f"{workday.date.isoformat()}T{workday.start_time.strftime('%H:%M:%S')}",
+                "end": f"{workday.date.isoformat()}T{workday.end_time.strftime('%H:%M:%S')}",
+                "extendedProps": {
+                    "startTime": workday.start_time.strftime("%H:%M"),
+                    "endTime": workday.end_time.strftime("%H:%M"),
+                    "employeeId": workday.employee.id,
+                    "employeeName": workday.employee.name,
+                },
+            }
+        )
+
+    return JsonResponse(events, safe=False)
+
+
+@require_POST
+def update_workday_date(request, pk):
+    """API endpoint to update workday date (for drag and drop)"""
+    try:
+        workday = WorkDay.objects.get(pk=pk)
+        data = json.loads(request.body)
+        new_date = data.get("date")
+
+        if new_date:
+            workday.date = datetime.strptime(new_date, "%Y-%m-%d").date()
+            workday.save()
+
+            return JsonResponse(
+                {"status": "success", "message": "Work day updated successfully!"}
+            )
+        else:
+            return JsonResponse(
+                {"status": "error", "message": "Date is required"}, status=400
+            )
+
+    except WorkDay.DoesNotExist:
+        return JsonResponse(
+            {"status": "error", "message": "Work day not found"}, status=404
+        )
+    except Exception as e:
+        return JsonResponse({"status": "error", "message": str(e)}, status=500)

@@ -23,7 +23,7 @@ urlpatterns = [
     path("workdays/", views.WorkDayListView.as_view(), name="workday_list"),
     path("workdays/add/", views.WorkDayCreateView.as_view(), name="workday_create"),
     path(
-        "workdays/<int:pk>/edit/",
+        "workdays/<int:pk>/update/",
         views.WorkDayUpdateView.as_view(),
         name="workday_update",
     ),
@@ -31,5 +31,12 @@ urlpatterns = [
         "workdays/<int:pk>/delete/",
         views.WorkDayDeleteView.as_view(),
         name="workday_delete",
+    ),
+    # API endpoints for FullCalendar
+    path("api/workdays/", views.workday_api, name="workday_api"),
+    path(
+        "workdays/<int:pk>/update-date/",
+        views.update_workday_date,
+        name="update_workday_date",
     ),
 ]
