@@ -9,10 +9,11 @@ from django.urls import reverse_lazy
 from django.views.decorators.http import require_POST
 from django.views.generic import CreateView, DeleteView, ListView, UpdateView
 
-from reservations.models import WorkDay
+from reservations.models import Reservation, WorkDay
+from services.models import Service
 from users.models import Employee
 
-from .forms import EmployeeForm, WorkDayForm
+from .forms import EmployeeForm, ServiceForm, WorkDayForm
 
 
 def home(request):
@@ -32,7 +33,7 @@ class OwnerRequiredMixin(UserPassesTestMixin):
         return self.request.user.is_authenticated and self.request.user.role == "OWNER"
 
 
-# Employee Views
+# Employee Manage Views ###########
 class EmployeeListView(OwnerRequiredMixin, ListView):
     model = Employee
     template_name = "dashboard/employee_list.html"
@@ -102,24 +103,18 @@ class WorkDayUpdateView(OwnerRequiredMixin, UpdateView):
         messages.success(self.request, "Work day updated successfully!")
         return super().form_valid(form)
 
-        # Add AJAX support with proper content type checking
-
     def post(self, request, *args, **kwargs):
         is_ajax = (
             request.headers.get("x-requested-with") == "XMLHttpRequest"
             or request.content_type == "application/json"
         )
-        print(is_ajax)
+
         if is_ajax:
-            # Handle AJAX request
             self.object = self.get_object()
 
-            # We need to manually process the form data for AJAX requests
             try:
-                # Get the form data either from request.POST or request.body
                 if request.content_type == "application/json":
                     data = json.loads(request.body)
-                    print("Dane otrzymane w JSON:", data)
                     form = self.form_class(data, instance=self.object)
                 else:
                     form = self.form_class(request.POST, instance=self.object)
@@ -133,14 +128,12 @@ class WorkDayUpdateView(OwnerRequiredMixin, UpdateView):
                         }
                     )
                 else:
-                    print(form.errors)
                     return JsonResponse(
                         {"status": "error", "errors": form.errors}, status=400
                     )
             except Exception as e:
                 return JsonResponse({"status": "error", "message": str(e)}, status=500)
         else:
-            # Handle normal form submission
             return super().post(request, *args, **kwargs)
 
 
@@ -205,3 +198,49 @@ def update_workday_date(request, pk):
         )
     except Exception as e:
         return JsonResponse({"status": "error", "message": str(e)}, status=500)
+
+
+##### Reservations Management ########
+class ManageReservationsListView(OwnerRequiredMixin, ListView):
+    model = Reservation
+    template_name = "dashboard/manage_reservations_list.html"
+    context_object_name = "reservations"
+
+
+# Services Management  ###############
+class ManageServicesListView(OwnerRequiredMixin, ListView):
+    model = Service
+    template_name = "dashboard/manage_services_list.html"
+    context_object_name = "services"
+
+
+class ServiceCreateView(OwnerRequiredMixin, CreateView):
+    model = Service
+    form_class = ServiceForm
+    template_name = "dashboard/manage_services_form.html"
+    success_url = reverse_lazy("manage_services_list")
+
+    def form_valid(self, form):
+        messages.success(self.request, "Service created successfully!")
+        return super().form_valid(form)
+
+
+class ServiceUpdateView(OwnerRequiredMixin, UpdateView):
+    model = Service
+    form_class = ServiceForm
+    template_name = "dashboard/manage_services_form.html"
+    success_url = reverse_lazy("manage_services_list")
+
+    def form_valid(self, form):
+        messages.success(self.request, "Service updated successfully!")
+        return super().form_valid(form)
+
+
+class ServiceDeleteView(OwnerRequiredMixin, DeleteView):
+    model = Service
+    template_name = "dashboard/manage_services_delete.html"
+    success_url = reverse_lazy("manage_services_list")
+
+    def delete(self, request, *args, **kwargs):
+        messages.success(request, "Service deleted successfully!")
+        return super().delete(request, *args, **kwargs)

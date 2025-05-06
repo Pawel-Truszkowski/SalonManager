@@ -5,12 +5,12 @@ from . import views, views_ajax
 urlpatterns = [
     path(
         "your-reservations/",
-        views.ReservationsListView.as_view(),
+        views.UserReservationsListView.as_view(),
         name="your_reservation_list",
     ),
     path(
         "reservation-cancel/<int:pk>/",
-        views.CancelReservationView.as_view(),
+        views.CancelUserReservationView.as_view(),
         name="cancel_reservation",
     ),
     path(

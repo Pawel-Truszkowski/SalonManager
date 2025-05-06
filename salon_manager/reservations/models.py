@@ -98,12 +98,6 @@ class Reservation(models.Model):
         if not hasattr(self, "reservation_request"):
             raise ValidationError("Reservation request is required")
 
-        if self.get_start_time() and self.get_service():
-            start_datetime = self.get_start_time()
-            duration = datetime.timedelta(minutes=self.get_service_duration())
-            end_datetime = start_datetime + duration
-            self.end_time = end_datetime
-
         if self.id_request is None:
             self.id_request = f"{get_timestamp()}{self.reservation_request.service.id}{generate_random_id()}"
 
@@ -120,7 +114,9 @@ class Reservation(models.Model):
         return self.reservation_request.date
 
     def get_start_time(self):
-        return self.reservation_request.start_time
+        return datetime.datetime.combine(
+            self.get_date(), self.reservation_request.start_time
+        )
 
     def get_end_time(self):
         return datetime.datetime.combine(

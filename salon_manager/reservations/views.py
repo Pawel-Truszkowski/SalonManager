@@ -1,23 +1,16 @@
-import datetime
-
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from django.http import JsonResponse
-from django.shortcuts import get_object_or_404, redirect, render
+from django.shortcuts import get_object_or_404, redirect
 from django.views.generic import ListView, TemplateView, View
 
-from services.models import Service
-from users.models import Employee
-
-from . import forms
-from .models import Reservation, WorkDay
+from .models import Reservation
 
 
 class ReservationSuccessView(TemplateView):
     template_name = "reservations/reservation_success.html"
 
 
-class ReservationsListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
+class UserReservationsListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
     template_name = "reservations/reservation_list.html"
     model = Reservation
     context_object_name = "reservations"
@@ -31,7 +24,7 @@ class ReservationsListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
         return self.request.user.is_authenticated
 
 
-class CancelReservationView(LoginRequiredMixin, UserPassesTestMixin, View):
+class CancelUserReservationView(LoginRequiredMixin, UserPassesTestMixin, View):
     def post(self, request, *args, **kwargs):
         reservation = get_object_or_404(Reservation, id=self.kwargs["pk"])
         if reservation.status != "CANCEL":
