@@ -95,15 +95,8 @@
                                             </li>
                                         </ul>
                                     </li>
-                                    <li class="has-children {% if request.path == '/services/' %}active{% endif %}">
+                                    <li class="{% if request.path == '/services/' %}active{% endif %}">
                                         <a href="{% url 'services_list' %}">Services</a>
-                                        <ul class="dropdown">
-                                            {% for category in service_categories %}
-                                                <li>
-                                                    <a href="#">{{ category.name }}</a>
-                                                </li>
-                                            {% endfor %}
-                                        </ul>
                                     </li>
                                     <li class="{% if request.path == '/about/' %}active{% endif %}">
                                         <a href="{% url 'about' %}">About</a>
@@ -116,13 +109,16 @@
                                             <a href="#">Owner Panel</a>
                                             <ul class="dropdown">
                                                 <li>
-                                                    <a href="{% url 'employee_list' %}">Manage Employees</a>
+                                                    <a href="{% url 'employee_list' %}">Employees</a>
                                                 </li>
                                                 <li>
-                                                    <a href="{% url 'workday_list' %}">Manage Work Days</a>
+                                                    <a href="{% url 'workday_list' %}">Work Days</a>
                                                 </li>
                                                 <li>
-                                                    <a href="{% url 'manage_services_list' %}">Manage Services</a>
+                                                    <a href="{% url 'manage_services_list' %}">Services</a>
+                                                </li>
+                                                <li>
+                                                    <a href="{% url 'manage_reservations_list' %}">Reservations</a>
                                                 </li>
                                             </ul>
                                         </li>
@@ -193,6 +189,14 @@
                     </div>
                 </div>
             </header>
+            <div class="messagelist">
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-dismissible {% if message.tags %}alert-{% if message.level == DEFAULT_MESSAGE_LEVELS.ERROR %}danger{% else %}{{ message.tags }}{% endif %}{% endif %}"
+                             role="alert">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            </div>
             {% block content %}
             {% endblock content %}
             {% block body %}
@@ -280,8 +284,7 @@
               href="https://code.jquery.com/ui/1.12.1/themes/smoothness/jquery-ui.css">
         <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
         <!-- FullCalendar JS -->
-        <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.5/main.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.5/locales-all.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.17/index.global.min.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/5.10.0/main.min.js"></script>
         <script src="{% static 'core/js/jquery-migrate-3.0.1.min.js' %}"></script>
         <script src="{% static 'core/js/jquery-ui.js' %}"></script>

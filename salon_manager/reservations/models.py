@@ -114,14 +114,10 @@ class Reservation(models.Model):
         return self.reservation_request.date
 
     def get_start_time(self):
-        return datetime.datetime.combine(
-            self.get_date(), self.reservation_request.start_time
-        )
+        return self.reservation_request.start_time
 
     def get_end_time(self):
-        return datetime.datetime.combine(
-            self.get_date(), self.reservation_request.end_time
-        )
+        return self.reservation_request.end_time
 
     def get_service(self):
         return self.reservation_request.service
@@ -132,16 +128,13 @@ class Reservation(models.Model):
     def get_service_duration(self):
         return self.reservation_request.service.duration
 
-    def get_staff_member_name(self):
+    def get_employee_name(self):
         if not self.reservation_request.employee:
             return ""
         return self.reservation_request.employee.name
 
-    def get_staff_member(self):
+    def get_employee(self):
         return self.reservation_request.employee
 
     def get_service_price(self):
         return self.reservation_request.service.price
-
-    def get_reservation_date(self):
-        return self.reservation_request.date

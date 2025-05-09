@@ -147,7 +147,6 @@ class WorkDayDeleteView(OwnerRequiredMixin, DeleteView):
         return super().delete(request, *args, **kwargs)
 
 
-# New API views for FullCalendar
 def workday_api(request):
     """API endpoint to provide workday data for FullCalendar"""
     workdays = WorkDay.objects.all()
@@ -174,7 +173,6 @@ def workday_api(request):
 
 @require_POST
 def update_workday_date(request, pk):
-    """API endpoint to update workday date (for drag and drop)"""
     try:
         workday = WorkDay.objects.get(pk=pk)
         data = json.loads(request.body)
@@ -198,13 +196,6 @@ def update_workday_date(request, pk):
         )
     except Exception as e:
         return JsonResponse({"status": "error", "message": str(e)}, status=500)
-
-
-##### Reservations Management ########
-class ManageReservationsListView(OwnerRequiredMixin, ListView):
-    model = Reservation
-    template_name = "dashboard/manage_reservations_list.html"
-    context_object_name = "reservations"
 
 
 # Services Management  ###############
@@ -244,3 +235,34 @@ class ServiceDeleteView(OwnerRequiredMixin, DeleteView):
     def delete(self, request, *args, **kwargs):
         messages.success(request, "Service deleted successfully!")
         return super().delete(request, *args, **kwargs)
+
+
+# Reservations Management ########
+class ManageReservationsListView(OwnerRequiredMixin, ListView):
+    model = Reservation
+    template_name = "dashboard/manage_reservations_list.html"
+    context_object_name = "reservations"
+
+
+def reservations_api(request):
+    """API endpoint to provide reservations data for FullCalendar"""
+    reservations = Reservation.objects.all()
+    events = []
+
+    for reservation in reservations:
+        events.append(
+            {
+                "id": reservation.pk,
+                "title": f"{reservation.customer}: {reservation.get_start_time()}",
+                "start": f"{reservation.date.isoformat()}T{reservation.start_time.strftime('%H:%M:%S')}",
+                "end": f"{reservation.date.isoformat()}T{reservation.end_time.strftime('%H:%M:%S')}",
+                "extendedProps": {
+                    "startTime": reservation.start_time.strftime("%H:%M"),
+                    "endTime": reservation.end_time.strftime("%H:%M"),
+                    "employeeId": reservation.get_employee(),
+                    "employeeName": reservation.get_employee_name(),
+                },
+            }
+        )
+
+    return JsonResponse(events, safe=False)

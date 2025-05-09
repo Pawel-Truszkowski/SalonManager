@@ -52,7 +52,7 @@
             </div>
         </div>
     </div>
-    <!-- Modal do edycji -->
+    <!-- Modal -->
     <div class="modal fade"
          id="editWorkdayModal"
          tabindex="-1"
@@ -62,9 +62,6 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="editWorkdayModalLabel">Edit Work Day</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
                 </div>
                 <div class="modal-body">
                     <form id="editWorkdayForm" method="post">
@@ -88,8 +85,11 @@
                             <input type="time" id="edit_end_time" name="end_time" class="form-control">
                         </div>
                         <input type="hidden" id="edit_workday_id" name="workday_id">
-                        <button type="submit" class="btn btn-primary">Save Changes</button>
                     </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
                 </div>
             </div>
         </div>
@@ -104,7 +104,7 @@
         // Initialize FullCalendar
         const calendarEl = document.getElementById('calendar');
         const calendar = new FullCalendar.Calendar(calendarEl, {
-            initialView: 'dayGridMonth',
+            initialView: 'timeGridWeek',
             headerToolbar: {
                 left: 'prev,next today',
                 center: 'title',

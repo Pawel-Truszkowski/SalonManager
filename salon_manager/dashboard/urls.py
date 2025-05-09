@@ -39,12 +39,6 @@ urlpatterns = [
         views.update_workday_date,
         name="update_workday_date",
     ),
-    # Reservation Management URLs
-    path(
-        "reservations-manage-reservations/",
-        views.ManageReservationsListView.as_view(),
-        name="manage_reservations_list",
-    ),
     # Servcies Management URLs
     path(
         "manage-services/",
@@ -64,4 +58,11 @@ urlpatterns = [
         views.ServiceDeleteView.as_view(),
         name="service_delete",
     ),
+    # Reservation Management URLs
+    path(
+        "reservations-manage-reservations/",
+        views.ManageReservationsListView.as_view(),
+        name="manage_reservations_list",
+    ),
+    path("api/reservations/", views.reservations_api, name="reservations_api"),
 ]
