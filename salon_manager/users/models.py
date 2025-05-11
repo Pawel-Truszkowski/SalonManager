@@ -24,6 +24,10 @@ class CustomUser(AbstractUser):
     def is_owner(self) -> bool:
         return self.role == "OWNER"
 
+    @property
+    def is_employee(self) -> bool:
+        return self.role == "EMPLOYEE"
+
 
 class Employee(models.Model):
     name = models.CharField(max_length=100)
@@ -33,7 +37,6 @@ class Employee(models.Model):
         return self.name
 
 
-# Do wywalenia Profile
 class Profile(models.Model):
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE)
     image = models.ImageField(default="default.jpg", upload_to="profile_pics")

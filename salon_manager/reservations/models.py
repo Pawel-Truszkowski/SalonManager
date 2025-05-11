@@ -78,7 +78,6 @@ class Reservation(models.Model):
         null=True,
         blank=True,
     )
-    phone = PhoneNumberField(blank=True)
     status = models.CharField(
         max_length=10, choices=RESERVATION_STATUS_CHOICES, default="PENDING"
     )
@@ -86,6 +85,10 @@ class Reservation(models.Model):
         ReservationRequest, on_delete=models.CASCADE, related_name="reservations"
     )
     id_request = models.CharField(max_length=100, blank=True, null=True)
+
+    name = models.CharField(max_length=100)
+    email = models.EmailField()
+    phone = PhoneNumberField(blank=True)
     additional_info = models.TextField(blank=True, null=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
@@ -138,3 +141,6 @@ class Reservation(models.Model):
 
     def get_service_price(self):
         return self.reservation_request.service.price
+
+    def get_customer_name(self):
+        return self.name

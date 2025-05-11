@@ -243,24 +243,46 @@ class ManageReservationsListView(OwnerRequiredMixin, ListView):
     template_name = "dashboard/manage_reservations_list.html"
     context_object_name = "reservations"
 
+    def get_queryset(self):
+        return Reservation.objects.all().order_by("-reservation_request__date")
+
+    def get_context_data(self, *, object_list=None, **kwargs):
+        context = super().get_context_data()
+        context["employees"] = Employee.objects.all()
+        return context
+
 
 def reservations_api(request):
     """API endpoint to provide reservations data for FullCalendar"""
-    reservations = Reservation.objects.all()
+
+    employee_id = request.GET.get("employee")
+
+    if employee_id:
+        reservations = Reservation.objects.filter(
+            reservation_request__employee__id=employee_id
+        )
+    else:
+        try:
+            reservations = Reservation.objects.all()
+        except Reservation.DoesNotExist:
+            return JsonResponse(
+                {"status": "error", "message": "Reservations not found"}, status=404
+            )
+
     events = []
 
     for reservation in reservations:
         events.append(
             {
                 "id": reservation.pk,
-                "title": f"{reservation.customer}: {reservation.get_start_time()}",
-                "start": f"{reservation.date.isoformat()}T{reservation.start_time.strftime('%H:%M:%S')}",
-                "end": f"{reservation.date.isoformat()}T{reservation.end_time.strftime('%H:%M:%S')}",
+                "title": f"{reservation.get_service_name()}, {reservation.name} ",
+                "start": f"{reservation.get_date().isoformat()}T{reservation.get_start_time().strftime('%H:%M')}",
+                "end": f"{reservation.get_date().isoformat()}T{reservation.get_end_time().strftime('%H:%M')}",
                 "extendedProps": {
-                    "startTime": reservation.start_time.strftime("%H:%M"),
-                    "endTime": reservation.end_time.strftime("%H:%M"),
-                    "employeeId": reservation.get_employee(),
-                    "employeeName": reservation.get_employee_name(),
+                    "startTime": reservation.get_start_time().strftime("%H:%M"),
+                    "endTime": reservation.get_end_time().strftime("%H:%M"),
+                    # "employeeId": reservation.get_employee(),
+                    # "employeeName": reservation.get_employee_name(),
                 },
             }
         )
