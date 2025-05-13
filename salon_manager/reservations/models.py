@@ -87,7 +87,7 @@ class Reservation(models.Model):
     id_request = models.CharField(max_length=100, blank=True, null=True)
 
     name = models.CharField(max_length=100)
-    email = models.EmailField()
+    email = models.EmailField(null=True, blank=True)
     phone = PhoneNumberField(blank=True)
     additional_info = models.TextField(blank=True, null=True)
 

@@ -1,0 +1,29 @@
+{% extends "dashboard/base.html" %}
+{% load crispy_forms_tags %}
+{% load static %}
+{% block content %}
+    <div class="site-section">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-8">
+                    <h2 class="site-section-heading">
+                        {% if form.instance.pk %}
+                            Edit
+                        {% else %}
+                            Add
+                        {% endif %}
+                        Reservation
+                    </h2>
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="form-group">{{ request_reservation_form|crispy }}</div>
+                        <div class="form-group">{{ client_data_form|crispy }}</div>
+                        <div class="form-group">{{ reservation_form|crispy }}</div>
+                        <button type="submit" class="btn btn-primary">Save</button>
+                        <a href="{% url 'manage_reservations_list' %}" class="btn btn-secondary">Cancel</a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock content %}

@@ -4,11 +4,12 @@ from datetime import datetime
 from django.contrib import messages
 from django.contrib.auth.mixins import UserPassesTestMixin
 from django.http import JsonResponse
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy
 from django.views.decorators.http import require_POST
-from django.views.generic import CreateView, DeleteView, ListView, UpdateView
+from django.views.generic import CreateView, DeleteView, ListView, UpdateView, View
 
+from reservations.forms import ClientDataForm, ReservationForm, ReservationRequestForm
 from reservations.models import Reservation, WorkDay
 from services.models import Service
 from users.models import Employee
@@ -288,3 +289,52 @@ def reservations_api(request):
         )
 
     return JsonResponse(events, safe=False)
+
+
+class ReservationCreateView(OwnerRequiredMixin, View):
+    template_name = "dashboard/manage_reservations_form.html"
+    success_url = reverse_lazy("manage_reservations_list")
+
+    def get(self, request, *args, **kwargs):
+        request_reservation_form = ReservationRequestForm()
+        client_data_form = ClientDataForm()
+        reservation_form = ReservationForm()
+        return render(
+            request,
+            self.template_name,
+            {
+                "request_reservation_form": request_reservation_form,
+                "client_data_form": client_data_form,
+                "reservation_form": reservation_form,
+            },
+        )
+
+    def post(self, request, *args, **kwargs):
+        request_reservation_form = ReservationRequestForm(request.POST)
+        client_data_form = ClientDataForm(request.POST)
+        reservation_form = ReservationForm(request.POST)
+
+        if (
+            request_reservation_form.is_valid()
+            and client_data_form.is_valid()
+            and reservation_form.is_valid()
+        ):
+            request_reservation = request_reservation_form.save()
+            reservation = reservation_form.save(commit=False)
+            reservation.reservation_request = request_reservation
+            reservation.name = client_data_form.cleaned_data["name"]
+            reservation.email = client_data_form.cleaned_data["email"]
+            reservation.save()
+
+            messages.success(request, "Reservation created successfully!")
+            return redirect(self.success_url)
+
+        return render(
+            request,
+            self.template_name,
+            {
+                "request_reservation_form": request_reservation_form,
+                "client_data_form": client_data_form,
+                "reservation_form": reservation_form,
+            },
+        )

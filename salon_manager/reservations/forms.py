@@ -75,6 +75,17 @@ class ReservationRequestForm(forms.ModelForm):
     class Meta:
         model = ReservationRequest
         fields = ("date", "start_time", "end_time", "service", "employee")
+        widgets = {
+            "date": forms.DateInput(attrs={"class": "form-control", "type": "date"}),
+            "start_time": forms.TimeInput(
+                attrs={"class": "form-control", "type": "time"}
+            ),
+            "end_time": forms.TimeInput(
+                attrs={"class": "form-control", "type": "time"}
+            ),
+            "service": forms.Select(attrs={"class": "form-control"}),
+            "employee": forms.Select(attrs={"class": "form-control"}),
+        }
 
 
 class ReservationForm(forms.ModelForm):

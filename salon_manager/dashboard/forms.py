@@ -1,6 +1,6 @@
 from django import forms
 
-from reservations.models import WorkDay
+from reservations.models import Reservation, WorkDay
 from services.models import Service
 from users.models import Employee
 
