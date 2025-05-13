@@ -307,6 +307,7 @@ def create_reservation(
     reservation_request_obj, id_request, client_data, reservation_data
 ):
     email = client_data["email"]
+    name = client_data["name"]
     phone = reservation_data["phone"]
     additional_info = reservation_data["additional_info"]
 
@@ -318,6 +319,8 @@ def create_reservation(
         reservation_request=reservation_request_obj,
         id_request=id_request,
         additional_info=additional_info,
+        email=email,
+        name=name,
     )
 
     reservation.save()
