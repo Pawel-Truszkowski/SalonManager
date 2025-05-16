@@ -14,12 +14,6 @@
     {% endblock description %}
     <div class="main-container">
         <div class="body-container">
-            {% if messages %}
-                {% for message in messages %}
-                    <div class="alert alert-dismissible {% if message.tags %}alert-{% if message.level == DEFAULT_MESSAGE_LEVELS.ERROR %}danger{% else %}{{ message.tags }}{% endif %}{% endif %}"
-                         role="alert">{{ message }}</div>
-                {% endfor %}
-            {% endif %}
             <form method="post"
                   action="{% url 'reservation_client_information' ar.id ar.id_request %}"
                   class="page-body">
@@ -98,7 +92,7 @@
                 messageElements.forEach(function (element) {
                     element.style.display = 'none';
                 });
-            }, 3000);
+            }, 5000);
 
             // Get the form and the 'submit' button
             const form = document.querySelector('form');

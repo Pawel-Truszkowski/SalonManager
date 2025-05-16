@@ -24,7 +24,7 @@
                         <tbody>
                             {% for reservation in reservations %}
                                 <tr>
-                                    <td>{{ reservation.get_reservation_date }}</td>
+                                    <td>{{ reservation.get_date }}</td>
                                     <td>{{ reservation.get_start_time }}</td>
                                     <td>{{ reservation.get_service_name }}</td>
                                     <td>{{ reservation.status }}</td>

@@ -5,7 +5,7 @@ from django.contrib import messages
 from django.contrib.auth.mixins import UserPassesTestMixin
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
-from django.urls import reverse_lazy
+from django.urls import reverse, reverse_lazy
 from django.views.decorators.http import require_POST
 from django.views.generic import CreateView, DeleteView, ListView, UpdateView, View
 
@@ -279,11 +279,10 @@ def reservations_api(request):
                 "title": f"{reservation.get_service_name()}, {reservation.name} ",
                 "start": f"{reservation.get_date().isoformat()}T{reservation.get_start_time().strftime('%H:%M')}",
                 "end": f"{reservation.get_date().isoformat()}T{reservation.get_end_time().strftime('%H:%M')}",
+                "color": "#28a745" if reservation.status == "CONFIRMED" else "#ffc107",
                 "extendedProps": {
                     "startTime": reservation.get_start_time().strftime("%H:%M"),
                     "endTime": reservation.get_end_time().strftime("%H:%M"),
-                    # "employeeId": reservation.get_employee(),
-                    # "employeeName": reservation.get_employee_name(),
                 },
             }
         )
@@ -338,3 +337,22 @@ class ReservationCreateView(OwnerRequiredMixin, View):
                 "reservation_form": reservation_form,
             },
         )
+
+
+class ReservationDeleteView(OwnerRequiredMixin, DeleteView):
+    model = Reservation
+    template_name = "dashboard/manage_reservations_delete.html"
+    success_url = reverse_lazy("manage_reservations_list")
+
+    def delete(self, request, *args, **kwargs):
+        messages.success(request, "Reservation deleted successfully!")
+        return super().delete(request, *args, **kwargs)
+
+
+class ConfirmReservationView(OwnerRequiredMixin, View):
+    def post(self, request, pk, *args, **kwargs):
+        reservation = get_object_or_404(Reservation, pk=pk)
+        reservation.status = "CONFIRMED"
+        reservation.save()
+        messages.success(request, "Reservation confirmed")
+        return redirect(reverse("manage_reservations_list"))

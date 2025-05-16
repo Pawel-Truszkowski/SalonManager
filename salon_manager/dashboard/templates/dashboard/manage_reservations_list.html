@@ -8,6 +8,7 @@
                     <h3 class="site-section-heading">Reservations Management</h3>
                 </div>
             </div>
+            <label>Employees</label>
             <div class="row mb-4">
                 <div class="col-md-7 mb-4">
                     <select class="form-select"
@@ -25,16 +26,17 @@
             <!-- FullCalendar -->
             <div id="calendar"></div>
             <hr>
-            <div class="row mt-4">
+            <div class="row mt-6">
                 <div class="col-md-12">
                     <table class="table table-striped">
                         <thead>
                             <tr>
                                 <th>Date</th>
+                                <th>Time</th>
+                                <th>Service</th>
                                 <th>Customer</th>
                                 <th>Employee</th>
-                                <th>Start Time</th>
-                                <th>End Time</th>
+                                <th>Status</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
@@ -42,13 +44,19 @@
                             {% for reservation in reservations %}
                                 <tr>
                                     <td>{{ reservation.get_date }}</td>
+                                    <td>{{ reservation.get_start_time }} - {{ reservation.get_end_time }}</td>
+                                    <td>{{ reservation.get_service_name }}</td>
                                     <td>{{ reservation.get_customer_name }}</td>
                                     <td>{{ reservation.get_employee_name }}</td>
-                                    <td>{{ reservation.get_start_time }}</td>
-                                    <td>{{ reservation.get_end_time }}</td>
+                                    <td>{{ reservation.status }}</td>
                                     <td>
+                                        <form method="post" action="{% url 'reservation_confirm' reservation.pk %}">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-success">Confirm</button>
+                                        </form>
                                         <a href="#" class="btn btn-sm btn-info">Edit</a>
-                                        <a href="#" class="btn btn-sm btn-danger">Delete</a>
+                                        <a href="{% url 'reservation_delete' reservation.id %}"
+                                           class="btn btn-sm btn-danger">Delete</a>
                                     </td>
                                 </tr>
                             {% empty %}
