@@ -70,6 +70,11 @@ urlpatterns = [
         name="reservation_create",
     ),
     path(
+        "reservations/<int:pk>/edit/",
+        views.ReservationUpdateView.as_view(),
+        name="reservation_edit",
+    ),
+    path(
         "manage-reservations/<int:pk>/delete/",
         views.ReservationDeleteView.as_view(),
         name="reservation_delete",

@@ -149,7 +149,6 @@ class WorkDayDeleteView(OwnerRequiredMixin, DeleteView):
 
 
 def workday_api(request):
-    """API endpoint to provide workday data for FullCalendar"""
     workdays = WorkDay.objects.all()
     events = []
 
@@ -334,6 +333,71 @@ class ReservationCreateView(OwnerRequiredMixin, View):
             {
                 "request_reservation_form": request_reservation_form,
                 "client_data_form": client_data_form,
+                "reservation_form": reservation_form,
+            },
+        )
+
+
+class ReservationUpdateView(OwnerRequiredMixin, UpdateView):
+    model = Reservation
+    form_class = ReservationForm
+    template_name = "dashboard/manage_reservations_form.html"
+    success_url = reverse_lazy("manage_reservations_list")
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data()
+        reservation = self.get_object()
+
+        print(">>> DATE VALUE:", reservation.reservation_request.date)
+        print(">>> TYPE:", type(reservation.reservation_request.date))
+
+        if self.request.POST:
+            context["request_reservation_form"] = ReservationRequestForm(
+                self.request.POST,
+                instance=reservation.reservation_request,
+            )
+            context["client_data_form"] = ClientDataForm(
+                initial={"name": reservation.name, "email": reservation.email}
+            )
+        else:
+            context["request_reservation_form"] = ReservationRequestForm(
+                instance=reservation.reservation_request
+            )
+            context["client_data_form"] = ClientDataForm(
+                initial={"name": reservation.name, "email": reservation.email}
+            )
+        context["reservation_form"] = self.get_form()
+        return context
+
+    def post(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        request_form = ReservationRequestForm(
+            request.POST, instance=self.object.reservation_request
+        )
+        client_form = ClientDataForm(request.POST)
+        reservation_form = ReservationForm(request.POST, instance=self.object)
+
+        if (
+            request_form.is_valid()
+            and client_form.is_valid()
+            and reservation_form.is_valid()
+        ):
+            request_reservation = request_form.save()
+            reservation = reservation_form.save(commit=False)
+            reservation.reservation_request = request_reservation
+            reservation.name = client_form.cleaned_data["name"]
+            reservation.email = client_form.cleaned_data["email"]
+            reservation.save()
+
+            messages.success(request, "Reservation updated successfully!")
+            return redirect(self.success_url)
+
+        return render(
+            request,
+            self.template_name,
+            {
+                "request_reservation_form": request_form,
+                "client_data_form": client_form,
                 "reservation_form": reservation_form,
             },
         )

@@ -54,7 +54,8 @@
                                             {% csrf_token %}
                                             <button type="submit" class="btn btn-success">Confirm</button>
                                         </form>
-                                        <a href="#" class="btn btn-sm btn-info">Edit</a>
+                                        <a href="{% url 'reservation_edit' reservation.id %}"
+                                           class="btn btn-sm btn-info">Edit</a>
                                         <a href="{% url 'reservation_delete' reservation.id %}"
                                            class="btn btn-sm btn-danger">Delete</a>
                                     </td>

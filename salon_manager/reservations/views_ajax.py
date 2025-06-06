@@ -66,11 +66,17 @@ def get_available_slots_ajax(request):
         employee=sm.id,
         date=selected_date,
     )
-    work_day = WorkDay.objects.get(employee=sm.id, date=selected_date)
 
-    available_slots = generate_available_slots(
-        work_day.start_time, work_day.end_time, service_duration, existing_reservations
-    )
+    work_days = WorkDay.objects.filter(employee=sm.id, date=selected_date)
+
+    available_slots = []
+    for work_day in work_days:
+        available_slots += generate_available_slots(
+            work_day.start_time,
+            work_day.end_time,
+            service_duration,
+            existing_reservations,
+        )
 
     if selected_date == date.today():
         current_time = timezone.now().time().strftime("%H:%M")
