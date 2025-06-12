@@ -78,7 +78,6 @@ class Reservation(models.Model):
         null=True,
         blank=True,
     )
-    phone = PhoneNumberField(blank=True)
     status = models.CharField(
         max_length=10, choices=RESERVATION_STATUS_CHOICES, default="PENDING"
     )
@@ -86,6 +85,10 @@ class Reservation(models.Model):
         ReservationRequest, on_delete=models.CASCADE, related_name="reservations"
     )
     id_request = models.CharField(max_length=100, blank=True, null=True)
+
+    name = models.CharField(max_length=100)
+    email = models.EmailField(null=True, blank=True)
+    phone = PhoneNumberField(blank=True)
     additional_info = models.TextField(blank=True, null=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
@@ -97,12 +100,6 @@ class Reservation(models.Model):
     def save(self, *args, **kwargs):
         if not hasattr(self, "reservation_request"):
             raise ValidationError("Reservation request is required")
-
-        if self.get_start_time() and self.get_service():
-            start_datetime = self.get_start_time()
-            duration = datetime.timedelta(minutes=self.get_service_duration())
-            end_datetime = start_datetime + duration
-            self.end_time = end_datetime
 
         if self.id_request is None:
             self.id_request = f"{get_timestamp()}{self.reservation_request.service.id}{generate_random_id()}"
@@ -123,9 +120,7 @@ class Reservation(models.Model):
         return self.reservation_request.start_time
 
     def get_end_time(self):
-        return datetime.datetime.combine(
-            self.get_date(), self.reservation_request.end_time
-        )
+        return self.reservation_request.end_time
 
     def get_service(self):
         return self.reservation_request.service
@@ -136,16 +131,16 @@ class Reservation(models.Model):
     def get_service_duration(self):
         return self.reservation_request.service.duration
 
-    def get_staff_member_name(self):
+    def get_employee_name(self):
         if not self.reservation_request.employee:
             return ""
         return self.reservation_request.employee.name
 
-    def get_staff_member(self):
+    def get_employee(self):
         return self.reservation_request.employee
 
     def get_service_price(self):
         return self.reservation_request.service.price
 
-    def get_reservation_date(self):
-        return self.reservation_request.date
+    def get_customer_name(self):
+        return self.name

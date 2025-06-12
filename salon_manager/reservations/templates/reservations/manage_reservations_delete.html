@@ -1,0 +1,19 @@
+{% extends "dashboard/base.html" %}
+{% load static %}
+{% block content %}
+    <div class="site-section">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-12">
+                    <h2 class="site-section-heading">Delete Reservation</h2>
+                    <form method="post">
+                        {% csrf_token %}
+                        <p>Are you sure you want to delete service for "{{ object.name }} at {{ object.get_date }}."?</p>
+                        <button type="submit" class="btn btn-danger">Confirm Delete</button>
+                        <a href="{% url 'manage_reservations_list' %}" class="btn btn-secondary">Cancel</a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock content %}

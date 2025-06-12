@@ -1,8 +1,13 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect, render
+from django.urls import reverse_lazy
+from django.views.generic import CreateView, DeleteView, ListView, UpdateView
 
-from .forms import ProfileUpdateForm, UserRegisterForm, UserUpdateForm
+from utils.mixins import OwnerRequiredMixin
+
+from .forms import EmployeeForm, ProfileUpdateForm, UserRegisterForm, UserUpdateForm
+from .models import Employee
 
 
 def register(request):
@@ -43,3 +48,42 @@ def profile(request):
         "users/profile.html",
         {"user_form": user_form, "profile_form": profile_form},
     )
+
+
+# Employee Views
+class EmployeeListView(OwnerRequiredMixin, ListView):
+    model = Employee
+    template_name = "dashboard/employee_list.html"
+    context_object_name = "employees"
+
+
+class EmployeeCreateView(OwnerRequiredMixin, CreateView):
+    model = Employee
+    form_class = EmployeeForm
+    template_name = "dashboard/employee_form.html"
+    success_url = reverse_lazy("employee_list")
+
+    def form_valid(self, form):
+        messages.success(self.request, "Employee created successfully!")
+        return super().form_valid(form)
+
+
+class EmployeeUpdateView(OwnerRequiredMixin, UpdateView):
+    model = Employee
+    form_class = EmployeeForm
+    template_name = "dashboard/employee_form.html"
+    success_url = reverse_lazy("employee_list")
+
+    def form_valid(self, form):
+        messages.success(self.request, "Employee updated successfully!")
+        return super().form_valid(form)
+
+
+class EmployeeDeleteView(OwnerRequiredMixin, DeleteView):
+    model = Employee
+    template_name = "dashboard/employee_confirm_delete.html"
+    success_url = reverse_lazy("employee_list")
+
+    def delete(self, request, *args, **kwargs):
+        messages.success(request, "Employee deleted successfully!")
+        return super().delete(request, *args, **kwargs)

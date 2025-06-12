@@ -1,67 +1,12 @@
 from django import forms
 from phonenumber_field.formfields import SplitPhoneNumberField
 
-from services.models import Service
 from users.models import Employee
 from utils.validators import not_in_the_past
 
-from .models import Reservation, ReservationRequest
+from .models import Reservation, ReservationRequest, WorkDay
 
 
-class CustomerInfoForm(forms.Form):
-    name = forms.CharField(max_length=100, disabled=True, required=False)
-    email = forms.EmailField(required=False, disabled=True)
-    phone = forms.CharField(max_length=15, disabled=True, required=False)
-
-    def __init__(self, *args, **kwargs):
-        self.user = kwargs.pop("user", None)
-        super().__init__(*args, **kwargs)
-        if self.user:
-            self.fields["name"].initial = (
-                self.user.get_full_name() or self.user.username
-            )
-            self.fields["email"].initial = self.user.email
-            self.fields["phone"].initial = self.user.phone_number
-
-            for field in self.fields:
-                self.fields[field].widget.attrs["readonly"] = True
-
-
-class ReservationSelectionForm(forms.Form):
-    service = forms.ModelChoiceField(
-        queryset=Service.objects.all(),
-        widget=forms.Select(attrs={"class": "form-control", "id": "id_service"}),
-    )
-
-    employee = forms.ModelChoiceField(
-        queryset=Employee.objects.all(),
-        widget=forms.Select(attrs={"class": "form-control", "id": "id_employee"}),
-    )
-
-    reservation_date = forms.DateField(
-        widget=forms.TextInput(
-            attrs={
-                "class": "form-control",
-                "id": "id_reservation_date",
-                "autocomplete": "off",
-            }
-        )
-    )
-
-    start_time = forms.CharField(
-        widget=forms.Select(attrs={"class": "form-control", "id": "id_start_time"}),
-    )
-
-
-class ConfirmationForm(forms.Form):
-    notes = forms.CharField(
-        label="Add special notes (optional)",
-        widget=forms.Textarea(attrs={"rows": 3, "class": "form-control"}),
-        required=False,
-    )
-
-
-###################### NEW #########################
 class SlotForm(forms.Form):
     selected_date = forms.DateField(validators=[not_in_the_past])
     staff_member = forms.ModelChoiceField(
@@ -75,6 +20,17 @@ class ReservationRequestForm(forms.ModelForm):
     class Meta:
         model = ReservationRequest
         fields = ("date", "start_time", "end_time", "service", "employee")
+        widgets = {
+            "date": forms.DateInput(attrs={"class": "form-control", "type": "date"}),
+            "start_time": forms.TimeInput(
+                attrs={"class": "form-control", "type": "time"}
+            ),
+            "end_time": forms.TimeInput(
+                attrs={"class": "form-control", "type": "time"}
+            ),
+            "service": forms.Select(attrs={"class": "form-control"}),
+            "employee": forms.Select(attrs={"class": "form-control"}),
+        }
 
 
 class ReservationForm(forms.ModelForm):
@@ -102,6 +58,20 @@ class ClientDataForm(forms.Form):
         required=True,
         widget=forms.TextInput(attrs={"class": "form-control"}),
     )
-    email = forms.EmailField(
-        required=True, widget=forms.EmailInput(attrs={"class": "form-control"})
-    )
+    email = forms.EmailField(widget=forms.EmailInput(attrs={"class": "form-control"}))
+
+
+class WorkDayForm(forms.ModelForm):
+    class Meta:
+        model = WorkDay
+        fields = ["date", "employee", "start_time", "end_time"]
+        widgets = {
+            "date": forms.DateInput(attrs={"class": "form-control", "type": "date"}),
+            "employee": forms.Select(attrs={"class": "form-control"}),
+            "start_time": forms.TimeInput(
+                attrs={"class": "form-control", "type": "time"}
+            ),
+            "end_time": forms.TimeInput(
+                attrs={"class": "form-control", "type": "time"}
+            ),
+        }

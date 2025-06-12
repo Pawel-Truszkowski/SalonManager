@@ -1,0 +1,148 @@
+{% extends "dashboard/base.html" %}
+{% load static %}
+{% block content %}
+    <div class="site-section">
+        <div class="container">
+            <div class="row mb-4">
+                <div class="col-md-7 mb-4">
+                    <h3 class="site-section-heading">Reservations Management</h3>
+                </div>
+            </div>
+            <label>Employees</label>
+            <div class="row mb-4">
+                <div class="col-md-7 mb-4">
+                    <select class="form-select"
+                            id="employeeFilter"
+                            multiple
+                            aria-label="Multiple select example">
+                        <option selected value="">All employees</option>
+                        {% for employee in employees %}<option value="{{ employee.id }}">{{ employee.name }}</option>{% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-5 text-right">
+                    <a href="{% url 'reservation_create' %}" class="btn btn-primary">Add New Reservation</a>
+                </div>
+            </div>
+            <!-- FullCalendar -->
+            <div id="calendar"></div>
+            <hr>
+            <div class="row mt-6">
+                <div class="col-md-12">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Time</th>
+                                <th>Service</th>
+                                <th>Customer</th>
+                                <th>Employee</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for reservation in reservations %}
+                                <tr>
+                                    <td>{{ reservation.get_date }}</td>
+                                    <td>{{ reservation.get_start_time }} - {{ reservation.get_end_time }}</td>
+                                    <td>{{ reservation.get_service_name }}</td>
+                                    <td>{{ reservation.get_customer_name }}</td>
+                                    <td>{{ reservation.get_employee_name }}</td>
+                                    <td>{{ reservation.status }}</td>
+                                    <td>
+                                        <form method="post" action="{% url 'reservation_confirm' reservation.pk %}">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-success">Confirm</button>
+                                        </form>
+                                        <a href="{% url 'reservation_edit' reservation.id %}"
+                                           class="btn btn-sm btn-info">Edit</a>
+                                        <a href="{% url 'reservation_delete' reservation.id %}"
+                                           class="btn btn-sm btn-danger">Delete</a>
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center">No work days found.</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Modal do edycji -->
+    <div class="modal fade"
+         id="editWorkdayModal"
+         tabindex="-1"
+         aria-labelledby="editWorkdayModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editWorkdayModalLabel">Edit Work Day</h5>
+                </div>
+                <div class="modal-body">
+                    <form id="editWorkdayForm" method="post">
+                        {% csrf_token %}
+                        <div class="form-group">
+                            <input type="hidden" id="edit_employee" name="employee" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label for="edit_date">Date</label>
+                            <input type="date" id="edit_date" name="date" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label for="edit_start_time">Start Time</label>
+                            <input type="time"
+                                   id="edit_start_time"
+                                   name="start_time"
+                                   class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label for="edit_end_time">End Time</label>
+                            <input type="time" id="edit_end_time" name="end_time" class="form-control">
+                        </div>
+                        <input type="hidden" id="edit_workday_id" name="workday_id">
+                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock content %}
+{% block extra_js %}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var calendarEl = document.getElementById('calendar');
+            var calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'timeGridWeek',
+                    headerToolbar: {
+                        left: 'prev,next today',
+                        center: 'title',
+                        right: 'dayGridMonth,timeGridWeek,timeGridDay'
+                    },
+                slotDuration: '00:15',
+                slotMinTime: "06:00:00",
+                slotMaxTime: "22:00:00",
+                events: function (fetchInfo, successCallback, failureCallback){
+                    const employeeId = document.getElementById('employeeFilter').value;
+
+                    fetch(`{% url 'reservations_api' %}?employee=${employeeId}`)
+                        .then(response => response.json()
+                        .then(data => successCallback(data))
+                        .catch(error => failureCallback(error)))
+                    },
+
+            });
+
+        calendar.render();
+
+        document.getElementById('employeeFilter').addEventListener('change', function() {
+            calendar.refetchEvents();
+        });
+
+      });
+
+    </script>
+{% endblock extra_js %}
