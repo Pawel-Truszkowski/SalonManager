@@ -2,7 +2,7 @@ from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from phonenumber_field.modelfields import PhoneNumberField
 
-from .models import CustomUser, Profile
+from .models import CustomUser, Employee, Profile
 
 
 class UserRegisterForm(UserCreationForm):
@@ -34,3 +34,9 @@ class ProfileUpdateForm(forms.ModelForm):
     class Meta:
         model = Profile
         fields = ["image"]
+
+
+class EmployeeForm(forms.ModelForm):
+    class Meta:
+        model = Employee
+        fields = ["name", "services"]

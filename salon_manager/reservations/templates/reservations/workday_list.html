@@ -129,7 +129,7 @@
                 document.getElementById('edit_workday_id').value = workdayId;
 
                 // Set form action
-                document.getElementById('editWorkdayForm').action = `/workdays/${workdayId}/update/`;
+                document.getElementById('editWorkdayForm').action = `reservations/workdays/${workdayId}/update/`;
 
                 // Show modal
                 $('#editWorkdayModal').modal('show');
@@ -182,7 +182,7 @@
                 end_time: document.getElementById('edit_end_time').value
             };
 
-            fetch(`/workdays/${workdayId}/update/`, {
+            fetch(`/reservations/workdays/${workdayId}/update/`, {
                 method: 'POST',
                 headers: {
                     'X-CSRFToken': csrftoken,

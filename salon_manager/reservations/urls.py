@@ -50,4 +50,51 @@ urlpatterns = [
         views_ajax.get_non_working_days_ajax,
         name="get_non_working_days_ajax",
     ),
+    # WorkDay Management URLs
+    path("workdays/", views.WorkDayListView.as_view(), name="workday_list"),
+    path("workdays/add/", views.WorkDayCreateView.as_view(), name="workday_create"),
+    path(
+        "workdays/<int:pk>/update/",
+        views.WorkDayUpdateView.as_view(),
+        name="workday_update",
+    ),
+    path(
+        "workdays/<int:pk>/delete/",
+        views.WorkDayDeleteView.as_view(),
+        name="workday_delete",
+    ),
+    # API endpoints for FullCalendar
+    path("api/workdays/", views.workday_api, name="workday_api"),
+    path(
+        "workdays/<int:pk>/update-date/",
+        views.update_workday_date,
+        name="update_workday_date",
+    ),
+    # Reservation Management URLs
+    path(
+        "manage-reservations/",
+        views.ManageReservationsListView.as_view(),
+        name="manage_reservations_list",
+    ),
+    path(
+        "manage-reservations/add",
+        views.ReservationCreateView.as_view(),
+        name="reservation_create",
+    ),
+    path(
+        "reservations/<int:pk>/edit/",
+        views.ReservationUpdateView.as_view(),
+        name="reservation_edit",
+    ),
+    path(
+        "manage-reservations/<int:pk>/delete/",
+        views.ReservationDeleteView.as_view(),
+        name="reservation_delete",
+    ),
+    path(
+        "reservations/<int:pk>/confirm/",
+        views.ConfirmReservationView.as_view(),
+        name="reservation_confirm",
+    ),
+    path("api/reservations/", views.reservations_api, name="reservations_api"),
 ]

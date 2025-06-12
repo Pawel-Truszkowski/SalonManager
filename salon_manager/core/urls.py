@@ -33,6 +33,23 @@ urlpatterns = [
     path("logout/", LogoutView.as_view(next_page="home"), name="logout"),
     path("register/", user_views.register, name="register"),
     path("profile/", user_views.profile, name="profile"),
+    # Employee Management
+    path("employees/", user_views.EmployeeListView.as_view(), name="employee_list"),
+    path(
+        "employees/add/",
+        user_views.EmployeeCreateView.as_view(),
+        name="employee_create",
+    ),
+    path(
+        "employees/<int:pk>/edit/",
+        user_views.EmployeeUpdateView.as_view(),
+        name="employee_update",
+    ),
+    path(
+        "employees/<int:pk>/delete/",
+        user_views.EmployeeDeleteView.as_view(),
+        name="employee_delete",
+    ),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 urlpatterns += debug_toolbar_urls()
