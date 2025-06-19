@@ -36,6 +36,7 @@ services:
       dockerfile: ./salon_manager/compose/local/django/Dockerfile
     image: celery_worker
     command: /start-celeryworker
+    user: "501:501"
     volumes:
       - .:/app
     env_file:
