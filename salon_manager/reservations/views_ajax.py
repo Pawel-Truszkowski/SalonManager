@@ -18,6 +18,7 @@ from utils.support_functions import (
 
 from .forms import ClientDataForm, ReservationForm, ReservationRequestForm, SlotForm
 from .models import Reservation, ReservationRequest, WorkDay
+from .tasks import send_reservation_notification
 
 
 def get_available_slots_ajax(request):
@@ -330,5 +331,12 @@ def create_reservation(
     )
 
     reservation.save()
+
+    send_reservation_notification.delay_on_commit(
+        customer=name,
+        service=reservation_request_obj.service.name,
+        date=reservation_request_obj.date,
+        time=reservation_request_obj.start_time,
+    )
 
     return True

@@ -134,6 +134,7 @@ class WorkDayDeleteView(OwnerRequiredMixin, DeleteView):
 
 def workday_api(request):
     workdays = WorkDay.objects.all()
+    # workdays = WorkDay.objects.select_related('employee').all()
     events = []
 
     for workday in workdays:
@@ -361,4 +362,5 @@ class ConfirmReservationView(OwnerRequiredMixin, View):
         reservation.status = "CONFIRMED"
         reservation.save()
         messages.success(request, "Reservation confirmed")
+
         return redirect(reverse("manage_reservations_list"))
