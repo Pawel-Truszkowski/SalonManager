@@ -26,5 +26,5 @@ def debug_task(self):
 def divide(x, y):
     import time
 
-    time.sleep(5)
+    time.sleep(10)
     return x / y
