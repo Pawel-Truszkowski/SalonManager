@@ -1,11 +1,12 @@
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.http import JsonResponse
-from django.shortcuts import get_object_or_404, redirect, render, reverse
-from django.urls import reverse_lazy
+from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse, reverse_lazy
+from django.utils.timezone import now
 from django.views.decorators.http import require_POST
 from django.views.generic import (
     CreateView,
@@ -21,6 +22,7 @@ from utils.mixins import OwnerRequiredMixin
 
 from .forms import ClientDataForm, ReservationForm, ReservationRequestForm, WorkDayForm
 from .models import Reservation, WorkDay
+from .tasks import send_confirmation_email
 
 
 class ReservationSuccessView(TemplateView):
@@ -134,6 +136,7 @@ class WorkDayDeleteView(OwnerRequiredMixin, DeleteView):
 
 def workday_api(request):
     workdays = WorkDay.objects.all()
+    # workdays = WorkDay.objects.select_related('employee').all()
     events = []
 
     for workday in workdays:
@@ -361,4 +364,33 @@ class ConfirmReservationView(OwnerRequiredMixin, View):
         reservation.status = "CONFIRMED"
         reservation.save()
         messages.success(request, "Reservation confirmed")
+
+        cancel_url = request.build_absolute_uri(
+            reverse("cancel_reservation", args=[reservation.id_request])
+        )
+
+        send_confirmation_email.delay_on_commit(
+            customer_email=reservation.email,
+            customer_name=reservation.name,
+            service_name=reservation.reservation_request.service.name,
+            date=reservation.reservation_request.date,
+            time=reservation.reservation_request.start_time,
+            cancel_url=cancel_url,
+        )
         return redirect(reverse("manage_reservations_list"))
+
+
+class CancelReservationByUserView(View):
+    def get(self, request, token):
+        reservation = get_object_or_404(Reservation, id_request=token)
+
+        if now() - reservation.created_at > timedelta(days=7):
+            return render(request, "reservations/cancel_expired.html")
+
+        if reservation.status == "CANCELLED":
+            return render(request, "reservations/already_cancelled.html")
+
+        reservation.status = "CANCELLED"
+        reservation.save()
+
+        return render(request, "reservations/cancel_success.html")

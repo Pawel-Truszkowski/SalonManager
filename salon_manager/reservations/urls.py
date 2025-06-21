@@ -96,5 +96,10 @@ urlpatterns = [
         views.ConfirmReservationView.as_view(),
         name="reservation_confirm",
     ),
+    path(
+        "reservations/cancel/<str:token>/",
+        views.CancelReservationByUserView.as_view(),
+        name="cancel_reservation",
+    ),
     path("api/reservations/", views.reservations_api, name="reservations_api"),
 ]

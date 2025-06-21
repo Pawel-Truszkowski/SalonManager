@@ -1,4 +1,4 @@
-{% extends 'dashboard/base.html' %}
+{% extends "dashboard/base.html" %}
 {% load static %}
 {% block content %}
     <div class="slide-one-item home-slider owl-carousel">
@@ -19,27 +19,28 @@
         <div class="container">
             <div class="row">
                 <div class="col-md-7 mb-5">
-                    <form action="#" class="p-5 bg-white">
+                    <form action="{% url 'contact' %}" method="post" class="p-5 bg-white">
+                        {% csrf_token %}
                         <div class="row form-group">
                             <div class="col-md-6 mb-3 mb-md-0">
-                                <label class="text-black" for="fname">First Name</label>
-                                <input type="text" id="fname" class="form-control">
+                                <label class="text-black" for="first_name">First Name</label>
+                                <input type="text" id="first_name" name="first_name" class="form-control">
                             </div>
                             <div class="col-md-6">
-                                <label class="text-black" for="lname">Last Name</label>
-                                <input type="text" id="lname" class="form-control">
+                                <label class="text-black" for="last_name">Last Name</label>
+                                <input type="text" id="last_name" name="last_name" class="form-control">
                             </div>
                         </div>
                         <div class="row form-group">
                             <div class="col-md-12">
                                 <label class="text-black" for="email">Email</label>
-                                <input type="email" id="email" class="form-control">
+                                <input type="email" id="email" name="email" class="form-control">
                             </div>
                         </div>
                         <div class="row form-group">
                             <div class="col-md-12">
                                 <label class="text-black" for="subject">Subject</label>
-                                <input type="subject" id="subject" class="form-control">
+                                <input type="subject" id="subject" name="subject" class="form-control">
                             </div>
                         </div>
                         <div class="row form-group">
@@ -100,4 +101,4 @@
             </div>
         </div>
     </div>
-{% endblock %}
+{% endblock body %}
