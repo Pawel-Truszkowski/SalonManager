@@ -38,7 +38,7 @@ def send_confirmation_email(
     customer_email, customer_name, service_name, date, time, cancel_url
 ):
     subject = "Reservation confirmation"
-    from_email = "noreply@twojsalon.pl"
+    from_email = settings.DEFAULT_FROM_EMAIL
     to = [customer_email]
 
     context = {
