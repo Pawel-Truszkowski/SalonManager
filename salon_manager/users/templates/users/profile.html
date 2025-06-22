@@ -21,6 +21,7 @@
                             <div class="col-md-8">
                                 <h4 class="account-heading">{{ user.username }}</h4>
                                 <p class="text-muted">{{ user.email }}</p>
+                                <p class="text-muted">{{ user.phone_number }}</p>
                             </div>
                         </div>
                         <hr>
@@ -31,6 +32,11 @@
                                 <div class="row">
                                     <div class="col-md-6">{{ user_form|crispy }}</div>
                                     <div class="col-md-6">{{ profile_form|crispy }}</div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <a href="{% url 'password_change' %}">Password Change</a>
+                                    </div>
                                 </div>
                             </fieldset>
                             <div class="text-center mt-3">

@@ -166,8 +166,8 @@ CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
 CRISPY_TEMPLATE_PACK = "bootstrap5"
 
 LOGIN_REDIRECT_URL = "home"
-
 LOGIN_URL = "login"
+LOGOUT_URL = "logout"
 
 
 # CELERY_BROKER_URL = "redis://127.0.0.1:6379/0"
