@@ -1,11 +1,11 @@
-{% extends 'dashboard/base.html' %}
+{% extends "dashboard/base.html" %}
 {% load crispy_forms_tags %}
 {% block content %}
     <div class="site-section">
         <div class="container">
             <div class="row m-5">
                 <div class="col-md-8 col-lg-8 mx-auto">
-                    <form method="POST">
+                    <form method="post">
                         {% csrf_token %}
                         <fieldset class="form-group">
                             <legend class="border-bottom mb-4">Log in!</legend>
@@ -20,8 +20,13 @@
                             Have an account? <a class="ml-2" href="{% url 'register' %}">Sign Up</a>
                         </small>
                     </div>
+                    <div class="border-top pt-3">
+                        <small class="text-muted">
+                            <a href="{% url 'password_reset' %}">Forgot your password?</a>
+                        </small>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-{% endblock %}
+{% endblock content %}
