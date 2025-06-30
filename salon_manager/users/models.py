@@ -30,6 +30,9 @@ class CustomUser(AbstractUser):
 
 
 class Employee(models.Model):
+    user = models.OneToOneField(
+        CustomUser, on_delete=models.CASCADE, limit_choices_to={"role": "EMPLOYEE"}
+    )
     name = models.CharField(max_length=100)
     services = models.ManyToManyField(Service, related_name="employees")
 
