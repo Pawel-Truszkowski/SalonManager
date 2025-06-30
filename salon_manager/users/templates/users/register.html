@@ -1,25 +1,37 @@
-{% extends 'dashboard/base.html' %}
+{% extends "dashboard/base.html" %}
 {% load crispy_forms_tags %}
 {% block content %}
-    <div class="content-section">
-        <div class="row m-5">
-            <div class="col-md-8 col-lg-8 mx-auto">
-                <form method="POST">
-                    {% csrf_token %}
-                    <fieldset class="form-group">
-                        <legend class="border-bottom mb-4">Join!</legend>
-                        {{ form|crispy }}
-                    </fieldset>
-                    <div class="form-group">
-                        <button class="btn btn-primary text-white" type="submit">Sign Up</button>
+    <div class="container-fluid bg-light min-vh-100 d-flex align-items-center">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-md-8 col-lg-8">
+                    <div class="card shadow-lg border-0">
+                        <div class="card-body p-5">
+                            <div class="text-center mb-4">
+                                <h3 class="fw-bold text-primary">Registration</h3>
+                                <p class="text-muted">Create a new account</p>
+                            </div>
+                            <form method="post">
+                                {% csrf_token %}
+                                {{ form|crispy }}
+                                <div class="d-grid text-center gap-2 mt-4">
+                                    <button class="btn btn-primary btn-lg rounded-pill text-white" type="submit">
+                                        <i class="fas fa-user-plus me-2 text-white"></i>
+                                        Sign Up
+                                    </button>
+                                </div>
+                            </form>
+                            <hr class="my-4">
+                            <div class="text-center">
+                                <small class="text-muted">Already have an account?</small>
+                                <br>
+                                <a href="{% url 'login' %}"
+                                   class="btn btn-outline-secondary btn-sm mt-2">Log-in</a>
+                            </div>
+                        </div>
                     </div>
-                </form>
-                <div class="border-top pt-3">
-                    <small class="text-muted">
-                        Have an account? <a class="ml-2" href="{% url 'login' %}">Sign In</a>
-                    </small>
                 </div>
             </div>
         </div>
     </div>
-{% endblock %}
+{% endblock content %}

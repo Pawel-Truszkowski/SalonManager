@@ -20,7 +20,7 @@ def register(request):
                 request,
                 f"Dear {username}, you have been successfully signed up! Now, you can log-in!",
             )
-            return redirect("login")
+            return render(request, "users/register_done.html", {"username": username})
     else:
         form = UserRegisterForm()
 
@@ -53,14 +53,14 @@ def profile(request):
 # Employee Views
 class EmployeeListView(OwnerRequiredMixin, ListView):
     model = Employee
-    template_name = "dashboard/employee_list.html"
+    template_name = "users/employee_list.html"
     context_object_name = "employees"
 
 
 class EmployeeCreateView(OwnerRequiredMixin, CreateView):
     model = Employee
     form_class = EmployeeForm
-    template_name = "dashboard/employee_form.html"
+    template_name = "users/employee_form.html"
     success_url = reverse_lazy("employee_list")
 
     def form_valid(self, form):
@@ -71,7 +71,7 @@ class EmployeeCreateView(OwnerRequiredMixin, CreateView):
 class EmployeeUpdateView(OwnerRequiredMixin, UpdateView):
     model = Employee
     form_class = EmployeeForm
-    template_name = "dashboard/employee_form.html"
+    template_name = "users/employee_form.html"
     success_url = reverse_lazy("employee_list")
 
     def form_valid(self, form):
@@ -81,7 +81,7 @@ class EmployeeUpdateView(OwnerRequiredMixin, UpdateView):
 
 class EmployeeDeleteView(OwnerRequiredMixin, DeleteView):
     model = Employee
-    template_name = "dashboard/employee_confirm_delete.html"
+    template_name = "users/employee_confirm_delete.html"
     success_url = reverse_lazy("employee_list")
 
     def delete(self, request, *args, **kwargs):
