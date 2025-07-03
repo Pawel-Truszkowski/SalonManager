@@ -7,37 +7,41 @@ from services.models import Service
 
 
 class CustomUser(AbstractUser):
-    ROLES = (
-        ("OWNER", "Owner"),
-        ("CUSTOMER", "Customer"),
-        ("EMPLOYEE", "Employee"),
-    )
+    class Role(models.TextChoices):
+        OWNER = "OWNER", "Owner"
+        CUSTOMER = "CUSTOMER", "Customer"
+        EMPLOYEE = "EMPLOYEE", "Employee"
 
     phone_number = PhoneNumberField(blank=True)
-    role = models.CharField(max_length=10, choices=ROLES, default="CUSTOMER")
+    role = models.CharField(max_length=10, choices=Role.choices, default=Role.CUSTOMER)
 
     @property
     def is_customer(self) -> bool:
-        return self.role == "CUSTOMER"
+        return self.role == self.Role.CUSTOMER
 
     @property
     def is_owner(self) -> bool:
-        return self.role == "OWNER"
+        return self.role == self.Role.OWNER
 
     @property
     def is_employee(self) -> bool:
-        return self.role == "EMPLOYEE"
+        return self.role == self.Role.EMPLOYEE
 
 
 class Employee(models.Model):
-    user = models.OneToOneField(
-        CustomUser, on_delete=models.CASCADE, limit_choices_to={"role": "EMPLOYEE"}
-    )
+    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE)
     name = models.CharField(max_length=100)
     services = models.ManyToManyField(Service, related_name="employees")
 
     def __str__(self):
         return self.name
+
+    def save(self, *args, **kwargs):
+        if self.user.role != self.Role.EMPLOYEE:
+            self.user.role = self.Role.EMPLOYEE
+            self.user.save()
+
+        super().save(*args, **kwargs)
 
 
 class Profile(models.Model):
