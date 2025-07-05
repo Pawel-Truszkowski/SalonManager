@@ -29,6 +29,8 @@ services:
 
   redis:
     image: redis:7-alpine
+    volumes:
+      - redis_data:/data
 
   celery-worker:
     build:
@@ -77,3 +79,4 @@ services:
 
 volumes:
    postgres_data:
+   redis_data:
