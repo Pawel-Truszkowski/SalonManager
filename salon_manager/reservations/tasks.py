@@ -75,6 +75,8 @@ def send_upcoming_reminder():
         reservation_request__date=tomorrow, status="CONFIRMED"
     )
 
+    email_counter = 0
+
     for reservation in reservations:
         subject = "Your appointment is tomorrow!"
         to_email = reservation.email
@@ -92,13 +94,16 @@ def send_upcoming_reminder():
             [to_email],
             html_message=html_message,
         )
+        email_counter += 1
+
+    return f"Sent {email_counter} reminder emails."
 
 
 @shared_task
 def change_reservation_status():
     today = now().date()
 
-    reservations = Reservation.ojbects.filter(
+    reservations = Reservation.objects.filter(
         status="CONFIRMED", reservation_request__date__lte=today
     )
 
