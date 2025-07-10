@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 
+from celery.schedules import crontab
 from django.core.exceptions import ImproperlyConfigured
 from dotenv import load_dotenv
 
@@ -175,3 +176,14 @@ LOGOUT_URL = "logout"
 
 CELERY_BROKER_URL = os.getenv("CELERY_BROKER", "redis://127.0.0.1:6379/0")
 CELERY_RESULT_BACKEND = os.getenv("CELERY_BACKEND", "redis://127.0.0.1:6379/0")
+
+CELERY_BEAT_SCHEDULE = {
+    "send-reminders-daily": {
+        "task": "reservations.tasks.send_upcoming_reminder",
+        "schedule": crontab(hour=1, minute=0),
+    },
+    "changing-status": {
+        "task": "reservations.tasks.change_reservation_status",
+        "schedule": crontab(hour=1, minute=0),
+    },
+}
