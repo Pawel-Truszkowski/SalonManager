@@ -4,7 +4,7 @@ from django.core.mail import EmailMultiAlternatives, send_mail
 from django.template.loader import render_to_string
 from django.utils.timezone import now, timedelta
 
-from .models import Reservation
+from .models import Reservation, ReservationRequest
 
 
 @shared_task
@@ -119,3 +119,13 @@ def change_reservation_status():
             updated_count += 1
 
     return f"Updated {updated_count} reservations as PAST"
+
+
+@shared_task
+def cleanup_expired_requests():
+    expired_requests = ReservationRequest.objects.filter(
+        expires_at__lt=now(), reservation__isnull=True
+    )
+    count = expired_requests.count()
+    expired_requests.delete()
+    return f"Deleted {count} expired requests"

@@ -3,6 +3,7 @@ import uuid
 
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from phonenumber_field.modelfields import PhoneNumberField
 
@@ -33,6 +34,7 @@ class ReservationRequest(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    expires_at = models.DateTimeField()
 
     def __str__(self):
         return (
@@ -57,7 +59,12 @@ class ReservationRequest(models.Model):
             self.id_request = (
                 f"{get_timestamp()}{self.service.id}{generate_random_id()}"
             )
+        if not self.expires_at:
+            self.expires_at = timezone.now() + timezone.timedelta(minutes=15)
         super().save(*args, **kwargs)
+
+    def is_expired(self):
+        return timezone.now() > self.expires_at
 
     def get_service_name(self):
         return self.service.name
@@ -83,7 +90,7 @@ class Reservation(models.Model):
         max_length=10, choices=RESERVATION_STATUS_CHOICES, default="PENDING"
     )
     reservation_request = models.OneToOneField(
-        ReservationRequest, on_delete=models.CASCADE, related_name="reservations"
+        ReservationRequest, on_delete=models.CASCADE, related_name="reservation"
     )
     id_request = models.CharField(max_length=100, blank=True, null=True)
 

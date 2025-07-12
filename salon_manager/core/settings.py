@@ -186,4 +186,8 @@ CELERY_BEAT_SCHEDULE = {
         "task": "reservations.tasks.change_reservation_status",
         "schedule": crontab(hour=1, minute=0),
     },
+    "cleanup-expired-requests": {
+        "task": "reservations.tasks.cleanup_expired_requests",
+        "schedule": crontab(minute="*/20"),
+    },
 }
