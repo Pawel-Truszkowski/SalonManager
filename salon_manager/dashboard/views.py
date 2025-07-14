@@ -2,7 +2,6 @@ from django.contrib import messages
 from django.shortcuts import render
 
 from .forms import ContactForm
-from .models import Contact
 from .tasks import send_email_to_admin, send_email_to_customer
 
 
@@ -20,7 +19,6 @@ def contact(request):
         if form.is_valid():
             con = form.save()
 
-            con.save()
             messages.success(request, "Your message has been sent.")
 
             send_email_to_customer.delay_on_commit(

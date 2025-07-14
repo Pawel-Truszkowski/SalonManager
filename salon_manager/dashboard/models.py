@@ -10,4 +10,4 @@ class Contact(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return self.subject
+        return f"{self.first_name} {self.last_name} - {self.subject}"

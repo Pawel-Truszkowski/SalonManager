@@ -69,7 +69,7 @@ def send_confirmation_email(
 @shared_task
 def send_upcoming_reminder():
     today = now()
-    tomorrow = today.date() + timedelta(days=2)
+    tomorrow = today.date() + timedelta(days=1)
 
     reservations = Reservation.objects.filter(
         reservation_request__date=tomorrow, status="CONFIRMED"
