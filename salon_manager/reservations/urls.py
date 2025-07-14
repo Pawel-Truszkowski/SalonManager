@@ -11,7 +11,7 @@ urlpatterns = [
     path(
         "reservation-cancel/<int:pk>/",
         views.CancelUserReservationView.as_view(),
-        name="cancel_reservation",
+        name="cancel",
     ),
     path(
         "reservation-success/",
