@@ -42,6 +42,7 @@ jobs:
         python manage.py test
       env:
         DJANGO_SECRET_KEY: ${{ secrets.DJANGO_SECRET_KEY }}
+        DB_ENGINE: ${{ vars.DB_ENGINE }}
         DB_NAME: ${{ vars.DB_NAME }}
         DB_USER: ${{ vars.DB_USER }}
         DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
