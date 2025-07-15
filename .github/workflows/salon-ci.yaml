@@ -21,6 +21,8 @@ jobs:
           POSTGRES_NAME: ${{ vars.DB_NAME }}
           POSTGRES_USER: ${{ vars.DB_USER}}
           POSTGRES_PASSWORD: ${{ secrets.DB_PASSWORD }}
+        ports:
+          - 5432:5432
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -42,7 +44,6 @@ jobs:
         python manage.py test
       env:
         DJANGO_SECRET_KEY: ${{ secrets.DJANGO_SECRET_KEY }}
-        DB_ENGINE: ${{ vars.DB_ENGINE }}
         DB_NAME: ${{ vars.DB_NAME }}
         DB_USER: ${{ vars.DB_USER }}
         DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
