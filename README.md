@@ -54,9 +54,10 @@ To run the project locally using Docker:
    git clone https://github.com/your-username/salon-manager.git
    cd salon_manager
    ```
-2.	Environment Setup
-```bash cp.env.example .env```
-Edit .env file with your configuration
+2.	Copy and edit .env file with your configuration:
+```bash
+cp.env.example .env
+```
 
 3.  Build and start the containers:
   ```bash
