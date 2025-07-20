@@ -1,6 +1,7 @@
 # Salon Manager
 
-**Salon Manager** is a full-featured web application for beauty salons. It provides both customers and salon owners with essential tools to manage appointments, services, and staff in an intuitive and efficient way.
+**Salon Manager**
+A comprehensive web application for beauty salon management, built with Django. This system provides a complete solution for salon owners to manage their business operations and allows clients to book appointments online.
 
 ## ✨ Features
 
@@ -19,12 +20,30 @@
 
 ## 🛠️ Technologies Used
 
+Backend
 - Python
 - Django
-- Celery + Celery Beat
+- Celery + Celery Beat, Celery Flower
 - Redis
 - PostgreSQL
 - Docker + Docker Compose
+
+Frontend
+- HTML5
+- CSS3
+- JavaScript
+- AJAX
+- Bootstrap
+
+DevOps
+- Docker - Containerization
+- Docker Compose - Multi-container application management
+- GitHub Actions - Continuous Integration/Continuous Deployment
+
+## 📋 Prerequisites
+
+- Docker and Docker Compose installed on your system
+- Git for version control
 
 ## 🚀 Getting Started
 
@@ -33,21 +52,68 @@ To run the project locally using Docker:
 1.  Clone the repository:
    ```bash
    git clone https://github.com/your-username/salon-manager.git
-   cd salon-manager
+   cd salon_manager
    ```
-2.	Create an .env file based on .env.example and configure environment variables.
+2.	Environment Setup
+```bash cp.env.example .env```
+Edit .env file with your configuration
+
 3.  Build and start the containers:
-  ```docker-compose up --build```
+  ```bash
+docker-compose up --build
+```
+
 4.  Apply migrations and create a superuser:
-  ``` docker-compose exec web python manage.py migrate
-      docker-compose exec web python manage.py createsuperuser
+  ```bash
+docker-compose exec web python manage.py migrate
+docker-compose exec web python manage.py createsuperuser
   ```
 5.	Access the app at: http://localhost:8010
 
+## 🌐 Docker Services
+
+- web: Django application server
+- db: PostgreSQL database
+- redis: Redis cache and message broker
+- celery-worker: Celery worker for background tasks
+- celery-beat: Celery beat scheduler for periodic tasks
+- flower: Celery monitoring dashboard
 
 ## 🧪 Running Tests
 
 To run available tests:
-```docker-compose exec web pytest```
+```bash
+docker-compose exec web python manage.py test
+```
 
-## 📌 Roadmap / TODO
+## 🔄 Development Status
+
+This project is currently in active development. Upcoming features and improvements include:
+
+- Complete test coverage
+- Full internationalization (Polish and English)
+- Enhanced UI/UX improvements
+- Additional salon management features
+- REST API implementation
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch (git checkout -b feature/amazing-feature)
+3. Commit your changes (git commit -m 'Add some amazing feature')
+4. Push to the branch (git push origin feature/amazing-feature)
+5. Open a Pull Request
+
+## 📝 License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## 👨‍💻 Author
+
+Paweł Truszkowski
+- GitHub: @Pawel-Truszkowski
+- Email: pawel.truszkowski14@gmail.com
+
+## 📬 Contact
+
+If you’d like to get in touch, feel free to open an issue or message me via GitHub.
