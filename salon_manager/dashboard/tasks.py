@@ -11,7 +11,7 @@ def send_email_to_customer(first_name, last_name, email):
         f"Your Beauty Salon - Royal Beauty"
     )
     return send_mail(
-        "Thanks for contacting",
+        "Thanks for contacting!",
         message,
         settings.EMAIL_HOST_USER,
         [email],
