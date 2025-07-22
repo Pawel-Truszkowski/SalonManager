@@ -10,7 +10,7 @@ class ServiceCategory(models.Model):
 
 
 class Service(models.Model):
-    name = models.CharField(max_length=100)
+    name = models.CharField(max_length=100, unique=True)
     description = models.TextField(blank=True, null=True)
     category = models.ForeignKey(
         ServiceCategory, on_delete=models.CASCADE, related_name="services"
