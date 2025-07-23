@@ -8,12 +8,12 @@ from dashboard.tasks import send_email_to_admin, send_email_to_customer
 @override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
 class TestSendEmailToCustomer(TestCase):
     def setUp(self):
+        mail.outbox = []
         self.first_name = "John"
         self.last_name = "Doe"
         self.email = "john@example.com"
 
     def test_send_email_to_customer_if_success(self):
-        mail.outbox = []
         result = send_email_to_customer(self.first_name, self.last_name, self.email)
         self.assertEqual(len(mail.outbox), 1)
         self.assertTrue(result)
@@ -30,9 +30,13 @@ class TestSendEmailToCustomer(TestCase):
         self.assertEqual(email.from_email, settings.EMAIL_HOST_USER)
 
 
-@override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
+@override_settings(
+    EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+    DEFAULT_FROM_EMAIL="no-reply@example.com",
+)
 class TestSendEmailToAdmin(TestCase):
     def setUp(self):
+        mail.outbox = []
         self.first_name = "John"
         self.last_name = "Doe"
         self.email = "john@example.com"
@@ -40,7 +44,6 @@ class TestSendEmailToAdmin(TestCase):
         self.message = "Test test test"
 
     def test_send_email_to_admin_if_success(self):
-        mail.outbox = []
         result = send_email_to_admin(
             self.first_name, self.last_name, self.email, self.subject, self.message
         )
@@ -52,6 +55,6 @@ class TestSendEmailToAdmin(TestCase):
         self.assertIn("Sent by,", email.body)
 
         self.assertEqual(email.to, [settings.OWNER_EMAIL])
-        self.assertEqual(email.from_email, settings.DEFAULT_FROM_EMAIL)
+        self.assertEqual(email.from_email, "no-reply@example.com")
 
         self.assertTrue(result)
