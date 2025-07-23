@@ -33,6 +33,7 @@ class TestSendEmailToCustomer(TestCase):
 @override_settings(
     EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
     DEFAULT_FROM_EMAIL="no-reply@example.com",
+    OWNER_EMAIL="test@test.com",
 )
 class TestSendEmailToAdmin(TestCase):
     def setUp(self):
@@ -54,7 +55,7 @@ class TestSendEmailToAdmin(TestCase):
         self.assertEqual(email.subject, self.subject)
         self.assertIn("Sent by,", email.body)
 
-        self.assertEqual(email.to, [settings.OWNER_EMAIL])
+        self.assertEqual(email.to, ["test@test.com"])
         self.assertEqual(email.from_email, "no-reply@example.com")
 
         self.assertTrue(result)
