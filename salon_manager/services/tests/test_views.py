@@ -21,7 +21,7 @@ class ServiceViewsTestCase(TestCase):
             name="TestCategory", description="This is category test"
         )
         self.service = Service.objects.create(
-            name="TestServie", category=self.category, price=50.00, duration=30
+            name="TestService", category=self.category, price=50.00, duration=30
         )
 
 
@@ -77,4 +77,5 @@ class ManageServicesListViewTest(ServiceViewsTestCase):
         Service.objects.all().delete()
         self.client.login(username="owner", password="test")
         response = self.client.get(reverse("manage_services_list"))
-        self.assertEqual(len(response.context["services"]), 0)
+        self.assertQuerysetEqual(response.context["services"], [])
+        self.assertContains(response, "No services found.")
