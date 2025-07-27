@@ -1,5 +1,3 @@
-target-version = "py313"
-
 [tool.black]
 target-version = ["py313"]
 
@@ -11,8 +9,7 @@ select = ["E", "F", "W"]
 ignore = ["E501", "E741", "F401"]
 
 [tool.bandit]
-skips = ["B105"]
 exclude_dirs = ["tests"]
 
-[djlint]
-ignore="H006,H021"
+[tool.djlint]
+ignore = "H006,H021"
