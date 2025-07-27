@@ -1,11 +1,8 @@
-from unittest.mock import patch
-
 from django.test import RequestFactory, TestCase
 from django.urls import reverse
 
 from services.forms import ServiceForm
 from services.models import Service, ServiceCategory
-from services.views import ServiceCreateView
 from users.models import CustomUser
 
 
