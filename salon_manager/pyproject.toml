@@ -12,6 +12,7 @@ ignore = ["E501", "E741", "F401"]
 
 [tool.bandit]
 skips = ["B105"]
+exclude_dirs = ["tests"]
 
 [djlint]
 ignore="H006,H021"

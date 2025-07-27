@@ -37,6 +37,10 @@ class ServiceCreateView(OwnerRequiredMixin, CreateView):
         messages.success(self.request, "Service created successfully!")
         return super().form_valid(form)
 
+    def form_invalid(self, form):
+        messages.error(self.request, "Form contains errors. Please check all fields.")
+        return super().form_invalid(form)
+
 
 class ServiceUpdateView(OwnerRequiredMixin, UpdateView):
     model = Service
