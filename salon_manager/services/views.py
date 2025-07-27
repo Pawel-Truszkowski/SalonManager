@@ -38,7 +38,7 @@ class ServiceCreateView(OwnerRequiredMixin, CreateView):
         return super().form_valid(form)
 
     def form_invalid(self, form):
-        messages.warning(self.request, "Form contains errors. Please check all fields.")
+        messages.error(self.request, "Form contains errors. Please check all fields.")
         return super().form_invalid(form)
 
 
