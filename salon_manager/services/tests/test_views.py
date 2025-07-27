@@ -1,3 +1,5 @@
+from http import HTTPStatus
+
 from django.test import RequestFactory, TestCase
 from django.urls import reverse
 
@@ -63,7 +65,7 @@ class ManageServicesListViewTest(ServiceViewsTestCase):
 
     def test_redirects_to_login_page_when_anonymous(self):
         self.response = self.client.get(self.url)
-        self.assertEqual(self.response.status_code, 302)
+        self.assertEqual(self.response.status_code, HTTPStatus.FOUND)
         self.assertRedirects(self.response, "/login/?next=/services/manage-services/")
 
     def test_view_for_login_other_user_if_redirect_to_home_page(self):
