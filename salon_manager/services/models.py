@@ -1,3 +1,4 @@
+from django.core.validators import MinValueValidator
 from django.db import models
 
 
@@ -15,8 +16,12 @@ class Service(models.Model):
     category = models.ForeignKey(
         ServiceCategory, on_delete=models.CASCADE, related_name="services"
     )
-    price = models.DecimalField(max_digits=6, decimal_places=2)
-    duration = models.PositiveIntegerField()
+    price = models.DecimalField(
+        max_digits=6, decimal_places=2, validators=[MinValueValidator(limit_value=0)]
+    )
+    duration = models.PositiveIntegerField(
+        validators=[MinValueValidator(limit_value=15)]
+    )
 
     def __str__(self):
         return f"{self.name} - {self.duration} min"

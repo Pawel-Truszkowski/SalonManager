@@ -46,18 +46,16 @@ class ServiceUpdateView(OwnerRequiredMixin, UpdateView):
     model = Service
     form_class = ServiceForm
     template_name = "services/manage_services_form.html"
-    success_url = reverse_lazy("manage_services_list")
 
-    def form_valid(self, form):
+    def get_success_url(self):
         messages.success(self.request, "Service updated successfully!")
-        return super().form_valid(form)
+        return reverse_lazy("manage_services_list")
 
 
 class ServiceDeleteView(OwnerRequiredMixin, DeleteView):
     model = Service
     template_name = "services/manage_services_delete.html"
-    success_url = reverse_lazy("manage_services_list")
 
-    def delete(self, request, *args, **kwargs):
-        messages.success(request, "Service deleted successfully!")
-        return super().delete(request, *args, **kwargs)
+    def get_success_url(self):
+        messages.success(self.request, "Service deleted successfully!")
+        return reverse_lazy("manage_services_list")
