@@ -37,8 +37,8 @@ class Employee(models.Model):
         return self.name
 
     def save(self, *args, **kwargs):
-        if self.user.role != self.Role.EMPLOYEE:
-            self.user.role = self.Role.EMPLOYEE
+        if self.user.role != CustomUser.Role.EMPLOYEE:
+            self.user.role = CustomUser.Role.EMPLOYEE
             self.user.save()
 
         super().save(*args, **kwargs)
