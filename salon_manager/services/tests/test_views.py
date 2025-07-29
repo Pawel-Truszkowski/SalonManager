@@ -1,7 +1,7 @@
 from http import HTTPStatus
 
 from django.contrib.messages import get_messages
-from django.test import RequestFactory, TestCase
+from django.test import TestCase
 from django.urls import reverse
 
 from services.forms import ServiceForm
@@ -13,7 +13,7 @@ class ServiceViewsTestCase(TestCase):
     @classmethod
     def setUpTestData(cls):
         cls.owner_user = CustomUser.objects.create_user(
-            username="owner", password="test", role="OWNER"
+            username="owner", password="test", role=CustomUser.Role.OWNER
         )
         cls.other_user = CustomUser.objects.create_user(
             username="not_owner", password="test"
