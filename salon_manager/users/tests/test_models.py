@@ -1,8 +1,18 @@
+import io
+import os.path
+import shutil
+import tempfile
+
 from django.core.exceptions import ValidationError
-from django.test import TestCase
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.db.models.signals import post_save
+from django.test import TestCase, override_settings
+from PIL import Image
 
 from services.models import Service, ServiceCategory
-from users.models import CustomUser, Employee
+from users.models import CustomUser, Employee, Profile
+
+MEDIA_ROOT = tempfile.mkdtemp()
 
 
 class CustomUserModelTest(TestCase):
@@ -89,3 +99,66 @@ class EmployeeModelTest(TestCase):
 
     def test_string_representation(self):
         self.assertEqual(str(self.employee), "TestEmployee")
+
+
+@override_settings(MEDIA_ROOT=MEDIA_ROOT)
+class ProfileModelTest(TestCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.create_default_image()
+
+    @classmethod
+    def create_default_image(cls):
+        default_image_path = os.path.join(MEDIA_ROOT, "default.jpg")
+        img = Image.new("RGB", (100, 100), color="blue")
+        img.save(default_image_path, "JPEG")
+
+    @classmethod
+    def tearDownClass(cls):
+        shutil.rmtree(MEDIA_ROOT, ignore_errors=True)
+        super().tearDownClass()
+
+    def setUp(self):
+        self.user = CustomUser.objects.create_user(username="testuser", password="test")
+
+    def create_test_image(self, width=300, height=300, format="JPEG"):
+        image = Image.new("RGB", (width, height), color="red")
+        image_file = io.BytesIO()
+        image.save(image_file, format=format)
+        image_file.seek(0)
+
+        return SimpleUploadedFile(
+            "test_img.jpg", content=image_file.getvalue(), content_type="image/jpeg"
+        )
+
+    def test_profile_auto_created_by_signal(self):
+        self.assertTrue(hasattr(self.user, "profile"))
+        self.assertEqual(self.user.profile.user, self.user)
+
+    def test_profile_deleted_when_user_deleted(self):
+        profile_id = self.user.profile.id
+        self.user.delete()
+
+        with self.assertRaises(Profile.DoesNotExist):
+            Profile.objects.get(id=profile_id)
+
+    def test_large_image_get_resized(self):
+        large_image = self.create_test_image(width=500, height=500)
+        profile = self.user.profile
+        profile.image = large_image
+        profile.save()
+
+        with Image.open(profile.image.path) as img:
+            self.assertLessEqual(img.width, 300)
+            self.assertLessEqual(img.height, 300)
+
+    def test_small_image_get_resized(self):
+        small_image = self.create_test_image(width=100, height=100)
+        profile = self.user.profile
+        profile.image = small_image
+        profile.save()
+
+        with Image.open(profile.image.path) as img:
+            self.assertLessEqual(img.width, 300)
+            self.assertLessEqual(img.height, 300)
