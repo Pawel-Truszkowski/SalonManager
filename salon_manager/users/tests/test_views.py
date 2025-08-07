@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
 from django.test import TestCase
 from django.urls import reverse
 
@@ -46,3 +47,28 @@ class RegisterUserViewTest(TestCase):
         form = response.context["form"]
         self.assertTrue(form.errors)
         self.assertFalse(User.objects.exists())
+
+    def test_register_new_user_with_existing_email_should_fail(self):
+        User.objects.create_user(
+            username="testuser", email="test@test.com", password="securepassword123"
+        )
+
+        data = {
+            "username": "user",
+            "first_name": "Test",
+            "last_name": "User",
+            "phone_number_0": "PL",
+            "phone_number_1": "500111222",
+            "email": "test@test.com",
+            "password1": "SuperSecure123!",
+            "password2": "SuperSecure123!",
+        }
+
+        response = self.client.post(self.url, data)
+        form = response.context["form"]
+
+        self.assertFalse(form.is_valid())
+        self.assertIn("email", form.errors)
+        self.assertIn("This email address is already in use.", form.errors["email"])
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "users/register.html")
