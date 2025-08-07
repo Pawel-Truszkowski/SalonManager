@@ -5,7 +5,6 @@ import tempfile
 
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.db.models.signals import post_save
 from django.test import TestCase, override_settings
 from PIL import Image
 

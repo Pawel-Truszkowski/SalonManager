@@ -1,9 +1,12 @@
 from django import forms
+from django.contrib.auth import get_user_model
 from django.contrib.auth.forms import UserCreationForm
 from phonenumber_field.formfields import SplitPhoneNumberField
 from phonenumber_field.modelfields import PhoneNumberField
 
 from .models import CustomUser, Employee, Profile
+
+User = get_user_model()
 
 
 class UserRegisterForm(UserCreationForm):
@@ -11,7 +14,7 @@ class UserRegisterForm(UserCreationForm):
     phone_number = SplitPhoneNumberField(required=True, region="PL")
 
     class Meta:
-        model = CustomUser
+        model = get_user_model()
         fields = [
             "username",
             "first_name",
@@ -24,7 +27,7 @@ class UserRegisterForm(UserCreationForm):
 
     def clean_email(self):
         email = self.cleaned_data["email"]
-        if CustomUser.objects.filter(email=email).exists():
+        if User.objects.filter(email=email).exists():
             raise forms.ValidationError("This email address is already in use.")
         return email
 
@@ -33,7 +36,7 @@ class UserUpdateForm(forms.ModelForm):
     email = forms.EmailField()
 
     class Meta:
-        model = CustomUser
+        model = User
         fields = ["first_name", "last_name", "email", "phone_number"]
 
 
