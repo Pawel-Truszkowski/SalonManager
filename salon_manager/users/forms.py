@@ -33,6 +33,7 @@ class UserRegisterForm(UserCreationForm):
 
 class UserUpdateForm(forms.ModelForm):
     email = forms.EmailField()
+    phone_number = SplitPhoneNumberField(required=True, region="PL")
 
     class Meta:
         model = User
