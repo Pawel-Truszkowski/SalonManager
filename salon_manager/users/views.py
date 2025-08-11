@@ -2,7 +2,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect, render
 from django.urls import reverse_lazy
-from django.views.generic import CreateView, DeleteView, ListView, UpdateView
+from django.views.generic import CreateView, DeleteView, FormView, ListView, UpdateView
 
 from utils.mixins import OwnerRequiredMixin
 
@@ -25,6 +25,20 @@ def register(request):
         form = UserRegisterForm()
 
     return render(request, "users/register.html", {"form": form})
+
+
+class RegisterView(FormView):
+    template_name = "users/register.html"
+    form_class = UserRegisterForm
+
+    def form_valid(self, form):
+        form.save()
+        username = form.cleaned_data.get("username")
+        messages.success(
+            self.request,
+            f"Dear {username}, you have been successfully signed up! Now, you can log-in!",
+        )
+        return render(self.request, "users/register_done.html", {"username": username})
 
 
 @login_required()

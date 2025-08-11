@@ -121,7 +121,8 @@ class ProfileModelTest(TestCase):
     def setUp(self):
         self.user = CustomUser.objects.create_user(username="testuser", password="test")
 
-    def create_test_image(self, width=300, height=300, format="JPEG"):
+    @staticmethod
+    def create_test_image(width=300, height=300, format="JPEG"):
         image = Image.new("RGB", (width, height), color="red")
         image_file = io.BytesIO()
         image.save(image_file, format=format)

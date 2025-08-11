@@ -2,9 +2,8 @@ from django import forms
 from django.contrib.auth import get_user_model
 from django.contrib.auth.forms import UserCreationForm
 from phonenumber_field.formfields import SplitPhoneNumberField
-from phonenumber_field.modelfields import PhoneNumberField
 
-from .models import CustomUser, Employee, Profile
+from .models import Employee, Profile
 
 User = get_user_model()
 
@@ -34,6 +33,7 @@ class UserRegisterForm(UserCreationForm):
 
 class UserUpdateForm(forms.ModelForm):
     email = forms.EmailField()
+    phone_number = SplitPhoneNumberField(required=True, region="PL")
 
     class Meta:
         model = User
