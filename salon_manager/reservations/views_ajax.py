@@ -13,92 +13,47 @@ from utils.error_codes import ErrorCode
 from utils.support_functions import (
     check_for_conflicting_reservation,
     generate_available_slots,
+    handle_invalid_form,
     json_response,
 )
 
 from .forms import ClientDataForm, ReservationForm, ReservationRequestForm, SlotForm
 from .models import Reservation, ReservationRequest, WorkDay
+from .service import SlotAvailableService
 from .tasks import send_reservation_notification
 
 
 def get_available_slots_ajax(request):
     slot_form = SlotForm(request.GET)
-    error_code = 0
     if not slot_form.is_valid():
-        custom_data = {"error": True, "available_slots": [], "date_chosen": ""}
-        if "selected_date" in slot_form.errors:
-            error_code = ErrorCode.PAST_DATE
-        elif "staff_member" in slot_form.errors:
-            error_code = ErrorCode.STAFF_ID_REQUIRED
-        message = list(slot_form.errors.as_data().items())[0][1][0].messages[0]
-        return json_response(
-            message=message,
-            custom_data=custom_data,
-            success=False,
-            error_code=error_code,
-        )
+        return handle_invalid_form(slot_form)
 
     selected_date = slot_form.cleaned_data["selected_date"]
-    sm = slot_form.cleaned_data["staff_member"]
-    date_chosen = selected_date.strftime("%a, %B %d, %Y")
-    custom_data = {"date_chosen": date_chosen}
+    staff_member = slot_form.cleaned_data["staff_member"]
     service_id = slot_form.cleaned_data["service_id"]
 
-    working_day_exists = WorkDay.objects.filter(
-        employee=sm.id, date=selected_date
-    ).exists()
+    slot_service = SlotAvailableService()
 
-    if not working_day_exists:
-        message = _("Day off. Please select another date!")
-        custom_data["available_slots"] = []
+    try:
+        result = slot_service.get_available_slots(
+            selected_date, staff_member, service_id
+        )
         return json_response(
-            message=message,
-            custom_data=custom_data,
+            message="Successfully retrieved available slots",
+            custom_data=result,
+            success=True,
+        )
+    except ValueError as e:
+        return json_response(
+            message=str(e),
             success=False,
+            custom_data={
+                "error": True,
+                "available_slots": [],
+                "date_chosen": selected_date.strftime("%a, %B %d, %Y"),
+            },
             error_code=ErrorCode.INVALID_DATE,
         )
-
-    custom_data["staff_member"] = sm.name
-
-    service = Service.objects.get(id=service_id)
-    service_duration = service.duration
-
-    existing_reservations = ReservationRequest.objects.filter(
-        employee=sm.id,
-        date=selected_date,
-    )
-
-    work_days = WorkDay.objects.filter(employee=sm.id, date=selected_date)
-
-    available_slots = []
-    for work_day in work_days:
-        available_slots += generate_available_slots(
-            work_day.start_time,
-            work_day.end_time,
-            service_duration,
-            existing_reservations,
-        )
-
-    if selected_date == date.today():
-        current_time = timezone.now().time().strftime("%H:%M")
-        available_slots = [slot for slot in available_slots if slot > current_time]
-
-    custom_data["available_slots"] = available_slots
-    if not available_slots:
-        custom_data["error"] = True
-        message = _("No availability")
-        return json_response(
-            message=message,
-            custom_data=custom_data,
-            success=False,
-            error_code=ErrorCode.INVALID_DATE,
-        )
-    custom_data["error"] = False
-    return json_response(
-        message="Successfully retrieved available slots",
-        custom_data=custom_data,
-        success=True,
-    )
 
 
 def get_next_available_date_ajax(request):
@@ -320,17 +275,17 @@ def create_reservation(
 
     customer = CustomUser.objects.filter(email=email).first()
 
-    reservation = Reservation(
-        customer=customer,
-        phone=phone,
+    Reservation.objects.update_or_create(
         reservation_request=reservation_request_obj,
-        id_request=id_request,
-        additional_info=additional_info,
-        email=email,
-        name=name,
+        defaults={
+            "customer": customer,
+            "phone": phone,
+            "id_request": id_request,
+            "additional_info": additional_info,
+            "email": email,
+            "name": name,
+        },
     )
-
-    reservation.save()
 
     send_reservation_notification.delay_on_commit(
         customer=name,

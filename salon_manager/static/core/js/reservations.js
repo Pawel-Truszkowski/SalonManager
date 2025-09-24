@@ -264,7 +264,7 @@ function getAvailableSlots(selectedDate, staffId = null) {
         // Check if nonWorkingDays is an array
         if (Array.isArray(nonWorkingDays)) {
             // Update the FullCalendar configuration
-            // calendar.setOption('hiddenDays', nonWorkingDays);
+            calendar.setOption('hiddenDays', nonWorkingDays);
         } else {
             // Handle the case where there's an error or no data
             // For now, we'll just log it, but you can handle it more gracefully if needed

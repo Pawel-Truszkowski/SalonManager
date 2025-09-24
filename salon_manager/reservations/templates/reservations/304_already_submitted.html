@@ -20,9 +20,9 @@
                 <div class="text-5xl font-dark font-bold">304</div>
                 <p class="text-2xl md:text-3xl font-light leading-normal">{% trans 'Sorry, re-submission is not allowed' %}.</p>
                 <p class="mb-8">{% translate "But don't worry, you can create a new appointment" %}.</p>
-                <button onclick="location.href='{% url 'appointment:appointment_request' service_id %}';"
+                <button onclick="location.href='{% url 'reservation_request' service_id %}';"
                         class="px-4 inline py-2 text-sm font-medium leading-5 shadow text-white transition-colors duration-150 border border-transparent rounded-lg focus:outline-none focus:shadow-outline-blue bg-blue-600 active:bg-blue-600 hover:bg-blue-700">
-                    {% trans "yes, please do" %}
+                    {% trans "Return" %}
                 </button>
             </div>
             <div class="max-w-lg">

@@ -1,0 +1,79 @@
+from datetime import date, timedelta
+
+from django.utils import timezone
+from django.utils.translation import gettext as _
+
+from services.models import Service
+from utils.error_codes import ErrorCode
+from utils.support_functions import (
+    check_for_conflicting_reservation,
+    generate_available_slots,
+    handle_invalid_form,
+    json_response,
+)
+
+from .models import ReservationRequest, WorkDay
+
+
+class SlotAvailableService:
+    def get_available_slots(self, selected_date, employee, service_id):
+        self._validate_working_day(employee, selected_date)
+
+        service = self._get_service(service_id)
+        work_days = self._get_work_days(employee, selected_date)
+        existing_reservations = self._get_existing_reservations(employee, selected_date)
+        available_slots = self._calculate_available_slots(
+            work_days, service.duration, existing_reservations
+        )
+        available_slots = self._filter_past_slots(available_slots, selected_date)
+
+        if not available_slots:
+            raise ValueError(_("No availability"))
+
+        return {
+            "available_slots": available_slots,
+            "date_chosen": selected_date.strftime("%a, %B %d, %Y"),
+            "staff_member": employee.name,
+            "error": False,
+        }
+
+    @staticmethod
+    def _get_service(service_id) -> Service:
+        return Service.objects.get(id=service_id)
+
+    @staticmethod
+    def _validate_working_day(employee, selected_date):
+        working_day_exists = WorkDay.objects.filter(
+            employee=employee.id, date=selected_date
+        ).exists()
+        if not working_day_exists:
+            raise ValueError(_("Day off. Please select another date!"))
+
+    @staticmethod
+    def _get_work_days(employee, selected_date):
+        return WorkDay.objects.filter(employee=employee.id, date=selected_date)
+
+    @staticmethod
+    def _get_existing_reservations(employee, selected_date):
+        return ReservationRequest.objects.filter(
+            employee=employee.id, date=selected_date
+        )
+
+    @staticmethod
+    def _calculate_available_slots(work_days, service_duration, exisitng_reservations):
+        available_slots = []
+        for work_day in work_days:
+            available_slots += generate_available_slots(
+                work_day.start_time,
+                work_day.end_time,
+                service_duration,
+                exisitng_reservations,
+            )
+        return available_slots
+
+    @staticmethod
+    def _filter_past_slots(available_slots, selected_date):
+        if selected_date <= date.today():
+            current_time = timezone.now().time().strftime("%H:%M")
+            return [slot for slot in available_slots if slot > current_time]
+        return available_slots
