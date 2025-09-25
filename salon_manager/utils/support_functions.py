@@ -1,13 +1,18 @@
 import uuid
 from datetime import date, datetime, time, timedelta
-from typing import List
+from typing import Any, List, Optional
 
 from django.http import JsonResponse
 from django.utils import timezone
 
+from .error_codes import ErrorCode
+
 
 def generate_available_slots(
-    start_time, end_time, service_duration, existing_reservations
+    start_time: str,
+    end_time: str,
+    service_duration: str,
+    existing_reservations: List[str],
 ) -> List[str]:
     """Generate available time slots based on work hours and existing reservations"""
     # Convert times to datetime for easier manipulation
@@ -87,8 +92,13 @@ def check_for_conflicting_reservation(
 
 
 def json_response(
-    message, status=200, success=True, custom_data=None, error_code=None, **kwargs
-):
+    message: str,
+    status: int = 200,
+    success: bool = True,
+    custom_data: Optional[dict[str, Any]] = None,
+    error_code: Optional[Any] = None,
+    **kwargs: Any,
+) -> JsonResponse:
     """Return a generic JSON response."""
     response_data = {"message": message, "success": success}
     if error_code:
@@ -96,6 +106,22 @@ def json_response(
     if custom_data:
         response_data.update(custom_data)
     return JsonResponse(response_data, status=status, **kwargs)
+
+
+def handle_invalid_form(slot_form) -> JsonResponse:
+    custom_data = {"error": True, "available_slots": [], "date_chosen": ""}
+    error_code = 0
+    if "selected_date" in slot_form.errors:
+        error_code = ErrorCode.PAST_DATE
+    elif "staff_member" in slot_form.errors:
+        error_code = ErrorCode.STAFF_ID_REQUIRED
+    message = list(slot_form.errors.as_data().items())[0][1][0].messages[0]
+    return json_response(
+        message=message,
+        custom_data=custom_data,
+        success=False,
+        error_code=error_code,
+    )
 
 
 def generate_random_id() -> str:

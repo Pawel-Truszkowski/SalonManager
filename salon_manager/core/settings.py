@@ -16,12 +16,16 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 load_dotenv()
 
-SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
+# SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
+
+DEBUG = os.environ.get("DEBUG")
+
+SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY")
 
 if not SECRET_KEY:
     raise ImproperlyConfigured("SECRET_KEY is not set in environment variables!")
 
-DEBUG = True
+# DEBUG = True
 
 ALLOWED_HOSTS = ["*"]
 
@@ -60,6 +64,7 @@ INSTALLED_APPS += INSTALLED_EXTENSIONS
 MIDDLEWARE = [
     "debug_toolbar.middleware.DebugToolbarMiddleware",
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.locale.LocaleMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -98,11 +103,11 @@ WSGI_APPLICATION = "core.wsgi.application"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.getenv("DB_NAME"),
-        "USER": os.getenv("DB_USER"),
-        "PASSWORD": os.getenv("DB_PASSWORD"),
-        "HOST": os.getenv("DB_HOST"),
-        "PORT": os.getenv("DB_PORT"),
+        "NAME": os.environ.get("DB_NAME"),
+        "USER": os.environ.get("DB_USER"),
+        "PASSWORD": os.environ.get("DB_PASSWORD"),
+        "HOST": os.environ.get("DB_HOST"),
+        "PORT": os.environ.get("DB_PORT"),
     }
 }
 
@@ -142,7 +147,11 @@ LOCALE_PATHS = [
 ]
 
 
-STATIC_URL = "static/"
+STATIC_URL = "/static/"
+STATICFILES_DIRS = [BASE_DIR / "static"]
+STATIC_ROOT = BASE_DIR / "staticfiles"
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+
 
 MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 MEDIA_URL = "media/"
@@ -170,9 +179,6 @@ LOGIN_REDIRECT_URL = "home"
 LOGIN_URL = "login"
 LOGOUT_URL = "logout"
 
-
-# CELERY_BROKER_URL = "redis://127.0.0.1:6379/0"
-# CELERY_RESULT_BACKEND = "redis://127.0.0.1:6379/0"
 
 CELERY_BROKER_URL = os.getenv("CELERY_BROKER", "redis://127.0.0.1:6379/0")
 CELERY_RESULT_BACKEND = os.getenv("CELERY_BACKEND", "redis://127.0.0.1:6379/0")
