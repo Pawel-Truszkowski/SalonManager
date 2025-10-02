@@ -4,7 +4,6 @@ from django.utils import timezone
 from django.utils.translation import gettext as _
 
 from services.models import Service
-from utils.error_codes import ErrorCode
 from utils.support_functions import (
     check_for_conflicting_reservation,
     generate_available_slots,
@@ -15,7 +14,7 @@ from utils.support_functions import (
 from .models import ReservationRequest, WorkDay
 
 
-class SlotAvailableService:
+class SlotAvailabilityService:
     def get_available_slots(self, selected_date, employee, service_id):
         self._validate_working_day(employee, selected_date)
 
@@ -60,14 +59,14 @@ class SlotAvailableService:
         )
 
     @staticmethod
-    def _calculate_available_slots(work_days, service_duration, exisitng_reservations):
+    def _calculate_available_slots(work_days, service_duration, existing_reservations):
         available_slots = []
         for work_day in work_days:
             available_slots += generate_available_slots(
                 work_day.start_time,
                 work_day.end_time,
                 service_duration,
-                exisitng_reservations,
+                existing_reservations,
             )
         return available_slots
 

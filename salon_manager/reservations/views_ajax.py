@@ -19,7 +19,7 @@ from utils.support_functions import (
 
 from .forms import ClientDataForm, ReservationForm, ReservationRequestForm, SlotForm
 from .models import Reservation, ReservationRequest, WorkDay
-from .service import SlotAvailableService
+from .service import SlotAvailabilityService
 from .tasks import send_reservation_notification
 
 
@@ -32,7 +32,7 @@ def get_available_slots_ajax(request):
     staff_member = slot_form.cleaned_data["staff_member"]
     service_id = slot_form.cleaned_data["service_id"]
 
-    slot_service = SlotAvailableService()
+    slot_service = SlotAvailabilityService()
 
     try:
         result = slot_service.get_available_slots(
