@@ -1,5 +1,6 @@
 import datetime
 import uuid
+from typing import Any
 
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -54,7 +55,7 @@ class ReservationRequest(models.Model):
         if self.date and self.date < datetime.date.today():
             raise ValidationError(_("Date cannot be in the past"))
 
-    def save(self, *args, **kwargs):
+    def save(self, *args: Any, **kwargs: Any) -> None:
         if self.id_request is None:
             self.id_request = (
                 f"{get_timestamp()}{self.service.id}{generate_random_id()}"
@@ -105,7 +106,7 @@ class Reservation(models.Model):
     def __str__(self) -> str:
         return f"Reservation {self.customer.username} for {self.reservation_request.date} at {self.reservation_request.start_time}"
 
-    def save(self, *args, **kwargs):
+    def save(self, *args: Any, **kwargs: Any) -> None:
         if not hasattr(self, "reservation_request"):
             raise ValidationError("Reservation request is required")
 

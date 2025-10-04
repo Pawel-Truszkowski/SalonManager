@@ -1,9 +1,10 @@
 import json
 from datetime import datetime, timedelta
+from typing import Any
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from django.http import JsonResponse
+from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
 from django.utils.timezone import now
@@ -44,7 +45,7 @@ class UserReservationsListView(LoginRequiredMixin, UserPassesTestMixin, ListView
 
 
 class CancelUserReservationView(LoginRequiredMixin, UserPassesTestMixin, View):
-    def post(self, request, *args, **kwargs):
+    def post(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
         reservation = get_object_or_404(Reservation, id=self.kwargs["pk"])
         if reservation.status != "CANCEL":
             reservation.status = "CANCEL"
@@ -90,7 +91,7 @@ class WorkDayUpdateView(OwnerRequiredMixin, UpdateView):
         messages.success(self.request, "Work day updated successfully!")
         return super().form_valid(form)
 
-    def post(self, request, *args, **kwargs):
+    def post(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
         is_ajax = (
             request.headers.get("x-requested-with") == "XMLHttpRequest"
             or request.content_type == "application/json"
@@ -129,7 +130,7 @@ class WorkDayDeleteView(OwnerRequiredMixin, DeleteView):
     template_name = "reservations/workday_confirm_delete.html"
     success_url = reverse_lazy("workday_list")
 
-    def delete(self, request, *args, **kwargs):
+    def delete(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
         messages.success(request, "Work day deleted successfully!")
         return super().delete(request, *args, **kwargs)
 
@@ -194,13 +195,13 @@ class ManageReservationsListView(OwnerRequiredMixin, ListView):
     def get_queryset(self):
         return Reservation.objects.all().order_by("-reservation_request__date")
 
-    def get_context_data(self, *, object_list=None, **kwargs):
+    def get_context_data(self, *, object_list=None, **kwargs) -> dict[str, Any]:
         context = super().get_context_data()
         context["employees"] = Employee.objects.all()
         return context
 
 
-def reservations_api(request):
+def reservations_api(request: HttpRequest) -> JsonResponse:
     """API endpoint to provide reservations data for FullCalendar"""
 
     employee_id = request.GET.get("employee")
@@ -241,7 +242,7 @@ class ReservationCreateView(OwnerRequiredMixin, View):
     template_name = "reservations/manage_reservations_form.html"
     success_url = reverse_lazy("manage_reservations_list")
 
-    def get(self, request, *args, **kwargs):
+    def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
         request_reservation_form = ReservationRequestForm()
         client_data_form = ClientDataForm()
         reservation_form = ReservationForm()
@@ -255,7 +256,7 @@ class ReservationCreateView(OwnerRequiredMixin, View):
             },
         )
 
-    def post(self, request, *args, **kwargs):
+    def post(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
         request_reservation_form = ReservationRequestForm(request.POST)
         client_data_form = ClientDataForm(request.POST)
         reservation_form = ReservationForm(request.POST)
@@ -292,7 +293,7 @@ class ReservationUpdateView(OwnerRequiredMixin, UpdateView):
     template_name = "reservations/manage_reservations_form.html"
     success_url = reverse_lazy("manage_reservations_list")
 
-    def get_context_data(self, **kwargs):
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         context = super().get_context_data()
         reservation = self.get_object()
 
@@ -314,7 +315,7 @@ class ReservationUpdateView(OwnerRequiredMixin, UpdateView):
         context["reservation_form"] = self.get_form()
         return context
 
-    def post(self, request, *args, **kwargs):
+    def post(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
         self.object = self.get_object()
         request_form = ReservationRequestForm(
             request.POST, instance=self.object.reservation_request
@@ -353,13 +354,15 @@ class ReservationDeleteView(OwnerRequiredMixin, DeleteView):
     template_name = "reservations/manage_reservations_delete.html"
     success_url = reverse_lazy("manage_reservations_list")
 
-    def delete(self, request, *args, **kwargs):
+    def delete(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
         messages.success(request, "Reservation deleted successfully!")
         return super().delete(request, *args, **kwargs)
 
 
 class ConfirmReservationView(OwnerRequiredMixin, View):
-    def post(self, request, pk, *args, **kwargs):
+    def post(
+        self, request: HttpRequest, pk: int, *args: Any, **kwargs: Any
+    ) -> HttpResponse:
         reservation = get_object_or_404(Reservation, pk=pk)
         reservation.status = "CONFIRMED"
         reservation.save()
@@ -369,7 +372,7 @@ class ConfirmReservationView(OwnerRequiredMixin, View):
             reverse("cancel_reservation", args=[reservation.id_request])
         )
 
-        send_confirmation_email.delay_on_commit(
+        send_confirmation_email.delay_on_commit(  # type: ignore[attr-defined]
             customer_email=reservation.email,
             customer_name=reservation.name,
             service_name=reservation.reservation_request.service.name,
@@ -381,7 +384,7 @@ class ConfirmReservationView(OwnerRequiredMixin, View):
 
 
 class CancelReservationByUserView(View):
-    def get(self, request, token):
+    def get(self, request: HttpRequest, token: str) -> HttpResponse:
         reservation = get_object_or_404(Reservation, id_request=token)
 
         if now() - reservation.created_at > timedelta(days=7):

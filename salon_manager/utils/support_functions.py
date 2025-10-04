@@ -1,18 +1,21 @@
 import uuid
 from datetime import date, datetime, time, timedelta
-from typing import Any, List, Optional
+from typing import TYPE_CHECKING, Any, List, Optional
 
 from django.http import JsonResponse
 from django.utils import timezone
 
 from .error_codes import ErrorCode
 
+if TYPE_CHECKING:
+    from ..reservations.models import ReservationRequest
+
 
 def generate_available_slots(
-    start_time: str,
-    end_time: str,
+    start_time: time,
+    end_time: time,
     service_duration: str,
-    existing_reservations: List[str],
+    existing_reservations: List["ReservationRequest"],
 ) -> List[str]:
     """Generate available time slots based on work hours and existing reservations"""
     # Convert times to datetime for easier manipulation

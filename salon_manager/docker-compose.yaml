@@ -46,6 +46,7 @@ services:
     depends_on:
       - redis
       - db
+    restart: always
 
   celery_beat:
     build:

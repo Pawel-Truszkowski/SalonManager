@@ -1,5 +1,6 @@
 from datetime import date, timedelta
 
+from django.db.models import QuerySet
 from django.utils import timezone
 from django.utils.translation import gettext as _
 
@@ -53,7 +54,9 @@ class SlotAvailabilityService:
         return WorkDay.objects.filter(employee=employee.id, date=selected_date)
 
     @staticmethod
-    def _get_existing_reservations(employee, selected_date):
+    def _get_existing_reservations(
+        employee, selected_date
+    ) -> QuerySet[ReservationRequest]:
         return ReservationRequest.objects.filter(
             employee=employee.id, date=selected_date
         )
