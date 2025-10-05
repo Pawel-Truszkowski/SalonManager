@@ -1,8 +1,10 @@
 import json
 from datetime import date, timedelta
+from typing import Any
 
 from django.contrib import messages
-from django.http import JsonResponse
+from django.db.models import QuerySet
+from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.utils.translation import gettext as _
@@ -23,7 +25,7 @@ from .service import SlotAvailabilityService
 from .tasks import send_reservation_notification
 
 
-def get_available_slots_ajax(request):
+def get_available_slots(request):
     slot_form = SlotForm(request.GET)
     if not slot_form.is_valid():
         return handle_invalid_form(slot_form)
@@ -56,33 +58,48 @@ def get_available_slots_ajax(request):
         )
 
 
-def get_next_available_date_ajax(request):
+#
+# def get_next_available_date_ajax(request: HttpRequest) -> JsonResponse:
+#     staff_id = request.GET.get("staff_member")
+#
+#     if staff_id and staff_id != "none":
+#         staff_member = get_object_or_404(Employee, pk=staff_id)
+#
+#         current_date = date.today()
+#
+#         working_days = WorkDay.objects.filter(
+#             employee=staff_member, date__gt=current_date
+#         ).order_by("date")
+#         next_available_date = None
+#
+#         print("working days:", working_days)
+#
+#         if not working_days.exists():
+#             message = _("No available dates.")
+#             data = {"next_available_date": next_available_date}
+#             return json_response(message=message, custom_data=data, success=True)
+#
+#         next_available_date = working_days[0].date
+#
+#         message = _("Successfully retrieved next available date")
+#         data = {"next_available_date": next_available_date.isoformat()}
+#         return json_response(message=message, custom_data=data, success=True)
+#     else:
+#         data = {"error": True}
+#         message = _("No staff member selected")
+#         return json_response(
+#             message=message,
+#             custom_data=data,
+#             success=False,
+#             error_code=ErrorCode.STAFF_ID_REQUIRED,
+#         )
+
+
+def get_next_available_date(request: HttpRequest) -> JsonResponse:
     staff_id = request.GET.get("staff_member")
 
-    if staff_id and staff_id != "none":
-        staff_member = get_object_or_404(Employee, pk=staff_id)
-
-        current_date = date.today()
-
-        working_days = WorkDay.objects.filter(
-            employee=staff_member, date__gt=current_date
-        ).order_by("date")
-        next_available_date = None
-
-        print("working days:", working_days)
-
-        if not working_days.exists():
-            message = _("No available dates.")
-            data = {"next_available_date": next_available_date}
-            return json_response(message=message, custom_data=data, success=True)
-
-        next_available_date = working_days[0].date
-
-        message = _("Successfully retrieved next available date")
-        data = {"next_available_date": next_available_date.isoformat()}
-        return json_response(message=message, custom_data=data, success=True)
-    else:
-        data = {"error": True}
+    if not staff_id or staff_id == "none":
+        data = {"error": True, "next_available_date": ""}
         message = _("No staff member selected")
         return json_response(
             message=message,
@@ -91,8 +108,27 @@ def get_next_available_date_ajax(request):
             error_code=ErrorCode.STAFF_ID_REQUIRED,
         )
 
+    employee = get_object_or_404(Employee, pk=staff_id)
 
-def get_non_working_days_ajax(request):
+    current_date = date.today()
+
+    working_days = WorkDay.objects.filter(
+        employee=employee, date__gt=current_date
+    ).order_by("date")
+
+    if not working_days.exists():
+        message = _("No available dates.")
+        data = {"next_available_date": ""}
+        return json_response(message=message, custom_data=data, success=True)
+
+    next_available_date = working_days.first().date
+
+    message = _("Successfully retrieved next available date")
+    data = {"next_available_date": next_available_date.isoformat()}
+    return json_response(message=message, custom_data=data, success=True)
+
+
+def get_non_working_days(request):
     try:
         staff_id_str = request.GET.get("staff_id")
 
@@ -130,7 +166,7 @@ def get_non_working_days_ajax(request):
         return JsonResponse({"success": False, "message": str(e)})
 
 
-def reservation_request(request, service_id):
+def reservation_request(request: HttpRequest, service_id: int) -> HttpResponse:
     service_categories = Service.objects.values_list(
         "category__name", flat=True
     ).distinct()
@@ -165,7 +201,7 @@ def reservation_request(request, service_id):
     return render(request, "reservations/reservation_create.html", context)
 
 
-def reservation_request_submit(request):
+def reservation_request_submit(request: HttpRequest) -> HttpResponse:
     if request.method == "POST":
         form = ReservationRequestForm(request.POST)
         if form.is_valid():
@@ -196,7 +232,9 @@ def reservation_request_submit(request):
     )
 
 
-def reservation_client_information(request, reservation_request_id, id_request):
+def reservation_client_information(
+    request: HttpRequest, reservation_request_id: int, id_request: int
+) -> HttpResponse:
     reservation_request_obj = get_object_or_404(
         ReservationRequest, pk=reservation_request_id
     )
@@ -204,7 +242,7 @@ def reservation_client_information(request, reservation_request_id, id_request):
     if request.session.get(f"reservation_submitted_{id_request}", False):
         context = {
             "user": request.user,
-            "service_id": reservation_request_obj.service_id,
+            "service_id": reservation_request_obj.service.id,
         }
         return render(
             request, "reservations/304_already_submitted.html", context=context
@@ -243,7 +281,7 @@ def reservation_client_information(request, reservation_request_id, id_request):
 
     else:
         initial_data = {}
-        if request.user.is_authenticated:
+        if request.user.is_authenticated and isinstance(request.user, CustomUser):
             initial_data = {
                 "name": f"{request.user.first_name} {request.user.last_name}".strip(),
                 "email": request.user.email,
@@ -266,8 +304,11 @@ def reservation_client_information(request, reservation_request_id, id_request):
 
 
 def create_reservation(
-    reservation_request_obj, id_request, client_data, reservation_data
-):
+    reservation_request_obj: ReservationRequest,
+    id_request: int,
+    client_data: dict[str, Any],
+    reservation_data: dict[str, Any],
+) -> bool:
     email = client_data["email"]
     name = client_data["name"]
     phone = reservation_data["phone"]
@@ -287,7 +328,7 @@ def create_reservation(
         },
     )
 
-    send_reservation_notification.delay_on_commit(
+    send_reservation_notification.delay_on_commit(  # type: ignore[attr-defined]
         customer=name,
         service=reservation_request_obj.service.name,
         date=reservation_request_obj.date,

@@ -1,6 +1,7 @@
-import datetime
 import uuid
-from typing import Any
+from datetime import date, time, timedelta
+from decimal import Decimal
+from typing import Any, Optional
 
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -21,7 +22,7 @@ class WorkDay(models.Model):
         Employee, on_delete=models.CASCADE, related_name="work_day"
     )
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{self.employee} - {self.date}"
 
 
@@ -32,18 +33,17 @@ class ReservationRequest(models.Model):
     service = models.ForeignKey(Service, on_delete=models.CASCADE)
     employee = models.ForeignKey(Employee, on_delete=models.SET_NULL, null=True)
     id_request = models.CharField(max_length=100, blank=True, null=True, default=None)
-
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     expires_at = models.DateTimeField()
 
-    def __str__(self):
+    def __str__(self) -> str:
         return (
             f"{self.date} - {self.start_time} to {self.end_time} - {self.service.name}"
         )
 
-    def clean(self):
-        duration = datetime.timedelta(minutes=self.service.duration)
+    def clean(self) -> None:
+        duration = timedelta(minutes=self.service.duration)
         if self.start_time is not None and self.end_time is not None:
             if self.start_time > self.end_time:
                 raise ValidationError(_("Start time must be before end time"))
@@ -52,7 +52,7 @@ class ReservationRequest(models.Model):
             if time_difference(self.start_time, self.end_time) > duration:
                 raise ValidationError(_("Duration cannot exceed the service duration"))
 
-        if self.date and self.date < datetime.date.today():
+        if self.date and self.date < date.today():
             raise ValidationError(_("Date cannot be in the past"))
 
     def save(self, *args: Any, **kwargs: Any) -> None:
@@ -64,10 +64,10 @@ class ReservationRequest(models.Model):
             self.expires_at = timezone.now() + timezone.timedelta(minutes=15)
         super().save(*args, **kwargs)
 
-    def is_expired(self):
+    def is_expired(self) -> bool:
         return timezone.now() > self.expires_at
 
-    def get_service_name(self):
+    def get_service_name(self) -> str:
         return self.service.name
 
 
@@ -116,40 +116,40 @@ class Reservation(models.Model):
         return super().save(*args, **kwargs)
 
     @property
-    def calculate_end_time(self) -> datetime.time:
+    def calculate_end_time(self) -> time:
         start_datetime = self.get_start_time()
-        duration = datetime.timedelta(minutes=self.get_service_duration())
+        duration = timedelta(minutes=self.get_service_duration())
         end_datetime = start_datetime + duration
         return end_datetime.time()
 
-    def get_date(self):
+    def get_date(self) -> date:
         return self.reservation_request.date
 
-    def get_start_time(self):
+    def get_start_time(self) -> time:
         return self.reservation_request.start_time
 
-    def get_end_time(self):
+    def get_end_time(self) -> time:
         return self.reservation_request.end_time
 
-    def get_service(self):
+    def get_service(self) -> "Service":
         return self.reservation_request.service
 
-    def get_service_name(self):
+    def get_service_name(self) -> str:
         return self.reservation_request.service.name
 
-    def get_service_duration(self):
+    def get_service_duration(self) -> int:
         return self.reservation_request.service.duration
 
-    def get_employee_name(self):
+    def get_employee_name(self) -> str:
         if not self.reservation_request.employee:
             return ""
         return self.reservation_request.employee.name
 
-    def get_employee(self):
+    def get_employee(self) -> Optional["Employee"]:
         return self.reservation_request.employee
 
-    def get_service_price(self):
+    def get_service_price(self) -> "Decimal":
         return self.reservation_request.service.price
 
-    def get_customer_name(self):
+    def get_customer_name(self) -> str:
         return self.name

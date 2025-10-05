@@ -6,7 +6,7 @@ class ServiceCategory(models.Model):
     name = models.CharField(max_length=100, unique=True)
     description = models.TextField(null=True, blank=True)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.name
 
 
@@ -23,5 +23,5 @@ class Service(models.Model):
         validators=[MinValueValidator(limit_value=15)]
     )
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{self.name} - {self.duration} min"

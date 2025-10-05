@@ -112,9 +112,9 @@
     <script>
         const timezone = "{{ timezoneTxt }}";
         const locale = "{{ locale }}";
-        const availableSlotsAjaxURL = "{% url 'get_available_slots_ajax' %}";
-        const requestNextAvailableSlotURLTemplate = "{% url 'get_next_available_date_ajax' %}";
-        const getNonWorkingDaysURL = "{% url 'get_non_working_days_ajax' %}";
+        const availableSlotsAjaxURL = "{% url 'get_available_slots' %}";
+        const requestNextAvailableSlotURLTemplate = "{% url 'get_next_available_date' %}";
+        const getNonWorkingDaysURL = "{% url 'get_non_working_days' %}";
         const serviceId = "{{ service.id }}";
         const serviceDuration = "{{ service.duration }}";
         const appointmentRequestId = "{{ ar_id_request }}";

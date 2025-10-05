@@ -1,4 +1,5 @@
 from datetime import date, timedelta
+from typing import TYPE_CHECKING
 
 from django.db.models import QuerySet
 from django.utils import timezone
@@ -13,6 +14,9 @@ from utils.support_functions import (
 )
 
 from .models import ReservationRequest, WorkDay
+
+if TYPE_CHECKING:
+    from users.models import Employee
 
 
 class SlotAvailabilityService:
@@ -38,7 +42,7 @@ class SlotAvailabilityService:
         }
 
     @staticmethod
-    def _get_service(service_id) -> Service:
+    def _get_service(service_id) -> QuerySet[Service]:
         return Service.objects.get(id=service_id)
 
     @staticmethod
@@ -50,7 +54,7 @@ class SlotAvailabilityService:
             raise ValueError(_("Day off. Please select another date!"))
 
     @staticmethod
-    def _get_work_days(employee, selected_date):
+    def _get_work_days(employee: "Employee", selected_date: date) -> QuerySet[WorkDay]:
         return WorkDay.objects.filter(employee=employee.id, date=selected_date)
 
     @staticmethod

@@ -2,20 +2,22 @@ import uuid
 from datetime import date, datetime, time, timedelta
 from typing import TYPE_CHECKING, Any, List, Optional
 
+from django.db.models import QuerySet
 from django.http import JsonResponse
 from django.utils import timezone
 
 from .error_codes import ErrorCode
 
 if TYPE_CHECKING:
+    from ..reservations.forms import SlotForm
     from ..reservations.models import ReservationRequest
 
 
 def generate_available_slots(
     start_time: time,
     end_time: time,
-    service_duration: str,
-    existing_reservations: List["ReservationRequest"],
+    service_duration: int,
+    existing_reservations: QuerySet["ReservationRequest"],
 ) -> List[str]:
     """Generate available time slots based on work hours and existing reservations"""
     # Convert times to datetime for easier manipulation
@@ -65,12 +67,11 @@ def generate_available_slots(
 
 
 def check_for_conflicting_reservation(
-    employee,
-    reservation_date,
-    start_time,
-    duration,
-    conflicting_reservations,
-    exclude_id=None,
+    reservation_date: date,
+    start_time: time,
+    duration: int,
+    conflicting_reservations: QuerySet["ReservationRequest"],
+    exclude_id: Optional[int] = None,
 ) -> bool:
     """Check if there's a conflicting reservation"""
     # Calculate end time
@@ -111,9 +112,9 @@ def json_response(
     return JsonResponse(response_data, status=status, **kwargs)
 
 
-def handle_invalid_form(slot_form) -> JsonResponse:
+def handle_invalid_form(slot_form: "SlotForm") -> JsonResponse:
     custom_data = {"error": True, "available_slots": [], "date_chosen": ""}
-    error_code = 0
+    error_code: Optional[ErrorCode] = None
     if "selected_date" in slot_form.errors:
         error_code = ErrorCode.PAST_DATE
     elif "staff_member" in slot_form.errors:
@@ -142,7 +143,7 @@ def get_timestamp() -> str:
     return timestamp.replace(".", "")
 
 
-def time_difference(time1, time2) -> timedelta:
+def time_difference(time1: time, time2: time) -> timedelta:
     # If inputs are datetime.time objects, convert them to datetime.datetime objects for the same day
     if isinstance(time1, time) and isinstance(time2, time):
         today = datetime.today()

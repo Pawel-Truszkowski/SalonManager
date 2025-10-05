@@ -4,6 +4,7 @@ from typing import Any
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.db.models import QuerySet
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
@@ -35,20 +36,20 @@ class UserReservationsListView(LoginRequiredMixin, UserPassesTestMixin, ListView
     model = Reservation
     context_object_name = "reservations"
 
-    def get_queryset(self):
+    def get_queryset(self) -> QuerySet[Reservation]:
         return Reservation.objects.filter(customer=self.request.user).order_by(
             "-reservation_request__date"
         )
 
-    def test_func(self):
+    def test_func(self) -> bool:
         return self.request.user.is_authenticated
 
 
 class CancelUserReservationView(LoginRequiredMixin, UserPassesTestMixin, View):
     def post(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
         reservation = get_object_or_404(Reservation, id=self.kwargs["pk"])
-        if reservation.status != "CANCEL":
-            reservation.status = "CANCEL"
+        if reservation.status != "CANCELLED":
+            reservation.status = "CANCELLED"
             reservation.save()
             messages.success(request, "The reservation has been canceled")
         else:
@@ -56,7 +57,7 @@ class CancelUserReservationView(LoginRequiredMixin, UserPassesTestMixin, View):
 
         return redirect("your_reservation_list")
 
-    def test_func(self):
+    def test_func(self) -> bool:
         return self.request.user.is_authenticated
 
 
@@ -66,7 +67,7 @@ class WorkDayListView(OwnerRequiredMixin, ListView):
     template_name = "reservations/workday_list.html"
     context_object_name = "workdays"
 
-    def get_queryset(self):
+    def get_queryset(self) -> QuerySet[WorkDay]:
         return WorkDay.objects.all().order_by("-date")
 
 
@@ -76,7 +77,7 @@ class WorkDayCreateView(OwnerRequiredMixin, CreateView):
     template_name = "reservations/workday_form.html"
     success_url = reverse_lazy("workday_list")
 
-    def form_valid(self, form):
+    def form_valid(self, form: WorkDayForm) -> HttpResponse:
         messages.success(self.request, "Work day created successfully!")
         return super().form_valid(form)
 
@@ -87,7 +88,7 @@ class WorkDayUpdateView(OwnerRequiredMixin, UpdateView):
     template_name = "reservations/workday_form.html"
     success_url = reverse_lazy("workday_list")
 
-    def form_valid(self, form):
+    def form_valid(self, form: WorkDayForm) -> HttpResponse:
         messages.success(self.request, "Work day updated successfully!")
         return super().form_valid(form)
 
@@ -135,7 +136,7 @@ class WorkDayDeleteView(OwnerRequiredMixin, DeleteView):
         return super().delete(request, *args, **kwargs)
 
 
-def workday_api(request):
+def workday_api(request: HttpRequest) -> JsonResponse:
     workdays = WorkDay.objects.all()
     # workdays = WorkDay.objects.select_related('employee').all()
     events = []
@@ -160,7 +161,7 @@ def workday_api(request):
 
 
 @require_POST
-def update_workday_date(request, pk):
+def update_workday_date(request: HttpRequest, pk: int) -> JsonResponse:
     try:
         workday = WorkDay.objects.get(pk=pk)
         data = json.loads(request.body)
@@ -192,11 +193,11 @@ class ManageReservationsListView(OwnerRequiredMixin, ListView):
     template_name = "reservations/manage_reservations_list.html"
     context_object_name = "reservations"
 
-    def get_queryset(self):
+    def get_queryset(self) -> QuerySet[Reservation]:
         return Reservation.objects.all().order_by("-reservation_request__date")
 
-    def get_context_data(self, *, object_list=None, **kwargs) -> dict[str, Any]:
-        context = super().get_context_data()
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
+        context = super().get_context_data(**kwargs)
         context["employees"] = Employee.objects.all()
         return context
 
