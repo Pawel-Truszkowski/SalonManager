@@ -1,19 +1,20 @@
 from django.contrib import messages
+from django.http import HttpRequest, HttpResponse
 from django.shortcuts import render
 
 from .forms import ContactForm
 from .tasks import send_email_to_admin, send_email_to_customer
 
 
-def home(request):
+def home(request: HttpRequest) -> HttpResponse:
     return render(request, "dashboard/index.html")
 
 
-def about(request):
+def about(request: HttpRequest) -> HttpResponse:
     return render(request, "dashboard/about.html")
 
 
-def contact(request):
+def contact(request: HttpRequest) -> HttpResponse:
     if request.method == "POST":
         form = ContactForm(request.POST)
         if form.is_valid():
@@ -21,10 +22,10 @@ def contact(request):
 
             messages.success(request, "Your message has been sent.")
 
-            send_email_to_customer.delay_on_commit(
+            send_email_to_customer.delay_on_commit(  # type: ignore[attr-defined]
                 first_name=con.first_name, last_name=con.last_name, email=con.email
             )
-            send_email_to_admin.delay_on_commit(
+            send_email_to_admin.delay_on_commit(  # type: ignore[attr-defined]
                 first_name=con.first_name,
                 last_name=con.last_name,
                 email=con.email,

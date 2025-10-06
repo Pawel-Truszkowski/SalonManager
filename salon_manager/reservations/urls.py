@@ -37,18 +37,18 @@ urlpatterns = [
     # Ajax for New Reservations
     path(
         "available_slots/",
-        views_ajax.get_available_slots_ajax,
-        name="get_available_slots_ajax",
+        views_ajax.get_available_slots,
+        name="get_available_slots",
     ),
     path(
         "request_next_available_slot/",
-        views_ajax.get_next_available_date_ajax,
-        name="get_next_available_date_ajax",
+        views_ajax.get_next_available_date,
+        name="get_next_available_date",
     ),
     path(
         "request_staff_info/",
-        views_ajax.get_non_working_days_ajax,
-        name="get_non_working_days_ajax",
+        views_ajax.get_non_working_days,
+        name="get_non_working_days",
     ),
     # WorkDay Management URLs
     path("workdays/", views.WorkDayListView.as_view(), name="workday_list"),

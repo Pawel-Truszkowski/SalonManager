@@ -114,7 +114,7 @@ def change_reservation_status():
         if reservation.get_date() < today or (
             reservation.get_date() == today and end_time and today > end_time
         ):
-            reservation.status == "PAST"
+            reservation.status = "PAST"
             reservation.save()
             updated_count += 1
 

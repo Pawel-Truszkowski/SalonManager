@@ -1,3 +1,5 @@
+from typing import Any
+
 from django import forms
 from phonenumber_field.formfields import SplitPhoneNumberField
 
@@ -40,7 +42,7 @@ class ReservationForm(forms.ModelForm):
         model = Reservation
         fields = ("phone", "additional_info")
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self.fields["phone"].widget.attrs.update({"placeholder": "123456789"})
         self.fields["additional_info"].widget.attrs.update(
