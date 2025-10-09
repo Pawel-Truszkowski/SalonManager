@@ -180,8 +180,8 @@ LOGIN_URL = "login"
 LOGOUT_URL = "logout"
 
 
-CELERY_BROKER_URL = os.getenv("CELERY_BROKER", "redis://127.0.0.1:6379/0")
-CELERY_RESULT_BACKEND = os.getenv("CELERY_BACKEND", "redis://127.0.0.1:6379/0")
+CELERY_BROKER_URL = os.getenv("CELERY_BROKER", "redis://redis:6379/0")
+CELERY_RESULT_BACKEND = os.getenv("CELERY_BACKEND", "redis://redis:6379/0")
 
 CELERY_BEAT_SCHEDULE = {
     "send-reminders-daily": {
