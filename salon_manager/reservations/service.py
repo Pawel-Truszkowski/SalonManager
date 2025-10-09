@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 
 
 class SlotAvailabilityService:
-    def get_available_slots(self, selected_date, employee, service_id):
+    def get_available_slots_(self, selected_date, employee, service_id):
         self._validate_working_day(employee, selected_date)
 
         service = self._get_service(service_id)

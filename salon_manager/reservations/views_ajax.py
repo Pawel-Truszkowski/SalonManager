@@ -37,7 +37,7 @@ def get_available_slots(request):
     slot_service = SlotAvailabilityService()
 
     try:
-        result = slot_service.get_available_slots(
+        result = slot_service.get_available_slots_(
             selected_date, staff_member, service_id
         )
         return json_response(
@@ -46,53 +46,17 @@ def get_available_slots(request):
             success=True,
         )
     except ValueError as e:
+        result = {
+            "error": True,
+            "available_slots": [],
+            "date_chosen": selected_date.strftime("%a, %B %d, %Y"),
+        }
         return json_response(
             message=str(e),
             success=False,
-            custom_data={
-                "error": True,
-                "available_slots": [],
-                "date_chosen": selected_date.strftime("%a, %B %d, %Y"),
-            },
+            custom_data=result,
             error_code=ErrorCode.INVALID_DATE,
         )
-
-
-#
-# def get_next_available_date_ajax(request: HttpRequest) -> JsonResponse:
-#     staff_id = request.GET.get("staff_member")
-#
-#     if staff_id and staff_id != "none":
-#         staff_member = get_object_or_404(Employee, pk=staff_id)
-#
-#         current_date = date.today()
-#
-#         working_days = WorkDay.objects.filter(
-#             employee=staff_member, date__gt=current_date
-#         ).order_by("date")
-#         next_available_date = None
-#
-#         print("working days:", working_days)
-#
-#         if not working_days.exists():
-#             message = _("No available dates.")
-#             data = {"next_available_date": next_available_date}
-#             return json_response(message=message, custom_data=data, success=True)
-#
-#         next_available_date = working_days[0].date
-#
-#         message = _("Successfully retrieved next available date")
-#         data = {"next_available_date": next_available_date.isoformat()}
-#         return json_response(message=message, custom_data=data, success=True)
-#     else:
-#         data = {"error": True}
-#         message = _("No staff member selected")
-#         return json_response(
-#             message=message,
-#             custom_data=data,
-#             success=False,
-#             error_code=ErrorCode.STAFF_ID_REQUIRED,
-#         )
 
 
 def get_next_available_date(request: HttpRequest) -> JsonResponse:
@@ -130,15 +94,13 @@ def get_next_available_date(request: HttpRequest) -> JsonResponse:
 
 def get_non_working_days(request):
     try:
-        staff_id_str = request.GET.get("staff_id")
+        staff_id = request.GET.get("staff_id")
 
-        if not staff_id_str or staff_id_str == "none":
+        if not staff_id or staff_id == "none":
             return JsonResponse({"success": True, "non_working_days": []})
 
-        staff_id = int(staff_id_str)
-
         try:
-            employee = Employee.objects.get(id=staff_id)
+            employee = Employee.objects.get(id=int(staff_id))
         except Employee.DoesNotExist:
             return JsonResponse({"success": False, "message": "Invalid staff member"})
 
