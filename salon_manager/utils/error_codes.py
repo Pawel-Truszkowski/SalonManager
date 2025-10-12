@@ -12,6 +12,8 @@ class ErrorCode(Enum):
     PAST_DATE = auto()
     STAFF_ID_REQUIRED = auto()
     WORKING_HOURS_NOT_FOUND = auto()
+    WORKING_DAYS_NOT_FOUND = auto()
     WORKING_HOURS_CONFLICT = auto()
     SERVICE_NOT_FOUND = auto()
+    SERVICE_ID_REQUIRED = auto()
     STAFF_MEMBER_NOT_FOUND = auto()

@@ -2,6 +2,7 @@ import json
 from datetime import date, timedelta
 from typing import Any
 
+import requests
 from django.contrib import messages
 from django.db.models import QuerySet
 from django.http import HttpRequest, HttpResponse, JsonResponse
@@ -61,6 +62,7 @@ def get_available_slots(request):
 
 def get_next_available_date(request: HttpRequest) -> JsonResponse:
     staff_id = request.GET.get("staff_member")
+    service_id = request.GET.get("service_id")
 
     if not staff_id or staff_id == "none":
         data = {"error": True, "next_available_date": ""}
@@ -72,24 +74,40 @@ def get_next_available_date(request: HttpRequest) -> JsonResponse:
             error_code=ErrorCode.STAFF_ID_REQUIRED,
         )
 
+    if not service_id:
+        return json_response(
+            custom_data={"error": True, "next_available_date": ""},
+            message=_("Service not specified"),
+            success=False,
+            error_code=ErrorCode.SERVICE_ID_REQUIRED,
+        )
+
     employee = get_object_or_404(Employee, pk=staff_id)
 
     current_date = date.today()
 
-    working_days = WorkDay.objects.filter(
-        employee=employee, date__gt=current_date
-    ).order_by("date")
+    slot_service = SlotAvailabilityService()
 
-    if not working_days.exists():
-        message = _("No available dates.")
-        data = {"next_available_date": ""}
-        return json_response(message=message, custom_data=data, success=True)
+    try:
+        next_date = slot_service.get_next_available_date(
+            employee=employee, service_id=service_id, from_date=current_date
+        )
 
-    next_available_date = working_days.first().date
+        if not next_date:
+            raise ValueError(_("No available slots found"))
 
-    message = _("Successfully retrieved next available date")
-    data = {"next_available_date": next_available_date.isoformat()}
-    return json_response(message=message, custom_data=data, success=True)
+        return json_response(
+            message=_("Successfully retrieved next available date"),
+            custom_data={"next_available_date": next_date.isoformat()},
+            success=True,
+        )
+    except ValueError as e:
+        return json_response(
+            message=str(e),
+            custom_data={"error": True, "next_available_date": ""},
+            success=False,
+            error_code=ErrorCode.NO_AVAILABLE_SLOTS,
+        )
 
 
 def get_non_working_days(request):
