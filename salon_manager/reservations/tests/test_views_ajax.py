@@ -72,3 +72,11 @@ class TestGetAvailableSlots(BaseTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["error"], True)
         self.assertEqual(response.json()["message"], "Date is in the past")
+
+
+class TestNextAvailableDate(BaseTestCase):
+    def setUp(self):
+        self.url = reverse("get_next_available_date")
+
+    def test_get_next_available_date(self):
+        """get_next_available_date_ajax view should return a JSON response with the next available date."""

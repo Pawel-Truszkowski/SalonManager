@@ -41,12 +41,32 @@ class SlotAvailabilityService:
             "error": False,
         }
 
+    def get_next_available_date(
+        self, employee: "Employee", service_id: int, from_date: date
+    ) -> date:
+        service = self._get_service(service_id)
+        working_days = WorkDay.objects.filter(
+            employee=employee, date__gt=from_date
+        ).order_by("date")
+
+        for working_day in working_days:
+            try:
+                result = self.get_available_slots_(
+                    working_day.date, employee, service.id
+                )
+
+                if result.get("available_slots"):
+                    return working_day.date
+            except ValueError:
+                continue
+        raise ValueError(_("No available dates found for this employee and service."))
+
     @staticmethod
     def _get_service(service_id) -> QuerySet[Service]:
         return Service.objects.get(id=service_id)
 
     @staticmethod
-    def _validate_working_day(employee, selected_date):
+    def _validate_working_day(employee: "Employee", selected_date: date):
         working_day_exists = WorkDay.objects.filter(
             employee=employee.id, date=selected_date
         ).exists()
