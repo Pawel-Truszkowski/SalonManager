@@ -60,9 +60,9 @@ def get_available_slots(request):
         )
 
 
-def get_next_available_date(request: HttpRequest) -> JsonResponse:
+def get_next_available_date(request: HttpRequest, service_id) -> JsonResponse:
     staff_id = request.GET.get("staff_member")
-    service_id = request.GET.get("service_id")
+    employee = get_object_or_404(Employee, pk=staff_id)
 
     if not staff_id or staff_id == "none":
         data = {"error": True, "next_available_date": ""}
@@ -74,7 +74,8 @@ def get_next_available_date(request: HttpRequest) -> JsonResponse:
             error_code=ErrorCode.STAFF_ID_REQUIRED,
         )
 
-    if not service_id:
+    service = Service.objects.get(pk=service_id)
+    if not service:
         return json_response(
             custom_data={"error": True, "next_available_date": ""},
             message=_("Service not specified"),
@@ -82,10 +83,7 @@ def get_next_available_date(request: HttpRequest) -> JsonResponse:
             error_code=ErrorCode.SERVICE_ID_REQUIRED,
         )
 
-    employee = get_object_or_404(Employee, pk=staff_id)
-
     current_date = date.today()
-
     slot_service = SlotAvailabilityService()
 
     try:

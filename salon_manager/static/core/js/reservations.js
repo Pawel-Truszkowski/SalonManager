@@ -4,7 +4,7 @@ const body = $('body');
 let nonWorkingDays = [];
 let selectedDate = null;
 let staffId = $('#staff_id').val() || null;
-const service_id = $('#djangoAppt-wrapper').data('service-id');
+// const service_id = $('#djangoAppt-wrapper').data('service-id');
 let previouslySelectedCell = null;
 let isRequestInProgress = false;
 
@@ -96,9 +96,7 @@ body.on('click', '.djangoAppt_btn-request-next-slot', function () {
 
 body.on('click', '.btn-submit-appointment', function () {
     const selectedSlot = $('.djangoAppt_appointment-slot.selected').text();
-    console.log(selectedSlot);
     const selectedDate = $('.djangoAppt_date_chosen').text();
-    console.log(selectedDate);
 
     if (!selectedSlot || !selectedDate) {
         alert(selectDateAndTimeAlertTxt);
@@ -113,19 +111,10 @@ body.on('click', '.btn-submit-appointment', function () {
         const monthDayYear = dateParts[1] + "," + dateParts[2];
         const formattedDate = new Date(monthDayYear + " " + startTime);
 
-        console.log("formattedDate: ", formattedDate);
-
         const date = formattedDate.toISOString().slice(0, 10);
-
-        console.log("serviceDuration: ", serviceDuration);
-
         const endTimeDate = new Date(formattedDate.getTime() + serviceDuration * 60000);
-
-        console.log("formattedDate.getTime(): ", formattedDate.getTime());
-
         const endTime = formatTime(endTimeDate);
-        console.log("endTimeDate:", endTimeDate);
-        console.log("Data:", date, startTime, endTime, serviceId, staffId)
+
         const form = $('.appointment-form');
         let formAction = appointmentRequestSubmitURL;
         form.attr('action', formAction);
@@ -257,7 +246,7 @@ function getAvailableSlots(selectedDate, staffId = null) {
     let ajaxData = {
         'selected_date': selectedDate,
         'staff_member': staffId,
-        'service_id': service_id,
+        'service_id': serviceId,
     };
 
     fetchNonWorkingDays(staffId, function (nonWorkingDays) {
@@ -347,7 +336,8 @@ function getAvailableSlots(selectedDate, staffId = null) {
 }
 
 function requestNextAvailableSlot(serviceId) {
-    const requestNextAvailableSlotURL = requestNextAvailableSlotURLTemplate;
+    const requestNextAvailableSlotURL = requestNextAvailableSlotURLTemplate.replace('0', serviceId);
+    console.log("serviceId: ", serviceId);
     if (staffId === null) {
         return;
     }

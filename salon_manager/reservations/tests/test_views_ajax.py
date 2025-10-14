@@ -55,7 +55,7 @@ class TestGetAvailableSlots(BaseTestCase):
             "service_id": "1",
         }
 
-        response = self.client.get(self.url, data)
+        response = self.client.get(self.url, data=data)
         self.assertEqual(response.status_code, 200)
         response_data = response.json()
         self.assertIn("date_chosen", response_data)
@@ -75,8 +75,30 @@ class TestGetAvailableSlots(BaseTestCase):
 
 
 class TestNextAvailableDate(BaseTestCase):
-    def setUp(self):
-        self.url = reverse("get_next_available_date")
+    @classmethod
+    def setUpTestData(cls):
+        super().setUpTestData()
 
-    def test_get_next_available_date(self):
+    def setUp(self):
+        self.url = reverse("get_next_available_date", args=[self.service1.id])
+
+    @patch("reservations.views_ajax.SlotAvailabilityService")
+    def test_get_next_available_date_with_correct_data(self, mock_slot_service):
         """get_next_available_date_ajax view should return a JSON response with the next available date."""
+
+        mock_result = mock_slot_service.return_value
+        mock_result.get_next_available_date.return_value = date.today() + timedelta(
+            days=1
+        )
+        available_date = date.today() + timedelta(days=1)
+        response = self.client.get(self.url, data={"staff_member": self.employee1.id})
+        self.assertEqual(response.status_code, 200)
+        response_data = response.json()
+        self.assertIn(
+            response_data["next_available_date"], [available_date.isoformat()]
+        )
+        self.assertIn(
+            response_data["message"], "Successfully retrieved next available date"
+        )
+        self.assertFalse(response_data.get("error"))
+        mock_result.get_next_available_date.assert_called_once()
