@@ -17,3 +17,4 @@ class ErrorCode(Enum):
     SERVICE_NOT_FOUND = auto()
     SERVICE_ID_REQUIRED = auto()
     STAFF_MEMBER_NOT_FOUND = auto()
+    NO_AVAILABLE_SLOTS = auto()

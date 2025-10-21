@@ -62,7 +62,6 @@ def get_available_slots(request):
 
 def get_next_available_date(request: HttpRequest, service_id) -> JsonResponse:
     staff_id = request.GET.get("staff_member")
-    employee = get_object_or_404(Employee, pk=staff_id)
 
     if not staff_id or staff_id == "none":
         data = {"error": True, "next_available_date": ""}
@@ -74,13 +73,14 @@ def get_next_available_date(request: HttpRequest, service_id) -> JsonResponse:
             error_code=ErrorCode.STAFF_ID_REQUIRED,
         )
 
-    service = Service.objects.get(pk=service_id)
-    if not service:
+    try:
+        employee = Employee.objects.get(pk=staff_id)
+    except Employee.DoesNotExist:
         return json_response(
+            message=_("Staff member not found"),
             custom_data={"error": True, "next_available_date": ""},
-            message=_("Service not specified"),
             success=False,
-            error_code=ErrorCode.SERVICE_ID_REQUIRED,
+            error_code=ErrorCode.STAFF_MEMBER_NOT_FOUND,
         )
 
     current_date = date.today()
@@ -109,39 +109,32 @@ def get_next_available_date(request: HttpRequest, service_id) -> JsonResponse:
 
 
 def get_non_working_days(request):
+    staff_id = request.GET.get("staff_id")
+
+    if not staff_id or staff_id == "none":
+        return JsonResponse({"success": True, "non_working_days": []})
+
     try:
-        staff_id = request.GET.get("staff_id")
+        employee = Employee.objects.get(id=int(staff_id))
+    except Employee.DoesNotExist:
+        return JsonResponse({"success": False, "message": "Invalid staff member"})
 
-        if not staff_id or staff_id == "none":
-            return JsonResponse({"success": True, "non_working_days": []})
+    today = timezone.now().date()
 
-        try:
-            employee = Employee.objects.get(id=int(staff_id))
-        except Employee.DoesNotExist:
-            return JsonResponse({"success": False, "message": "Invalid staff member"})
+    date_range = [today + timedelta(days=i) for i in range(60)]
 
-        today = timezone.now().date()
+    working_days = WorkDay.objects.filter(
+        employee_id=employee.id,
+        date__gte=today,
+        date__lte=today + timedelta(days=60),
+    ).values_list("date", flat=True)
 
-        date_range = [today + timedelta(days=i) for i in range(60)]
+    working_days = set(working_days)
+    non_working_days = [
+        d.strftime("%Y-%m-%d") for d in date_range if d not in working_days
+    ]
 
-        working_days = WorkDay.objects.filter(
-            employee_id=employee.id,
-            date__gte=today,
-            date__lte=today + timedelta(days=60),
-        ).values_list("date", flat=True)
-
-        working_days = set(working_days)
-        non_working_days = [
-            d.strftime("%Y-%m-%d") for d in date_range if d not in working_days
-        ]
-
-        return JsonResponse({"success": True, "non_working_days": non_working_days})
-
-    except json.JSONDecodeError:
-        return JsonResponse({"success": False, "message": "Invalid JSON"})
-
-    except Exception as e:
-        return JsonResponse({"success": False, "message": str(e)})
+    return JsonResponse({"success": True, "non_working_days": non_working_days})
 
 
 def reservation_request(request: HttpRequest, service_id: int) -> HttpResponse:

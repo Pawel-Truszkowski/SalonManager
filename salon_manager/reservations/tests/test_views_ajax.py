@@ -45,8 +45,6 @@ class TestGetAvailableSlots(BaseTestCase):
         mock_result.get_available_slots_.assert_called_once()
 
     def test_get_available_slots_when_no_work_day(self):
-        """get_available_slots_ajax view should return an error if the selected date is in non working day of the employee."""
-
         selected_date = date.today() + timedelta(days=1)
 
         data = {
@@ -66,7 +64,6 @@ class TestGetAvailableSlots(BaseTestCase):
         )
 
     def test_get_available_slots_ajax_past_date(self):
-        """get_available_slots_ajax view should return an error if the selected date is in the past."""
         past_date = (date.today() - timedelta(days=1)).isoformat()
         response = self.client.get(self.url, {"selected_date": past_date})
         self.assertEqual(response.status_code, 200)
@@ -84,8 +81,6 @@ class TestNextAvailableDate(BaseTestCase):
 
     @patch("reservations.views_ajax.SlotAvailabilityService")
     def test_get_next_available_date_with_correct_data(self, mock_slot_service):
-        """get_next_available_date_ajax view should return a JSON response with the next available date."""
-
         mock_result = mock_slot_service.return_value
         mock_result.get_next_available_date.return_value = date.today() + timedelta(
             days=1
@@ -102,3 +97,28 @@ class TestNextAvailableDate(BaseTestCase):
         )
         self.assertFalse(response_data.get("error"))
         mock_result.get_next_available_date.assert_called_once()
+
+    @patch("reservations.views_ajax.SlotAvailabilityService")
+    def test_get_next_available_date_no_slots_found(self, mock_slot_service):
+        mock_service = mock_slot_service.return_value
+        mock_service.get_next_available_date.return_value = None
+
+        response = self.client.get(self.url, data={"staff_member": self.employee1.id})
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertTrue(data["error"])
+        self.assertIn("No available slots", data["message"])
+
+    def test_get_next_available_date_without_staff_member(self):
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertTrue(data["error"])
+        self.assertIn("No staff member selected", data["message"])
+
+    def test_get_next_available_date_with_invalid_employee(self):
+        response = self.client.get(self.url, data={"staff_member": "9999"})
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertTrue(data["error"])
+        self.assertIn("Staff member not found", data["message"])
