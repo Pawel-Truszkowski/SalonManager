@@ -90,3 +90,5 @@ db.sqlite3
 .idea/
 media/
 backup.sql
+pyproject.toml
+poetry.lock

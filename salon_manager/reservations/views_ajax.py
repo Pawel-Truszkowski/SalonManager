@@ -9,11 +9,11 @@ from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.utils.translation import gettext as _
-
 from services.models import Service
 from users.models import CustomUser, Employee
 from utils.error_codes import ErrorCode
 from utils.support_functions import (
+    _calculate_non_working_days,
     check_for_conflicting_reservation,
     generate_available_slots,
     handle_invalid_form,
@@ -63,7 +63,7 @@ def get_available_slots(request):
 def get_next_available_date(request: HttpRequest, service_id) -> JsonResponse:
     staff_id = request.GET.get("staff_member")
 
-    if not staff_id or staff_id == "none":
+    if not staff_id or staff_id.lower() == "none":
         data = {"error": True, "next_available_date": ""}
         message = _("No staff member selected")
         return json_response(
@@ -111,30 +111,38 @@ def get_next_available_date(request: HttpRequest, service_id) -> JsonResponse:
 def get_non_working_days(request):
     staff_id = request.GET.get("staff_id")
 
-    if not staff_id or staff_id == "none":
-        return JsonResponse({"success": True, "non_working_days": []})
+    if not staff_id or staff_id.lower() == "none":
+        return json_response(
+            message=_("No staff member selected"),
+            success=False,
+            error_code=ErrorCode.STAFF_ID_REQUIRED,
+        )
 
     try:
-        employee = Employee.objects.get(id=int(staff_id))
+        staff_id_int = int(staff_id)
+    except (ValueError, TypeError):
+        return json_response(
+            message=_("Invalid staff ID format"),
+            success=False,
+            error_code=ErrorCode.STAFF_MEMBER_NOT_FOUND,
+        )
+
+    try:
+        employee = Employee.objects.get(id=staff_id_int)
     except Employee.DoesNotExist:
-        return JsonResponse({"success": False, "message": "Invalid staff member"})
+        return json_response(
+            message=_("Staff member not found"),
+            success=False,
+            error_code=ErrorCode.STAFF_MEMBER_NOT_FOUND,
+        )
 
-    today = timezone.now().date()
+    non_working_days = _calculate_non_working_days(employee=employee, days_ahead=60)
 
-    date_range = [today + timedelta(days=i) for i in range(60)]
-
-    working_days = WorkDay.objects.filter(
-        employee_id=employee.id,
-        date__gte=today,
-        date__lte=today + timedelta(days=60),
-    ).values_list("date", flat=True)
-
-    working_days = set(working_days)
-    non_working_days = [
-        d.strftime("%Y-%m-%d") for d in date_range if d not in working_days
-    ]
-
-    return JsonResponse({"success": True, "non_working_days": non_working_days})
+    return json_response(
+        message=_("Successfully retrieved non-working days"),
+        success=True,
+        custom_data={"non_working_days": non_working_days},
+    )
 
 
 def reservation_request(request: HttpRequest, service_id: int) -> HttpResponse:

@@ -3,7 +3,7 @@ from unittest.mock import Mock, patch
 
 from django.test import TestCase
 from django.urls import reverse
-
+from django.utils import timezone
 from reservations.models import WorkDay
 from services.models import Service, ServiceCategory
 from users.models import CustomUser, Employee
@@ -122,3 +122,112 @@ class TestNextAvailableDate(BaseTestCase):
         data = response.json()
         self.assertTrue(data["error"])
         self.assertIn("Staff member not found", data["message"])
+
+
+class TestGetNonWorkingDays(BaseTestCase):
+    @classmethod
+    def setUpTestData(cls):
+        super().setUpTestData()
+
+    def setUp(self):
+        self.url = reverse("get_non_working_days")
+        self.workday2 = WorkDay.objects.create(
+            employee=self.employee1,
+            date=date.today() + timedelta(days=2),
+            start_time=time(9, 0),
+            end_time=time(17, 0),
+        )
+        self.workday3 = WorkDay.objects.create(
+            employee=self.employee1,
+            date=date.today() + timedelta(days=3),
+            start_time=time(9, 0),
+            end_time=time(17, 0),
+        )
+
+    def test_no_staff_id_provided(self):
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, 200)
+        response_data = response.json()
+
+        self.assertFalse(response_data["success"])
+        self.assertIn("No staff member selected", response_data["message"])
+
+    def test_staff_id_is_none_string(self):
+        response = self.client.get(self.url, {"staff_id": "none"})
+
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+
+        self.assertFalse(data["success"])
+        self.assertIn("No staff member selected", data["message"])
+
+    def test_invalid_staff_id_format(self):
+        response = self.client.get(self.url, {"staff_id": "abc"})
+
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+
+        self.assertFalse(data["success"])
+        self.assertIn("Invalid staff ID format", data["message"])
+
+    def test_staff_member_not_found(self):
+        response = self.client.get(self.url, {"staff_id": "99999"})
+
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+
+        self.assertFalse(data["success"])
+        self.assertIn("Staff member not found", data["message"])
+
+    def test_non_working_days_format(self):
+        response = self.client.get(self.url, {"staff_id": str(self.employee1.id)})
+        data = response.json()
+        non_working_days = data["non_working_days"]
+        for date_str in non_working_days:
+            self.assertRegex(date_str, r"^\d{4}-\d{2}-\d{2}$")
+
+    def test_non_working_days_excludes_working_days(self):
+        today = timezone.now().date()
+        response = self.client.get(self.url, {"staff_id": str(self.employee1.id)})
+        data = response.json()
+
+        non_working_days = data["non_working_days"]
+
+        self.assertNotIn(today.strftime("%Y-%m-%d"), non_working_days)
+        self.assertNotIn(
+            (today + timedelta(days=2)).strftime("%Y-%m-%d"), non_working_days
+        )
+        self.assertNotIn(
+            (today + timedelta(days=3)).strftime("%Y-%m-%d"), non_working_days
+        )
+
+        self.assertIn(
+            (today + timedelta(days=1)).strftime("%Y-%m-%d"), non_working_days
+        )
+
+    def test_employee_with_no_working_days(self):
+        self.workday.delete()
+        self.workday2.delete()
+        self.workday3.delete()
+        response = self.client.get(self.url, {"staff_id": str(self.employee1.id)})
+        data = response.json()
+
+        self.assertTrue(data["success"])
+        self.assertEqual(len(data["non_working_days"]), 61)
+
+    def test_employee_working_all_days(self):
+        today = timezone.now().date()
+        for i in range(61):
+            WorkDay.objects.create(
+                employee=self.employee1,
+                date=today + timedelta(days=i),
+                start_time=time(9, 0),
+                end_time=time(17, 0),
+            )
+
+        response = self.client.get(self.url, {"staff_id": str(self.employee1.id)})
+        data = response.json()
+
+        self.assertTrue(data["success"])
+        self.assertEqual(len(data["non_working_days"]), 0)
