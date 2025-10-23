@@ -2,6 +2,7 @@ import uuid
 from datetime import date, datetime, time, timedelta
 from typing import TYPE_CHECKING, Any, List, Optional
 
+from django.apps import apps
 from django.db.models import QuerySet
 from django.http import JsonResponse
 from django.utils import timezone
@@ -11,6 +12,15 @@ from .error_codes import ErrorCode
 if TYPE_CHECKING:
     from ..reservations.forms import SlotForm
     from ..reservations.models import ReservationRequest
+    from ..users import Employee
+
+
+def get_employee_model():
+    return apps.get_model("users", "Employee")
+
+
+def get_work_day_model():
+    return apps.get_model("reservations", "WorkDay")
 
 
 def generate_available_slots(
@@ -167,3 +177,28 @@ def time_difference(time1: time, time2: time) -> timedelta:
     delta = datetime2 - datetime1
 
     return delta
+
+
+def _calculate_non_working_days(
+    employee: "Employee", days_ahead: int = 60
+) -> List[str]:
+    WorkDay = get_work_day_model()
+
+    today = timezone.now().date()
+    end_date = today + timedelta(days=days_ahead)
+
+    working_days = set(
+        WorkDay.objects.filter(
+            employee=employee, date__range=(today, end_date)
+        ).values_list("date", flat=True)
+    )
+
+    non_working_days = []
+
+    for i in range(days_ahead + 1):
+        current_date = today + timedelta(days=i)
+        if current_date not in working_days:
+            formatted_date = current_date.strftime("%Y-%m-%d")
+            non_working_days.append(formatted_date)
+
+    return non_working_days
