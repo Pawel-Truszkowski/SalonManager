@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any, List, Optional
 
 from django.apps import apps
 from django.db.models import QuerySet
-from django.http import JsonResponse
+from django.http import HttpRequest, JsonResponse
 from django.utils import timezone
 
 from .error_codes import ErrorCode
@@ -12,6 +12,7 @@ from .error_codes import ErrorCode
 if TYPE_CHECKING:
     from ..reservations.forms import SlotForm
     from ..reservations.models import ReservationRequest
+    from ..services import Service
     from ..users import Employee
 
 
@@ -202,3 +203,25 @@ def _calculate_non_working_days(
             non_working_days.append(formatted_date)
 
     return non_working_days
+
+
+def _build_request_reservation_context(
+    request: HttpRequest, service: "Service"
+) -> dict:
+    Employee = get_employee_model()
+    staff_members = Employee.objects.filter(services=service).select_related()
+    staff_count = staff_members.count()
+    preselected_staff = staff_members.first() if staff_count == 1 else None
+
+    return {
+        "service": service,
+        "all_staff_members": staff_members,
+        "staff_member": preselected_staff,
+        "date_chosen": _format_today_date(),
+        "timezoneTxt": str(timezone.get_current_timezone()),
+        "locale": request.LANGUAGE_CODE or "en",
+    }
+
+
+def _format_today_date() -> str:
+    return date.today().strftime("%a, %B %d, %Y")

@@ -1,7 +1,6 @@
 from datetime import date, time
 
 from django.test import TestCase
-
 from reservations.models import WorkDay
 from services.models import Service, ServiceCategory
 from users.models import CustomUser, Employee

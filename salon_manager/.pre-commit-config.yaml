@@ -23,7 +23,7 @@ repos:
     rev: 1.8.2
     hooks:
     -   id: bandit
-        args: ["-c", "salon_manager/pyproject.toml"]
+        args: ["-c", "pyproject.toml"]
         additional_dependencies: [ "bandit[toml]" ]
 -   repo: https://github.com/djlint/djLint
     rev: v1.36.4
