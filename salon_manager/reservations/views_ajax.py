@@ -1,5 +1,5 @@
-import json
-from datetime import date, timedelta
+import logging
+from datetime import date
 from typing import Any
 
 import requests
@@ -9,10 +9,12 @@ from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.utils.translation import gettext as _
+from django.views.decorators.http import require_POST
 from services.models import Service
 from users.models import CustomUser, Employee
 from utils.error_codes import ErrorCode
 from utils.support_functions import (
+    _build_request_reservation_context,
     _calculate_non_working_days,
     check_for_conflicting_reservation,
     generate_available_slots,
@@ -24,6 +26,8 @@ from .forms import ClientDataForm, ReservationForm, ReservationRequestForm, Slot
 from .models import Reservation, ReservationRequest, WorkDay
 from .service import SlotAvailabilityService
 from .tasks import send_reservation_notification
+
+logger = logging.getLogger(__name__)
 
 
 def get_available_slots(request):
@@ -146,37 +150,8 @@ def get_non_working_days(request):
 
 
 def reservation_request(request: HttpRequest, service_id: int) -> HttpResponse:
-    service_categories = Service.objects.values_list(
-        "category__name", flat=True
-    ).distinct()
-    staff_member = None
-
-    context = {
-        "service_categories": service_categories,
-        "timezoneTxt": str(timezone.get_current_timezone()),
-        "locale": "en",
-    }
-
-    if service_id:
-        try:
-            service = Service.objects.get(id=service_id)
-            context["service"] = service
-        except Service.DoesNotExist:
-            messages.error(request, "Service not found.")
-            return redirect("services_list")
-    else:
-        messages.error(request, "No service selected.")
-        return redirect("services_list")
-
-    all_staff_members = Employee.objects.filter(services=service)
-
-    if all_staff_members.count() == 1:
-        staff_member = all_staff_members.first()
-
-    context["all_staff_members"] = all_staff_members
-    context["staff_member"] = staff_member
-    context["date_chosen"] = date.today().strftime("%a, %B %d, %Y")
-
+    service = get_object_or_404(Service, id=service_id)
+    context = _build_request_reservation_context(request, service)
     return render(request, "reservations/reservation_create.html", context)
 
 
@@ -184,18 +159,18 @@ def reservation_request_submit(request: HttpRequest) -> HttpResponse:
     if request.method == "POST":
         form = ReservationRequestForm(request.POST)
         if form.is_valid():
-            employee = form.cleaned_data["employee"]
-            employee_exists = Employee.objects.filter(id=employee.id).exists()
-            if not employee_exists:
-                messages.error(request, _("Selected staff member does not exist."))
-            else:
+            try:
                 ar = form.save()
-                request.session[f"reservation_completed_{ar.id_request}"] = False
+                request.session[f"reservation_submitted_{ar.id_request}"] = False
                 return redirect(
                     "reservation_client_information",
                     reservation_request_id=ar.id,
                     id_request=ar.id_request,
                 )
+            except Exception as e:
+                logger.info(f"Error saving reservation request: {e}", exc_info=True)
+                messages.error(request, _("an error occured. Please try again."))
+
         else:
             messages.error(
                 request,
