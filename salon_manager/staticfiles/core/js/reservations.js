@@ -112,22 +112,12 @@ body.on('click', '.btn-submit-appointment', function () {
         const dateParts = selectedDate.split(', ');
         const monthDayYear = dateParts[1] + "," + dateParts[2];
         const formattedDate = new Date(monthDayYear + " " + startTime);
-
-        console.log("formattedDate: ", formattedDate);
-
         const date = formattedDate.toISOString().slice(0, 10);
-
-        console.log("serviceDuration: ", serviceDuration);
-
         const endTimeDate = new Date(formattedDate.getTime() + serviceDuration * 60000);
-
-        console.log("formattedDate.getTime(): ", formattedDate.getTime());
-
         const endTime = formatTime(endTimeDate);
-        console.log("endTimeDate:", endTimeDate);
-        console.log("Data:", date, startTime, endTime, serviceId, staffId)
         const form = $('.appointment-form');
         let formAction = appointmentRequestSubmitURL;
+
         form.attr('action', formAction);
         if (!form.find('input[name="appointment_request_id"]').length) {
             form.append($('<input>', {
