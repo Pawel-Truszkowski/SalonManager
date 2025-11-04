@@ -5,11 +5,10 @@ from django.contrib.messages import get_messages
 from django.test import Client, TestCase
 from django.urls import reverse
 from django.utils import timezone
-from reservations.models import WorkDay
+from reservations.models import ReservationRequest, WorkDay
 from services.models import Service, ServiceCategory
 from users.models import CustomUser, Employee
 
-from ..models import ReservationRequest
 from .base_test import BaseTestCase
 
 
