@@ -109,7 +109,7 @@ class SlotAvailabilityService:
         if selected_date > date.today():
             return available_slots
         elif selected_date == date.today():
-            current_time = timezone.now().time().strftime("%H:%M")
+            current_time = timezone.localtime().time().strftime("%H:%M")
             return [slot for slot in available_slots if slot > current_time]
         else:
             return []

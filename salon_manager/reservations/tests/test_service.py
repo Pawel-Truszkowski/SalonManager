@@ -32,7 +32,7 @@ class TestSlotAvailabilityService(TestCase):
     def test_filter_past_slots_returns_only_future_slots_for_today(self, mock_date):
         mock_date.today.return_value = self.selected_date
 
-        with patch("reservations.service.timezone.now") as mock_now:
+        with patch("reservations.service.timezone.localtime") as mock_now:
             mock_now.return_value.time.return_value = time(11, 0)
             result = self.service._filter_past_slots(
                 self.available_slots, self.selected_date

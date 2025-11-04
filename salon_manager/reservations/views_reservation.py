@@ -5,7 +5,6 @@ from django.contrib import messages
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.translation import gettext as _
-from django.views.decorators.http import require_POST
 from services.models import Service
 from users.models import CustomUser, Employee
 from utils.support_functions import (

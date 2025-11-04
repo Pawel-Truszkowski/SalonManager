@@ -13,79 +13,6 @@ from .base_test import BaseTestCase
 
 
 class TestReservationRequestView(BaseTestCase):
-    @classmethod
-    def setUpTestData(cls):
-        super().setUpTestData()
-
-    def setUp(self):
-        super().setUp()
-        self.url = reverse(
-            "reservation_request", kwargs={"service_id": self.service1.id}
-        )
-        self.employee2 = Employee.objects.create(
-            user=self.users["employee2"], name="Samantha"
-        )
-        self.employee2.services.add(self.service1)
-        self.workday2 = WorkDay.objects.create(
-            employee=self.employee2,
-            date=date.today(),
-            start_time=time(9, 0),
-            end_time=time(17, 0),
-        )
-
-    def test_successful_reservation_request_with_valid_service_id(self):
-        response = self.client.get(self.url)
-
-        self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, "reservations/reservation_create.html")
-        self.assertIn("service", response.context)
-        self.assertEqual(response.context["service"], self.service1)
-
-    def test_service_not_found_redirects_to_services_list(self):
-        non_existent_id = 99999
-        url = reverse("reservation_request", kwargs={"service_id": non_existent_id})
-        response = self.client.get(url)
-        self.assertEqual(response.status_code, 404)
-
-    def test_context_contains_required_data(self):
-        response = self.client.get(self.url)
-        self.assertIn("service", response.context)
-        self.assertIn("all_staff_members", response.context)
-        self.assertIn("date_chosen", response.context)
-        self.assertIn("timezoneTxt", response.context)
-        self.assertIn("locale", response.context)
-
-    def test_all_staff_members_are_in_context(self):
-        response = self.client.get(self.url)
-
-        staff_members = response.context["all_staff_members"]
-        self.assertEqual(staff_members.count(), 2)
-        self.assertIn(self.employee1, staff_members)
-        self.assertIn(self.employee2, staff_members)
-
-    def test_single_staff_member_is_preselected(self):
-        service_category = ServiceCategory.objects.create(
-            name="Pedicure", description="This is category of service for testing"
-        )
-        single_staff_service = Service.objects.create(
-            name="Single Staff Service",
-            description="Service with one employee",
-            category=service_category,
-            price=50.00,
-            duration=30,
-        )
-        self.employee1.services.add(single_staff_service)
-
-        response = self.client.get(
-            reverse(
-                "reservation_request", kwargs={"service_id": single_staff_service.id}
-            )
-        )
-        self.assertIn("staff_member", response.context)
-        self.assertEqual(response.context["staff_member"], self.employee1)
-
-
-class ReservationRequestTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.client = Client()
@@ -164,3 +91,22 @@ class ReservationRequestTestCase(BaseTestCase):
             [self.employee1, self.employee2],
         )
         self.assertEqual(len(response.context["all_staff_members"]), 2)
+
+
+class TestReservationClientInformationView(BaseTestCase):
+    def setUp(self):
+        super().setUp()
+        self.client_user = self.users["client1"]
+
+        self.reservation_request = Mock()
+        self.reservation_request.id = 1
+        self.reservation_request.id_request = 1234567890
+
+        self.url = reverse(
+            "reservation_client_information",
+            kwargs={
+                "reservation_request_id": self.reservation_request.id,
+                "id_request": self.reservation_request.id_request,
+            },
+        )
+        self.valid_client_data_form = {"name": "Test Case", "email": "test@case.com"}
