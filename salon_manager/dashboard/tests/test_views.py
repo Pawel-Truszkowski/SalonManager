@@ -1,11 +1,10 @@
 from unittest.mock import patch
 
+from dashboard.forms import ContactForm
+from dashboard.models import Contact
 from django.contrib.messages import get_messages
 from django.test import TestCase
 from django.urls import reverse
-
-from dashboard.forms import ContactForm
-from dashboard.models import Contact
 
 
 class TestHomeView(TestCase):
@@ -70,11 +69,15 @@ class TestContactView(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertTrue(contact_exists)
+
         form = response.context["form"]
+
         self.assertTrue(form.is_valid())
         mock_customer_email.delay_on_commit.assert_called_once()
         mock_admin_email.delay_on_commit.assert_called_once()
+
         message = list(get_messages(response.wsgi_request))
+
         self.assertEqual(str(message[0]), "Your message has been sent.")
 
     def test_contact_view_post_invalid_data(self):
