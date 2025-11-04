@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import views, views_ajax
+from . import views, views_ajax, views_reservation
 
 urlpatterns = [
     path(
@@ -20,18 +20,13 @@ urlpatterns = [
     ),
     # New Reservations
     path(
-        "<int:service_id>/",
-        views_ajax.reservation_request,
+        "request/<int:service_id>/",
+        views_reservation.reservation_request,
         name="reservation_request",
     ),
     path(
-        "request-submit/",
-        views_ajax.reservation_request_submit,
-        name="reservation_request_submit",
-    ),
-    path(
         "client-info/<int:reservation_request_id>/<str:id_request>/",
-        views_ajax.reservation_client_information,
+        views_reservation.reservation_client_information,
         name="reservation_client_information",
     ),
     # Ajax for New Reservations

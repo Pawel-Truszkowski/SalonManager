@@ -1,10 +1,9 @@
 from datetime import date, timedelta
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from django.db.models import QuerySet
 from django.utils import timezone
 from django.utils.translation import gettext as _
-
 from services.models import Service
 from utils.support_functions import (
     check_for_conflicting_reservation,
@@ -20,7 +19,9 @@ if TYPE_CHECKING:
 
 
 class SlotAvailabilityService:
-    def get_available_slots_(self, selected_date, employee, service_id):
+    def get_available_slots_(
+        self, selected_date: date, employee: "Employee", service_id: int
+    ) -> dict[str, Any]:
         self._validate_working_day(employee, selected_date)
 
         service = self._get_service(service_id)
@@ -86,7 +87,11 @@ class SlotAvailabilityService:
         )
 
     @staticmethod
-    def _calculate_available_slots(work_days, service_duration, existing_reservations):
+    def _calculate_available_slots(
+        work_days: "WorkDay",
+        service_duration: int,
+        existing_reservations: "ReservationRequest",
+    ) -> list[str]:
         available_slots = []
         for work_day in work_days:
             available_slots += generate_available_slots(
@@ -98,8 +103,13 @@ class SlotAvailabilityService:
         return available_slots
 
     @staticmethod
-    def _filter_past_slots(available_slots, selected_date):
-        if selected_date <= date.today():
-            current_time = timezone.now().time().strftime("%H:%M")
+    def _filter_past_slots(
+        available_slots: list[str], selected_date: date
+    ) -> list[str]:
+        if selected_date > date.today():
+            return available_slots
+        elif selected_date == date.today():
+            current_time = timezone.localtime().time().strftime("%H:%M")
             return [slot for slot in available_slots if slot > current_time]
-        return available_slots
+        else:
+            return []

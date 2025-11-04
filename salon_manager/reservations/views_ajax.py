@@ -1,16 +1,8 @@
 import logging
 from datetime import date
-from typing import Any
 
-import requests
-from django.contrib import messages
-from django.db.models import QuerySet
 from django.http import HttpRequest, HttpResponse, JsonResponse
-from django.shortcuts import get_object_or_404, redirect, render
-from django.utils import timezone
 from django.utils.translation import gettext as _
-from django.views.decorators.http import require_POST
-from services.models import Service
 from users.models import CustomUser, Employee
 from utils.error_codes import ErrorCode
 from utils.support_functions import (
@@ -22,10 +14,8 @@ from utils.support_functions import (
     json_response,
 )
 
-from .forms import ClientDataForm, ReservationForm, ReservationRequestForm, SlotForm
-from .models import Reservation, ReservationRequest, WorkDay
+from .forms import SlotForm
 from .service import SlotAvailabilityService
-from .tasks import send_reservation_notification
 
 logger = logging.getLogger(__name__)
 
@@ -147,146 +137,3 @@ def get_non_working_days(request):
         success=True,
         custom_data={"non_working_days": non_working_days},
     )
-
-
-def reservation_request(request: HttpRequest, service_id: int) -> HttpResponse:
-    service = get_object_or_404(Service, id=service_id)
-    context = _build_request_reservation_context(request, service)
-    return render(request, "reservations/reservation_create.html", context)
-
-
-def reservation_request_submit(request: HttpRequest) -> HttpResponse:
-    if request.method == "POST":
-        form = ReservationRequestForm(request.POST)
-        if form.is_valid():
-            try:
-                ar = form.save()
-                request.session[f"reservation_submitted_{ar.id_request}"] = False
-                return redirect(
-                    "reservation_client_information",
-                    reservation_request_id=ar.id,
-                    id_request=ar.id_request,
-                )
-            except Exception as e:
-                logger.info(f"Error saving reservation request: {e}", exc_info=True)
-                messages.error(request, _("an error occured. Please try again."))
-
-        else:
-            messages.error(
-                request,
-                _(
-                    "There was an error in your submission. Please check the form and try again."
-                ),
-            )
-    else:
-        form = ReservationRequestForm()
-
-    return render(
-        request, "reservations/reservation_create.html", context={"form": form}
-    )
-
-
-def reservation_client_information(
-    request: HttpRequest, reservation_request_id: int, id_request: int
-) -> HttpResponse:
-    reservation_request_obj = get_object_or_404(
-        ReservationRequest, pk=reservation_request_id
-    )
-
-    if request.session.get(f"reservation_submitted_{id_request}", False):
-        context = {
-            "user": request.user,
-            "service_id": reservation_request_obj.service.id,
-        }
-        return render(
-            request, "reservations/304_already_submitted.html", context=context
-        )
-
-    if request.method == "POST":
-        reservation_form = ReservationForm(request.POST)
-        client_data_form = ClientDataForm(request.POST)
-
-        if reservation_form.is_valid() and client_data_form.is_valid():
-            client_data = client_data_form.cleaned_data
-            reservation_data = reservation_form.cleaned_data
-
-            response = create_reservation(
-                reservation_request_obj, id_request, client_data, reservation_data
-            )
-
-            if response:
-                request.session.setdefault(f"reservation_submitted_{id_request}", True)
-                return redirect("reservation_success")
-            else:
-                messages.error(
-                    request,
-                    _(
-                        "There was an error creating your reservation. Please try again."
-                    ),
-                )
-        else:
-            print(reservation_form.errors, client_data_form.errors)
-            messages.error(
-                request,
-                _(
-                    "There was an error in your submission. Please check the form and try again."
-                ),
-            )
-
-    else:
-        initial_data = {}
-        if request.user.is_authenticated and isinstance(request.user, CustomUser):
-            initial_data = {
-                "name": f"{request.user.first_name} {request.user.last_name}".strip(),
-                "email": request.user.email,
-                "phone": request.user.phone_number,
-            }
-        reservation_form = ReservationForm(initial=initial_data)
-        client_data_form = ClientDataForm(initial=initial_data)
-
-    context = {
-        "reservation_request_id": reservation_request_id,
-        "id_request": id_request,
-        "ar": reservation_request_obj,
-        "form": reservation_form,
-        "client_data_form": client_data_form,
-        "service_name": reservation_request_obj.service.name,
-    }
-    return render(
-        request, "reservations/reservation_client_information.html", context=context
-    )
-
-
-def create_reservation(
-    reservation_request_obj: ReservationRequest,
-    id_request: int,
-    client_data: dict[str, Any],
-    reservation_data: dict[str, Any],
-) -> bool:
-    email = client_data["email"]
-    name = client_data["name"]
-    phone = reservation_data["phone"]
-    additional_info = reservation_data["additional_info"]
-
-    customer = CustomUser.objects.filter(email=email).first()
-
-    Reservation.objects.update_or_create(
-        reservation_request=reservation_request_obj,
-        defaults={
-            "customer": customer,
-            "phone": phone,
-            "id_request": id_request,
-            "additional_info": additional_info,
-            "email": email,
-            "name": name,
-        },
-    )
-
-    send_reservation_notification.delay_on_commit(  # type: ignore[attr-defined]
-        customer=name,
-        service=reservation_request_obj.service.name,
-        date=reservation_request_obj.date,
-        time=reservation_request_obj.start_time,
-    )
-
-    return True

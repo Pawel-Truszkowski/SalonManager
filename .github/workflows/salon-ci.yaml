@@ -53,7 +53,7 @@ jobs:
         OWNER_EMAIL: 'test@test.com'
     - name: Run Bandit
       run: |
-        bandit -c pyproject.toml -r .
+        bandit -c ../pyproject.toml -r .
     - name: Run Safety
       run: |
         safety check

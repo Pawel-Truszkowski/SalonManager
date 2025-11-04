@@ -3,7 +3,6 @@ from unittest.mock import Mock, patch
 
 import pytest
 from django.test import TestCase
-
 from reservations.service import SlotAvailabilityService
 
 
@@ -33,7 +32,7 @@ class TestSlotAvailabilityService(TestCase):
     def test_filter_past_slots_returns_only_future_slots_for_today(self, mock_date):
         mock_date.today.return_value = self.selected_date
 
-        with patch("reservations.service.timezone.now") as mock_now:
+        with patch("reservations.service.timezone.localtime") as mock_now:
             mock_now.return_value.time.return_value = time(11, 0)
             result = self.service._filter_past_slots(
                 self.available_slots, self.selected_date
@@ -47,8 +46,8 @@ class TestSlotAvailabilityService(TestCase):
         self.assertEqual(result, self.available_slots)
 
     def test_filter_past_slots_return_empty_list_for_past_date(self):
-        future_date = date.today() - timedelta(days=10)
-        result = self.service._filter_past_slots(self.available_slots, future_date)
+        past_date = date.today() - timedelta(days=10)
+        result = self.service._filter_past_slots(self.available_slots, past_date)
         self.assertEqual(result, [])
 
     @patch("reservations.service.Service.objects.get")
