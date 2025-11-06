@@ -5,7 +5,8 @@ from django.contrib.messages import get_messages
 from django.test import Client, TestCase
 from django.urls import reverse
 from django.utils import timezone
-from reservations.models import ReservationRequest, WorkDay
+from reservations.models import Reservation, ReservationRequest, WorkDay
+from reservations.views_reservation import create_reservation
 from services.models import Service, ServiceCategory
 from users.models import CustomUser, Employee
 
@@ -115,10 +116,13 @@ class TestReservationClientInformationView(BaseTestCase):
                 "id_request": self.reservation_request.id_request,
             },
         )
-        self.valid_client_data_form = {"name": "Test Case", "email": "test@case.com"}
+        self.valid_client_data_form = {
+            "name": "Georges Hammond",
+            "email": "georges.s.hammond@test.com",
+        }
         self.valid_reservation_form = {
             "phone_0": "PL",
-            "phone_1": "500111222",
+            "phone_1": "611711911",
             "additional_info": "Please contact me!",
         }
 
@@ -192,3 +196,101 @@ class TestReservationClientInformationView(BaseTestCase):
             "There was an error in your submission. Please check the form and try again.",
             messages,
         )
+
+    def test_create_reservation_with_correct_data_should_return_reservation(self):
+        reservation_data = {
+            "phone": "+48611711911",
+            "additional_info": "Please contact me!",
+        }
+        result = create_reservation(
+            reservation_request_obj=self.reservation_request,
+            id_request=self.reservation_request.id_request,
+            client_data=self.valid_client_data_form,
+            reservation_data=reservation_data,
+        )
+
+        self.assertIsNotNone(result)
+        self.assertTrue(result)
+        self.assertEqual(result.customer, self.client_user)
+        self.assertEqual(result.email, "georges.s.hammond@test.com")
+        self.assertEqual(result.name, "Georges Hammond")
+        self.assertEqual(result.phone, "+48611711911")
+        self.assertEqual(result.additional_info, "Please contact me!")
+
+    def test_missing_required_field_raises_error(self):
+        incomplete_data = {"email": "test@example.com"}
+
+        with self.assertRaises(KeyError):
+            create_reservation(
+                reservation_request_obj=self.reservation_request,
+                id_request=self.reservation_request.id_request,
+                client_data=self.valid_client_data_form,
+                reservation_data=incomplete_data,
+            )
+
+    def test_duplicate_reservation_request_raises_error(self):
+        reservation_data = {
+            "phone": "+48611711911",
+            "additional_info": "Please contact me!",
+        }
+        create_reservation(
+            reservation_request_obj=self.reservation_request,
+            id_request=6,
+            client_data=self.valid_client_data_form,
+            reservation_data=reservation_data,
+        )
+
+        with self.assertRaises(Exception):
+            create_reservation(
+                reservation_request_obj=self.reservation_request,
+                id_request=7,
+                client_data=self._valid_client_data_form,
+                reservation_data=reservation_data,
+            )
+
+    @patch(
+        "reservations.views_reservation.send_reservation_notification.delay_on_commit"
+    )
+    def test_notification_is_sent(self, mock_notification):
+        reservation_data = {
+            "phone": "+48611711911",
+            "additional_info": "Please contact me!",
+        }
+        create_reservation(
+            reservation_request_obj=self.reservation_request,
+            id_request=3,
+            client_data=self.valid_client_data_form,
+            reservation_data=reservation_data,
+        )
+
+        mock_notification.assert_called_once_with(
+            customer=self.valid_client_data_form["name"],
+            service=self.reservation_request.service.name,
+            date=self.reservation_request.date,
+            time=self.reservation_request.start_time,
+        )
+
+    @patch(
+        "reservations.views_reservation.send_reservation_notification.delay_on_commit"
+    )
+    @patch("reservations.views_reservation.logger")
+    def test_notification_failure_does_not_prevent_reservation(
+        self, mock_logger, mock_notification
+    ):
+        mock_notification.side_effect = Exception("Email service down")
+
+        reservation_data = {
+            "phone": "+48611711911",
+            "additional_info": "Please contact me!",
+        }
+        reservation = create_reservation(
+            reservation_request_obj=self.reservation_request,
+            id_request=4,
+            client_data=self.valid_client_data_form,
+            reservation_data=reservation_data,
+        )
+
+        self.assertIsNotNone(reservation)
+        self.assertTrue(Reservation.objects.filter(id=reservation.id).exists())
+
+        mock_logger.exception.assert_called_once()

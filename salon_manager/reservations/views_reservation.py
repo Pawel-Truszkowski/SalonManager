@@ -128,39 +128,32 @@ def create_reservation(
     id_request: int,
     client_data: dict[str, Any],
     reservation_data: dict[str, Any],
-) -> bool:
+) -> Reservation:
+    email = client_data["email"]
+    name = client_data["name"]
+    phone = reservation_data["phone"]
+    additional_info = reservation_data["additional_info"]
+
+    customer = CustomUser.objects.filter(email=email).first()
+
+    reservation = Reservation.objects.create(
+        reservation_request=reservation_request_obj,
+        customer=customer,
+        phone=phone,
+        id_request=id_request,
+        additional_info=additional_info,
+        email=email,
+        name=name,
+    )
+
     try:
-        email = client_data["email"]
-        name = client_data["name"]
-        phone = reservation_data["phone"]
-        additional_info = reservation_data["additional_info"]
-
-        customer = CustomUser.objects.filter(email=email).first()
-
-        Reservation.objects.update_or_create(
-            reservation_request=reservation_request_obj,
-            defaults={
-                "customer": customer,
-                "phone": phone,
-                "id_request": id_request,
-                "additional_info": additional_info,
-                "email": email,
-                "name": name,
-            },
+        send_reservation_notification.delay_on_commit(  # type: ignore[attr-defined]
+            customer=name,
+            service=reservation_request_obj.service.name,
+            date=reservation_request_obj.date,
+            time=reservation_request_obj.start_time,
         )
-
-        try:
-            send_reservation_notification.delay_on_commit(  # type: ignore[attr-defined]
-                customer=name,
-                service=reservation_request_obj.service.name,
-                date=reservation_request_obj.date,
-                time=reservation_request_obj.start_time,
-            )
-        except Exception as e:
-            logger.exception(f"Exception occurred: {e}")
-
-        return True
-
     except Exception as e:
-        logger.exception(f"Reservation submission failed: {e}")
-        return False
+        logger.exception(f"Exception occurred: {e}")
+
+    return reservation
