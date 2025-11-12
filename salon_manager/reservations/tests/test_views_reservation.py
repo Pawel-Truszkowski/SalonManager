@@ -1,13 +1,11 @@
-from datetime import date, time, timedelta
-from unittest.mock import Mock, patch
+from datetime import date, timedelta
+from unittest.mock import patch
 
 from django.contrib.messages import get_messages
 from django.test import Client, TestCase
 from django.urls import reverse
-from django.utils import timezone
 from reservations.models import Reservation, ReservationRequest, WorkDay
 from reservations.views_reservation import create_reservation
-from services.models import Service, ServiceCategory
 from users.models import CustomUser, Employee
 
 from .base_test import BaseTestCase

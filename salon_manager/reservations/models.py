@@ -8,7 +8,6 @@ from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from phonenumber_field.modelfields import PhoneNumberField
-
 from services.models import Service
 from users.models import CustomUser, Employee
 from utils.support_functions import generate_random_id, get_timestamp, time_difference
@@ -21,6 +20,18 @@ class WorkDay(models.Model):
     employee = models.ForeignKey(
         Employee, on_delete=models.CASCADE, related_name="work_day"
     )
+
+    def clean(self):
+        super().clean()
+        if self.start_time and self.end_time:
+            if self.end_time <= self.start_time:
+                raise ValidationError(
+                    {"end_time": "The end time must be later than the start time!"}
+                )
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
 
     def __str__(self) -> str:
         return f"{self.employee} - {self.date}"
