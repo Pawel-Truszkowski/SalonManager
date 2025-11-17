@@ -4,8 +4,6 @@ from unittest.mock import patch
 from django.urls import reverse
 from django.utils import timezone
 from reservations.models import WorkDay
-from services.models import Service, ServiceCategory
-from users.models import CustomUser, Employee
 
 from .base_test import BaseTestCase
 

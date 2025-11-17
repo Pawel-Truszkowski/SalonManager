@@ -4,19 +4,19 @@ from . import views, views_ajax, views_reservation
 
 urlpatterns = [
     path(
+        "reservation-success/",
+        views.ReservationSuccessView.as_view(),
+        name="reservation_success",
+    ),
+    path(
         "your-reservations/",
         views.UserReservationsListView.as_view(),
-        name="your_reservation_list",
+        name="user_reservations_list",
     ),
     path(
         "reservation-cancel/<int:pk>/",
         views.CancelUserReservationView.as_view(),
-        name="cancel",
-    ),
-    path(
-        "reservation-success/",
-        views.ReservationSuccessView.as_view(),
-        name="reservation_success",
+        name="reservation_cancel",
     ),
     # New Reservations
     path(

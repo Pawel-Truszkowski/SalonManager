@@ -29,7 +29,7 @@
                                     <td>{{ reservation.get_service_name }}</td>
                                     <td>{{ reservation.status }}</td>
                                     <td>
-                                        <form method="post" action="{% url 'cancel' reservation.id %}">
+                                        <form method="post" action="{% url 'reservation_cancel' reservation.id %}">
                                             {% csrf_token %}
                                             <button type="submit"
                                                     class="btn-danger"

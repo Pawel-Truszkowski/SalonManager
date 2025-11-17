@@ -1,4 +1,5 @@
 import json
+import logging
 from datetime import datetime, timedelta
 from typing import Any
 
@@ -18,13 +19,14 @@ from django.views.generic import (
     UpdateView,
     View,
 )
-
 from users.models import Employee
 from utils.mixins import OwnerRequiredMixin
 
 from .forms import ClientDataForm, ReservationForm, ReservationRequestForm, WorkDayForm
 from .models import Reservation, WorkDay
 from .tasks import send_confirmation_email
+
+logger = logging.getLogger(__name__)
 
 
 class ReservationSuccessView(TemplateView):
@@ -51,11 +53,11 @@ class CancelUserReservationView(LoginRequiredMixin, UserPassesTestMixin, View):
         if reservation.status != "CANCELLED":
             reservation.status = "CANCELLED"
             reservation.save()
-            messages.success(request, "The reservation has been canceled")
+            messages.success(request, "The reservation has been canceled!")
         else:
-            messages.warning(request, "The reservation has already been canceled")
+            messages.info(request, "The reservation has already been canceled.")
 
-        return redirect("your_reservation_list")
+        return redirect("user_reservations_list")
 
     def test_func(self) -> bool:
         return self.request.user.is_authenticated
@@ -365,22 +367,30 @@ class ConfirmReservationView(OwnerRequiredMixin, View):
         self, request: HttpRequest, pk: int, *args: Any, **kwargs: Any
     ) -> HttpResponse:
         reservation = get_object_or_404(Reservation, pk=pk)
+
+        if reservation.status == "CONFIRMED":
+            messages.info(request, "Reservation already confirmed!")
+            return redirect(reverse("manage_reservations_list"))
+
         reservation.status = "CONFIRMED"
         reservation.save()
-        messages.success(request, "Reservation confirmed")
-
+        messages.success(request, "Reservation confirmed!")
         cancel_url = request.build_absolute_uri(
             reverse("cancel_reservation", args=[reservation.id_request])
         )
 
-        send_confirmation_email.delay_on_commit(  # type: ignore[attr-defined]
-            customer_email=reservation.email,
-            customer_name=reservation.name,
-            service_name=reservation.reservation_request.service.name,
-            date=reservation.reservation_request.date,
-            time=reservation.reservation_request.start_time,
-            cancel_url=cancel_url,
-        )
+        try:
+            send_confirmation_email.delay_on_commit(  # type: ignore[attr-defined]
+                customer_email=reservation.email,
+                customer_name=reservation.name,
+                service_name=reservation.reservation_request.service.name,
+                date=reservation.reservation_request.date,
+                time=reservation.reservation_request.start_time,
+                cancel_url=cancel_url,
+            )
+        except Exception as e:
+            logger.exception(f"Exception occurred: {e}")
+
         return redirect(reverse("manage_reservations_list"))
 
 
