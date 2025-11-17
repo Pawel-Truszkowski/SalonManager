@@ -115,23 +115,14 @@ class Reservation(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self) -> str:
-        return f"Reservation {self.customer.username} for {self.reservation_request.date} at {self.reservation_request.start_time}"
+        customer_name = self.customer.username if self.customer else self.name
+        return f"Reservation {customer_name} for {self.reservation_request.date} at {self.reservation_request.start_time}"
 
     def save(self, *args: Any, **kwargs: Any) -> None:
-        if not hasattr(self, "reservation_request"):
-            raise ValidationError("Reservation request is required")
-
         if self.id_request is None:
             self.id_request = f"{get_timestamp()}{self.reservation_request.service.id}{generate_random_id()}"
 
         return super().save(*args, **kwargs)
-
-    @property
-    def calculate_end_time(self) -> time:
-        start_datetime = self.get_start_time()
-        duration = timedelta(minutes=self.get_service_duration())
-        end_datetime = start_datetime + duration
-        return end_datetime.time()
 
     def get_date(self) -> date:
         return self.reservation_request.date
