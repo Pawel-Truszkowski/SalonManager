@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import views, views_ajax, views_reservation
+from . import api, views, views_reservation
 
 urlpatterns = [
     path(
@@ -32,17 +32,17 @@ urlpatterns = [
     # Ajax for New Reservations
     path(
         "available_slots/",
-        views_ajax.get_available_slots,
+        api.get_available_slots,
         name="get_available_slots",
     ),
     path(
         "request_next_available_slot/<int:service_id>/",
-        views_ajax.get_next_available_date,
+        api.get_next_available_date,
         name="get_next_available_date",
     ),
     path(
         "request_staff_info/",
-        views_ajax.get_non_working_days,
+        api.get_non_working_days,
         name="get_non_working_days",
     ),
     # WorkDay Management URLs
@@ -59,10 +59,10 @@ urlpatterns = [
         name="workday_delete",
     ),
     # API endpoints for FullCalendar
-    path("api/workdays/", views.workday_api, name="workday_api"),
+    path("api/workdays/", api.workday_api, name="workday_api"),
     path(
         "workdays/<int:pk>/update-date/",
-        views.update_workday_date,
+        api.update_workday_date,
         name="update_workday_date",
     ),
     # Reservation Management URLs
@@ -96,5 +96,5 @@ urlpatterns = [
         views.CancelReservationByUserView.as_view(),
         name="cancel_reservation",
     ),
-    path("api/reservations/", views.reservations_api, name="reservations_api"),
+    path("api/reservations/", api.reservations_api, name="reservations_api"),
 ]
