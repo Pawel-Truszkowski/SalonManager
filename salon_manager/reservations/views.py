@@ -265,9 +265,9 @@ class ReservationDeleteView(OwnerRequiredMixin, DeleteView):
     template_name = "reservations/manage_reservations_delete.html"
     success_url = reverse_lazy("manage_reservations_list")
 
-    def delete(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
-        messages.success(request, "Reservation deleted successfully!")
-        return super().delete(request, *args, **kwargs)
+    def get_success_url(self):
+        messages.success(self.request, "Reservation deleted successfully!")
+        return self.success_url
 
 
 class ConfirmReservationView(OwnerRequiredMixin, View):
