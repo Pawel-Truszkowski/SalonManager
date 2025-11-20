@@ -3,14 +3,13 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect, render
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, DeleteView, FormView, ListView, UpdateView
-
 from utils.mixins import OwnerRequiredMixin
 
 from .forms import EmployeeForm, ProfileUpdateForm, UserRegisterForm, UserUpdateForm
 from .models import Employee
 
 
-def register(request):
+def register(request):  # TODO CBV
     if request.method == "POST":
         form = UserRegisterForm(request.POST)
         if form.is_valid():

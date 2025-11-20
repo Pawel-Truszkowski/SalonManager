@@ -13,7 +13,7 @@ from users.models import CustomUser, Employee
 from utils.support_functions import generate_random_id, get_timestamp, time_difference
 
 
-class WorkDay(models.Model):
+class WorkDay(models.Model):  # TODO helptexts
     date = models.DateField()
     start_time = models.TimeField()
     end_time = models.TimeField()
@@ -37,7 +37,7 @@ class WorkDay(models.Model):
         return f"{self.employee} - {self.date}"
 
 
-class ReservationRequest(models.Model):
+class ReservationRequest(models.Model):  # TODO helptexts
     date = models.DateField()
     start_time = models.TimeField()
     end_time = models.TimeField()

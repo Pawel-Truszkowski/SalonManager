@@ -8,7 +8,7 @@ from .models import Reservation, ReservationRequest
 
 
 @shared_task
-def send_reservation_notification(customer, service, date, time):
+def send_reservation_notification(customer, service, date, time):  # TODO typing
     subject = "New reservation!"
     from_email = settings.DEFAULT_FROM_EMAIL
     recipient_list = [settings.OWNER_EMAIL]
@@ -38,7 +38,12 @@ def send_reservation_notification(customer, service, date, time):
 
 @shared_task
 def send_confirmation_email(
-    customer_email, customer_name, service_name, date, time, cancel_url
+    customer_email,
+    customer_name,
+    service_name,
+    date,
+    time,
+    cancel_url,  # TODO typing
 ):
     subject = "Reservation confirmation"
     from_email = settings.DEFAULT_FROM_EMAIL
