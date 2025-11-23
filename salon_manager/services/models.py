@@ -2,7 +2,7 @@ from django.core.validators import MinValueValidator
 from django.db import models
 
 
-class ServiceCategory(models.Model):
+class ServiceCategory(models.Model):  # TODO help texty
     name = models.CharField(max_length=100, unique=True)
     description = models.TextField(null=True, blank=True)
 

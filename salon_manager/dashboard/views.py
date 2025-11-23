@@ -6,15 +6,15 @@ from .forms import ContactForm
 from .tasks import send_email_to_admin, send_email_to_customer
 
 
-def home(request: HttpRequest) -> HttpResponse:
+def home(request: HttpRequest) -> HttpResponse:  # TODO CBV
     return render(request, "dashboard/index.html")
 
 
-def about(request: HttpRequest) -> HttpResponse:
+def about(request: HttpRequest) -> HttpResponse:  # TODO CBV
     return render(request, "dashboard/about.html")
 
 
-def contact(request: HttpRequest) -> HttpResponse:
+def contact(request: HttpRequest) -> HttpResponse:  # TODO CBV
     if request.method == "POST":
         form = ContactForm(request.POST)
         if form.is_valid():

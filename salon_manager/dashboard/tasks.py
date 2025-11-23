@@ -4,7 +4,7 @@ from django.core.mail import send_mail
 
 
 @shared_task
-def send_email_to_customer(first_name, last_name, email):
+def send_email_to_customer(first_name, last_name, email):  # TODO typing
     message = (
         f"Hello {first_name} {last_name}! \n\n"
         f"Thanks for contacting, we will get back to you shortly. \n"
@@ -20,7 +20,7 @@ def send_email_to_customer(first_name, last_name, email):
 
 
 @shared_task
-def send_email_to_admin(first_name, last_name, email, subject, message):
+def send_email_to_admin(first_name, last_name, email, subject, message):  # TODO typing
     return send_mail(
         subject,
         f"Sent by,\n    Name: {first_name} {last_name} \n    Email: {email} \n\n{message}",

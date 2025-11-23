@@ -91,41 +91,37 @@ class WorkDayUpdateView(OwnerRequiredMixin, UpdateView):
     success_url = reverse_lazy("workday_list")
 
     def form_valid(self, form: WorkDayForm) -> HttpResponse:
-        messages.success(self.request, "Work day updated successfully!")
-        return super().form_valid(form)
-
-    def post(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
-        is_ajax = (
-            request.headers.get("x-requested-with") == "XMLHttpRequest"
-            or request.content_type == "application/json"
-        )
+        is_ajax = self.request.headers.get("x-requested-with") == "XMLHttpRequest"
 
         if is_ajax:
-            self.object = self.get_object()
-
-            try:
-                if request.content_type == "application/json":
-                    data = json.loads(request.body)
-                    form = self.form_class(data, instance=self.object)
-                else:
-                    form = self.form_class(request.POST, instance=self.object)
-
-                if form.is_valid():
-                    self.object = form.save()
-                    return JsonResponse(
-                        {
-                            "status": "success",
-                            "message": "Work day updated successfully!",
-                        }
-                    )
-                else:
-                    return JsonResponse(
-                        {"status": "error", "errors": form.errors}, status=400
-                    )
-            except Exception as e:
-                return JsonResponse({"status": "error", "message": str(e)}, status=500)
+            self.object = form.save()
+            return JsonResponse(
+                {
+                    "status": "success",
+                    "message": "Work day updated successfully!",
+                }
+            )
         else:
-            return super().post(request, *args, **kwargs)
+            messages.success(self.request, "Work day updated successfully!")
+            return super().form_valid(form)
+
+    def form_invalid(self, form: WorkDayForm) -> HttpResponse:
+        is_ajax = self.request.headers.get("x-requested-with") == "XMLHttpRequest"
+
+        if is_ajax:
+            return JsonResponse({"status": "error", "errors": form.errors}, status=400)
+        return super().form_invalid(form)
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        if self.request.headers.get("x-requested-with") == "XMLHttpRequest":
+            if self.request.content_type == "application/json":
+                kwargs["data"] = json.loads(self.request.body)
+        return kwargs
+
+    def get_success_url(self):
+        messages.success(self.request, "Work day updated successfully!")
+        return self.success_url
 
 
 class WorkDayDeleteView(OwnerRequiredMixin, DeleteView):
@@ -133,60 +129,9 @@ class WorkDayDeleteView(OwnerRequiredMixin, DeleteView):
     template_name = "reservations/workday_confirm_delete.html"
     success_url = reverse_lazy("workday_list")
 
-    def delete(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
-        messages.success(request, "Work day deleted successfully!")
-        return super().delete(request, *args, **kwargs)
-
-
-def workday_api(request: HttpRequest) -> JsonResponse:
-    workdays = WorkDay.objects.all()
-    # workdays = WorkDay.objects.select_related('employee').all()
-    events = []
-
-    for workday in workdays:
-        events.append(
-            {
-                "id": workday.pk,
-                "title": f"{workday.employee.name}: {workday.start_time.strftime('%H:%M')} - {workday.end_time.strftime('%H:%M')}",
-                "start": f"{workday.date.isoformat()}T{workday.start_time.strftime('%H:%M:%S')}",
-                "end": f"{workday.date.isoformat()}T{workday.end_time.strftime('%H:%M:%S')}",
-                "extendedProps": {
-                    "startTime": workday.start_time.strftime("%H:%M"),
-                    "endTime": workday.end_time.strftime("%H:%M"),
-                    "employeeId": workday.employee.id,
-                    "employeeName": workday.employee.name,
-                },
-            }
-        )
-
-    return JsonResponse(events, safe=False)
-
-
-@require_POST
-def update_workday_date(request: HttpRequest, pk: int) -> JsonResponse:
-    try:
-        workday = WorkDay.objects.get(pk=pk)
-        data = json.loads(request.body)
-        new_date = data.get("date")
-
-        if new_date:
-            workday.date = datetime.strptime(new_date, "%Y-%m-%d").date()
-            workday.save()
-
-            return JsonResponse(
-                {"status": "success", "message": "Work day updated successfully!"}
-            )
-        else:
-            return JsonResponse(
-                {"status": "error", "message": "Date is required"}, status=400
-            )
-
-    except WorkDay.DoesNotExist:
-        return JsonResponse(
-            {"status": "error", "message": "Work day not found"}, status=404
-        )
-    except Exception as e:
-        return JsonResponse({"status": "error", "message": str(e)}, status=500)
+    def get_success_url(self):
+        messages.success(self.request, "Work day deleted successfully!")
+        return self.success_url
 
 
 # Reservations Management ########
@@ -202,43 +147,6 @@ class ManageReservationsListView(OwnerRequiredMixin, ListView):
         context = super().get_context_data(**kwargs)
         context["employees"] = Employee.objects.all()
         return context
-
-
-def reservations_api(request: HttpRequest) -> JsonResponse:
-    """API endpoint to provide reservations data for FullCalendar"""
-
-    employee_id = request.GET.get("employee")
-
-    if employee_id:
-        reservations = Reservation.objects.filter(
-            reservation_request__employee__id=employee_id
-        )
-    else:
-        try:
-            reservations = Reservation.objects.all()
-        except Reservation.DoesNotExist:
-            return JsonResponse(
-                {"status": "error", "message": "Reservations not found"}, status=404
-            )
-
-    events = []
-
-    for reservation in reservations:
-        events.append(
-            {
-                "id": reservation.pk,
-                "title": f"{reservation.get_service_name()}, {reservation.name} ",
-                "start": f"{reservation.get_date().isoformat()}T{reservation.get_start_time().strftime('%H:%M')}",
-                "end": f"{reservation.get_date().isoformat()}T{reservation.get_end_time().strftime('%H:%M')}",
-                "color": "#28a745" if reservation.status == "CONFIRMED" else "#ffc107",
-                "extendedProps": {
-                    "startTime": reservation.get_start_time().strftime("%H:%M"),
-                    "endTime": reservation.get_end_time().strftime("%H:%M"),
-                },
-            }
-        )
-
-    return JsonResponse(events, safe=False)
 
 
 class ReservationCreateView(OwnerRequiredMixin, View):
@@ -357,9 +265,9 @@ class ReservationDeleteView(OwnerRequiredMixin, DeleteView):
     template_name = "reservations/manage_reservations_delete.html"
     success_url = reverse_lazy("manage_reservations_list")
 
-    def delete(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
-        messages.success(request, "Reservation deleted successfully!")
-        return super().delete(request, *args, **kwargs)
+    def get_success_url(self):
+        messages.success(self.request, "Reservation deleted successfully!")
+        return self.success_url
 
 
 class ConfirmReservationView(OwnerRequiredMixin, View):
@@ -374,22 +282,28 @@ class ConfirmReservationView(OwnerRequiredMixin, View):
 
         reservation.status = "CONFIRMED"
         reservation.save()
-        messages.success(request, "Reservation confirmed!")
-        cancel_url = request.build_absolute_uri(
-            reverse("cancel_reservation", args=[reservation.id_request])
-        )
 
-        try:
-            send_confirmation_email.delay_on_commit(  # type: ignore[attr-defined]
-                customer_email=reservation.email,
-                customer_name=reservation.name,
-                service_name=reservation.reservation_request.service.name,
-                date=reservation.reservation_request.date,
-                time=reservation.reservation_request.start_time,
-                cancel_url=cancel_url,
+        if reservation.email:
+            cancel_url = request.build_absolute_uri(
+                reverse("cancel_reservation", args=[reservation.id_request])
             )
-        except Exception as e:
-            logger.exception(f"Exception occurred: {e}")
+            try:
+                send_confirmation_email.delay(  # type: ignore[attr-defined]
+                    customer_email=reservation.email,
+                    customer_name=reservation.name,
+                    service_name=reservation.reservation_request.service.name,
+                    date=str(reservation.reservation_request.date),
+                    time=str(reservation.reservation_request.start_time),
+                    cancel_url=cancel_url,
+                )
+                messages.success(request, "Reservation confirmed and email sent!")
+            except Exception as e:
+                logger.exception(f"Failed to send confirmation email: {e}")
+                messages.warning(
+                    request, "Reservation confirmed but email failed to send."
+                )
+        else:
+            messages.success(request, "Reservation confirmed!")
 
         return redirect(reverse("manage_reservations_list"))
 

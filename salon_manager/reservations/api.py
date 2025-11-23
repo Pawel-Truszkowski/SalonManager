@@ -1,8 +1,10 @@
+import json
 import logging
-from datetime import date
+from datetime import date, datetime
 
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.utils.translation import gettext as _
+from django.views.decorators.http import require_POST
 from users.models import CustomUser, Employee
 from utils.error_codes import ErrorCode
 from utils.support_functions import (
@@ -15,6 +17,7 @@ from utils.support_functions import (
 )
 
 from .forms import SlotForm
+from .models import Reservation, WorkDay
 from .service import SlotAvailabilityService
 
 logger = logging.getLogger(__name__)
@@ -137,3 +140,89 @@ def get_non_working_days(request):
         success=True,
         custom_data={"non_working_days": non_working_days},
     )
+
+
+def workday_api(request: HttpRequest) -> JsonResponse:
+    workdays = WorkDay.objects.all()
+    # workdays = WorkDay.objects.select_related('employee').all()
+    events = []
+
+    for workday in workdays:
+        events.append(
+            {
+                "id": workday.pk,
+                "title": f"{workday.employee.name}: {workday.start_time.strftime('%H:%M')} - {workday.end_time.strftime('%H:%M')}",
+                "start": f"{workday.date.isoformat()}T{workday.start_time.strftime('%H:%M:%S')}",
+                "end": f"{workday.date.isoformat()}T{workday.end_time.strftime('%H:%M:%S')}",
+                "extendedProps": {
+                    "startTime": workday.start_time.strftime("%H:%M"),
+                    "endTime": workday.end_time.strftime("%H:%M"),
+                    "employeeId": workday.employee.id,
+                    "employeeName": workday.employee.name,
+                },
+            }
+        )
+
+    return JsonResponse(events, safe=False)
+
+
+@require_POST
+def update_workday_date(request: HttpRequest, pk: int) -> JsonResponse:
+    try:
+        workday = WorkDay.objects.get(pk=pk)
+        data = json.loads(request.body)
+        new_date = data.get("date")
+
+        if new_date:
+            workday.date = datetime.strptime(new_date, "%Y-%m-%d").date()
+            workday.save()
+
+            return JsonResponse(
+                {"status": "success", "message": "Work day updated successfully!"}
+            )
+        else:
+            return JsonResponse(
+                {"status": "error", "message": "Date is required"}, status=400
+            )
+
+    except WorkDay.DoesNotExist:
+        return JsonResponse(
+            {"status": "error", "message": "Work day not found"}, status=404
+        )
+    except Exception as e:
+        return JsonResponse({"status": "error", "message": str(e)}, status=500)
+
+
+def reservations_api(request: HttpRequest) -> JsonResponse:
+    employee_id = request.GET.get("employee")
+
+    if employee_id:
+        reservations = Reservation.objects.filter(
+            reservation_request__employee__id=employee_id
+        )
+    else:
+        try:
+            reservations = Reservation.objects.all()
+        except Reservation.DoesNotExist:
+            return JsonResponse(
+                {"status": "error", "message": "Reservations not found"}, status=404
+            )
+
+    events = []
+
+    for reservation in reservations:
+        events.append(
+            {
+                "id": reservation.pk,
+                "title": f"{reservation.get_service_name()}, {reservation.name} ",
+                "start": f"{reservation.get_date().isoformat()}T{reservation.get_start_time().strftime('%H:%M')}",
+                "end": f"{reservation.get_date().isoformat()}T{reservation.get_end_time().strftime('%H:%M')}",
+                "color": "#28a745" if reservation.status == "CONFIRMED" else "#ffc107",
+                "extendedProps": {
+                    "startTime": reservation.get_start_time().strftime("%H:%M"),
+                    "endTime": reservation.get_end_time().strftime("%H:%M"),
+                },
+            }
+        )
+
+    return JsonResponse(events, safe=False)
