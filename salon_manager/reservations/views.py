@@ -282,22 +282,28 @@ class ConfirmReservationView(OwnerRequiredMixin, View):
 
         reservation.status = "CONFIRMED"
         reservation.save()
-        messages.success(request, "Reservation confirmed!")
-        cancel_url = request.build_absolute_uri(
-            reverse("cancel_reservation", args=[reservation.id_request])
-        )
 
-        try:
-            send_confirmation_email.delay_on_commit(  # type: ignore[attr-defined]
-                customer_email=reservation.email,
-                customer_name=reservation.name,
-                service_name=reservation.reservation_request.service.name,
-                date=reservation.reservation_request.date,
-                time=reservation.reservation_request.start_time,
-                cancel_url=cancel_url,
+        if reservation.email:
+            cancel_url = request.build_absolute_uri(
+                reverse("cancel_reservation", args=[reservation.id_request])
             )
-        except Exception as e:
-            logger.exception(f"Exception occurred: {e}")
+            try:
+                send_confirmation_email.delay(  # type: ignore[attr-defined]
+                    customer_email=reservation.email,
+                    customer_name=reservation.name,
+                    service_name=reservation.reservation_request.service.name,
+                    date=str(reservation.reservation_request.date),
+                    time=str(reservation.reservation_request.start_time),
+                    cancel_url=cancel_url,
+                )
+                messages.success(request, "Reservation confirmed and email sent!")
+            except Exception as e:
+                logger.exception(f"Failed to send confirmation email: {e}")
+                messages.warning(
+                    request, "Reservation confirmed but email failed to send."
+                )
+        else:
+            messages.success(request, "Reservation confirmed!")
 
         return redirect(reverse("manage_reservations_list"))
 

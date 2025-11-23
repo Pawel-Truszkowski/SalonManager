@@ -8,7 +8,7 @@ from reservations.models import Reservation, ReservationRequest, WorkDay
 from reservations.views_reservation import create_reservation
 from users.models import CustomUser, Employee
 
-from .base_test import BaseTestCase
+from salon_manager.reservations.tests.base_test import BaseTestCase
 
 
 class TestReservationRequestView(BaseTestCase):

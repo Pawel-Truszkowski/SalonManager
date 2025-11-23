@@ -1,12 +1,13 @@
 import json
 from datetime import date, time, timedelta
+from unittest.mock import patch
 
 from django.contrib.messages import get_messages
 from django.urls import reverse
-from reservations.models import Reservation, ReservationRequest
+from django.utils.timezone import now
+from reservations.models import Reservation, ReservationRequest, WorkDay
 
-from ..models import WorkDay
-from .base_test import BaseTestCase
+from salon_manager.reservations.tests.base_test import BaseTestCase
 
 
 class UserReservationsListViewTest(BaseTestCase):
@@ -902,3 +903,213 @@ class ReservationDeleteViewTest(BaseTestCase):
         self.assertTemplateUsed(
             response, "reservations/manage_reservations_delete.html"
         )
+
+
+class ConfirmReservationViewTest(BaseTestCase):
+    def setUp(self):
+        super().setUp()
+        self.request1 = ReservationRequest.objects.create(
+            date=date.today() + timedelta(days=5),
+            start_time=time(10, 0),
+            end_time=time(11, 0),
+            service=self.service1,
+            employee=self.employee1,
+        )
+        self.reservation = Reservation.objects.create(
+            customer=self.users["client1"],
+            reservation_request=self.request1,
+            name="Georges Hammond",
+            email="georges@test.com",
+            phone="+48123456789",
+            status="PENDING",
+        )
+        self.url = reverse("reservation_confirm", kwargs={"pk": self.reservation.pk})
+
+    def test_view_requires_owner_permission(self):
+        self.client.force_login(self.users["client1"])
+        response = self.client.post(self.url)
+        self.assertEqual(response.status_code, 302)
+
+    def test_get_method_not_allowed(self):
+        self.client.force_login(self.users["superuser"])
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 405)
+
+    @patch("reservations.views.send_confirmation_email.delay")
+    def test_confirm_reservation_success(self, mock_email):
+        self.client.force_login(self.users["superuser"])
+        response = self.client.post(self.url)
+
+        self.reservation.refresh_from_db()
+        self.assertEqual(self.reservation.status, "CONFIRMED")
+        self.assertRedirects(response, reverse("manage_reservations_list"))
+
+    @patch("reservations.views.send_confirmation_email.delay")
+    def test_confirm_reservation_sends_email(self, mock_email):
+        self.client.force_login(self.users["superuser"])
+        self.client.post(self.url)
+        mock_email.assert_called_once()
+        call_kwargs = mock_email.call_args[1]
+
+        self.assertEqual(call_kwargs["customer_email"], "georges@test.com")
+        self.assertEqual(call_kwargs["customer_name"], "Georges Hammond")
+
+    @patch("reservations.views.send_confirmation_email.delay")
+    def test_confirm_reservation_shows_success_message(self, mock_email):
+        self.client.force_login(self.users["superuser"])
+        response = self.client.post(self.url, follow=True)
+
+        messages = list(get_messages(response.wsgi_request))
+        self.assertIn("confirmed", str(messages[0]).lower())
+
+    def test_already_confirmed_reservation_shows_info_message(self):
+        self.reservation.status = "CONFIRMED"
+        self.reservation.save()
+
+        self.client.force_login(self.users["superuser"])
+        response = self.client.post(self.url, follow=True)
+
+        messages = list(get_messages(response.wsgi_request))
+        self.assertEqual(str(messages[0]), "Reservation already confirmed!")
+
+    @patch("reservations.views.send_confirmation_email.delay")
+    def test_already_confirmed_does_not_send_email(self, mock_email):
+        self.reservation.status = "CONFIRMED"
+        self.reservation.save()
+
+        self.client.force_login(self.users["superuser"])
+        self.client.post(self.url)
+
+        mock_email.assert_not_called()
+
+    @patch("reservations.views.send_confirmation_email.delay")
+    def test_email_failure_logs_error(self, mock_email):
+        mock_email.side_effect = Exception("SMTP Error")
+
+        with self.assertLogs("reservations.views", level="ERROR") as logs:
+            self.client.force_login(self.users["superuser"])
+            self.client.post(self.url, follow=True)
+
+            self.reservation.refresh_from_db()
+            self.assertEqual(self.reservation.status, "CONFIRMED")
+
+            self.assertTrue(any("SMTP Error" in log for log in logs.output))
+
+    def test_reservation_without_email_still_confirms(self):
+        self.reservation.email = None
+        self.reservation.save()
+
+        self.client.force_login(self.users["superuser"])
+        self.client.post(self.url, follow=True)
+
+        self.reservation.refresh_from_db()
+        self.assertEqual(self.reservation.status, "CONFIRMED")
+
+    def test_invalid_reservation_id_returns_404(self):
+        self.client.force_login(self.users["superuser"])
+        url = reverse("reservation_confirm", kwargs={"pk": 99999})
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, 404)
+
+    @patch("reservations.views.send_confirmation_email.delay")
+    def test_cancel_url_in_email_is_absolute(self, mock_email):
+        self.client.force_login(self.users["superuser"])
+        self.client.post(self.url)
+
+        call_kwargs = mock_email.call_args[1]
+        self.assertIn("http", call_kwargs["cancel_url"])
+
+
+class CancelReservationByUserViewTest(BaseTestCase):
+    def setUp(self):
+        super().setUp()
+        self.request1 = ReservationRequest.objects.create(
+            date=date.today() + timedelta(days=5),
+            start_time=time(10, 0),
+            end_time=time(11, 0),
+            service=self.service1,
+            employee=self.employee1,
+        )
+        self.reservation = Reservation.objects.create(
+            customer=self.users["client1"],
+            reservation_request=self.request1,
+            name="Georges Hammond",
+            email="georges@test.com",
+            phone="+48600700800",
+            status="CONFIRMED",
+        )
+        self.url = reverse(
+            "cancel_reservation", kwargs={"token": self.reservation.id_request}
+        )
+
+    def test_view_does_not_require_login(self):
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+
+    def test_cancel_reservation_success(self):
+        response = self.client.get(self.url)
+
+        self.reservation.refresh_from_db()
+        self.assertEqual(self.reservation.status, "CANCELLED")
+        self.assertTemplateUsed(response, "reservations/cancel_success.html")
+
+    def test_already_cancelled_reservation(self):
+        self.reservation.status = "CANCELLED"
+        self.reservation.save()
+
+        response = self.client.get(self.url)
+
+        self.assertTemplateUsed(response, "reservations/already_cancelled.html")
+
+    def test_already_cancelled_does_not_change_status(self):
+        self.reservation.status = "CANCELLED"
+        self.reservation.save()
+
+        self.client.get(self.url)
+
+        self.reservation.refresh_from_db()
+        self.assertEqual(self.reservation.status, "CANCELLED")
+
+    def test_expired_token_shows_expired_page(self):
+        self.reservation.created_at = now() - timedelta(days=8)
+        self.reservation.save()
+
+        response = self.client.get(self.url)
+
+        self.assertTemplateUsed(response, "reservations/cancel_expired.html")
+
+    def test_expired_token_does_not_cancel_reservation(self):
+        self.reservation.created_at = now() - timedelta(days=8)
+        self.reservation.save()
+
+        self.client.get(self.url)
+
+        self.reservation.refresh_from_db()
+        self.assertEqual(self.reservation.status, "CONFIRMED")
+
+    def test_invalid_token_returns_404(self):
+        url = reverse("cancel_reservation", kwargs={"token": "invalid-token-123"})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 404)
+
+    def test_post_method_not_allowed(self):
+        response = self.client.post(self.url)
+        self.assertEqual(response.status_code, 405)
+
+    def test_cancel_pending_reservation(self):
+        self.reservation.status = "PENDING"
+        self.reservation.save()
+
+        self.client.get(self.url)
+
+        self.reservation.refresh_from_db()
+        self.assertEqual(self.reservation.status, "CANCELLED")
+
+    def test_cancel_past_reservation(self):
+        self.reservation.status = "PAST"
+        self.reservation.save()
+
+        self.client.get(self.url)
+
+        self.reservation.refresh_from_db()
+        self.assertEqual(self.reservation.status, "CANCELLED")
