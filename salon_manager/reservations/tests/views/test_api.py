@@ -17,7 +17,7 @@ class TestGetAvailableSlots(BaseTestCase):
         super().setUp()
         self.url = reverse("get_available_slots")
 
-    @patch("reservations.api.SlotAvailabilityService")
+    @patch("reservations.views.api.SlotAvailabilityService")
     def test_get_available_slots_with_correct_data(self, mock_slot_service):
         mock_result = mock_slot_service.return_value
         mock_result.get_available_slots_.return_value = {
@@ -77,7 +77,7 @@ class TestNextAvailableDate(BaseTestCase):
         super().setUp()
         self.url = reverse("get_next_available_date", args=[self.service1.id])
 
-    @patch("reservations.api.SlotAvailabilityService")
+    @patch("reservations.views.api.SlotAvailabilityService")
     def test_get_next_available_date_with_correct_data(self, mock_slot_service):
         mock_result = mock_slot_service.return_value
         mock_result.get_next_available_date.return_value = date.today() + timedelta(
@@ -96,7 +96,7 @@ class TestNextAvailableDate(BaseTestCase):
         self.assertFalse(response_data.get("error"))
         mock_result.get_next_available_date.assert_called_once()
 
-    @patch("reservations.api.SlotAvailabilityService")
+    @patch("reservations.views.api.SlotAvailabilityService")
     def test_get_next_available_date_no_slots_found(self, mock_slot_service):
         mock_service = mock_slot_service.return_value
         mock_service.get_next_available_date.return_value = None

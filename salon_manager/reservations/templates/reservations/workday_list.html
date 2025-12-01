@@ -35,7 +35,7 @@
                                     <td>{{ workday.start_time }}</td>
                                     <td>{{ workday.end_time }}</td>
                                     <td>
-                                        <a href="{% url 'workday_update' workday.pk %}"
+                                        <a href="{% url 'workday_edit' workday.pk %}"
                                            class="btn btn-sm btn-info">Edit</a>
                                         <a href="{% url 'workday_delete' workday.pk %}"
                                            class="btn btn-sm btn-danger">Delete</a>

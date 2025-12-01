@@ -2,13 +2,12 @@ from datetime import date, timedelta
 from unittest.mock import patch
 
 from django.contrib.messages import get_messages
-from django.test import Client, TestCase
+from django.test import Client
 from django.urls import reverse
 from reservations.models import Reservation, ReservationRequest, WorkDay
-from reservations.views_reservation import create_reservation
+from reservations.tests.base_test import BaseTestCase
+from reservations.views.reservation_views import create_reservation
 from users.models import CustomUser, Employee
-
-from salon_manager.reservations.tests.base_test import BaseTestCase
 
 
 class TestReservationRequestView(BaseTestCase):
@@ -151,7 +150,7 @@ class TestReservationClientInformationView(BaseTestCase):
         response = self.client.get(self.url)
         self.assertTemplateUsed(response, "reservations/304_already_submitted.html")
 
-    @patch("reservations.views_reservation.create_reservation")
+    @patch("reservations.views.reservation_views.create_reservation")
     def test_post_valid_forms_success(self, mock_create_reservation):
         mock_create_reservation.return_value = True
         post_data = {**self.valid_client_data_form, **self.valid_reservation_form}
@@ -167,7 +166,7 @@ class TestReservationClientInformationView(BaseTestCase):
             )
         )
 
-    @patch("reservations.views_reservation.create_reservation")
+    @patch("reservations.views.reservation_views.create_reservation")
     def test_post_valid_form_but_create_fails(self, mock_create_reservation):
         mock_create_reservation.return_value = False
         post_data = {**self.valid_client_data_form, **self.valid_reservation_form}
@@ -247,7 +246,7 @@ class TestReservationClientInformationView(BaseTestCase):
             )
 
     @patch(
-        "reservations.views_reservation.send_reservation_notification.delay_on_commit"
+        "reservations.views.reservation_views.send_reservation_notification.delay_on_commit"
     )
     def test_notification_is_sent(self, mock_notification):
         reservation_data = {
@@ -269,9 +268,9 @@ class TestReservationClientInformationView(BaseTestCase):
         )
 
     @patch(
-        "reservations.views_reservation.send_reservation_notification.delay_on_commit"
+        "reservations.views.reservation_views.send_reservation_notification.delay_on_commit"
     )
-    @patch("reservations.views_reservation.logger")
+    @patch("reservations.views.reservation_views.logger")
     def test_notification_failure_does_not_prevent_reservation(
         self, mock_logger, mock_notification
     ):

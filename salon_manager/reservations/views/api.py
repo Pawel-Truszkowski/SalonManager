@@ -5,6 +5,9 @@ from datetime import date, datetime
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.utils.translation import gettext as _
 from django.views.decorators.http import require_POST
+from reservations.forms import SlotForm
+from reservations.models import Reservation, WorkDay
+from reservations.service import SlotAvailabilityService
 from users.models import CustomUser, Employee
 from utils.error_codes import ErrorCode
 from utils.support_functions import (
@@ -15,10 +18,6 @@ from utils.support_functions import (
     handle_invalid_form,
     json_response,
 )
-
-from .forms import SlotForm
-from .models import Reservation, WorkDay
-from .service import SlotAvailabilityService
 
 logger = logging.getLogger(__name__)
 

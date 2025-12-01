@@ -5,6 +5,9 @@ from django.contrib import messages
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.translation import gettext as _
+from reservations.forms import ClientDataForm, ReservationForm, ReservationRequestForm
+from reservations.models import Reservation, ReservationRequest
+from reservations.tasks import send_reservation_notification
 from services.models import Service
 from users.models import CustomUser, Employee
 from utils.support_functions import (
@@ -15,10 +18,6 @@ from utils.support_functions import (
     handle_invalid_form,
     json_response,
 )
-
-from .forms import ClientDataForm, ReservationForm, ReservationRequestForm
-from .models import Reservation, ReservationRequest
-from .tasks import send_reservation_notification
 
 logger = logging.getLogger(__name__)
 

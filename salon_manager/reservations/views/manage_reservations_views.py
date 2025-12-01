@@ -19,122 +19,20 @@ from django.views.generic import (
     UpdateView,
     View,
 )
+from reservations.forms import (
+    ClientDataForm,
+    ReservationForm,
+    ReservationRequestForm,
+    WorkDayForm,
+)
+from reservations.models import Reservation, WorkDay
+from reservations.tasks import send_confirmation_email
 from users.models import Employee
 from utils.mixins import OwnerRequiredMixin
-
-from .forms import ClientDataForm, ReservationForm, ReservationRequestForm, WorkDayForm
-from .models import Reservation, WorkDay
-from .tasks import send_confirmation_email
 
 logger = logging.getLogger(__name__)
 
 
-class ReservationSuccessView(TemplateView):
-    template_name = "reservations/reservation_success.html"
-
-
-class UserReservationsListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
-    template_name = "reservations/reservation_list.html"
-    model = Reservation
-    context_object_name = "reservations"
-
-    def get_queryset(self) -> QuerySet[Reservation]:
-        return Reservation.objects.filter(customer=self.request.user).order_by(
-            "-reservation_request__date"
-        )
-
-    def test_func(self) -> bool:
-        return self.request.user.is_authenticated
-
-
-class CancelUserReservationView(LoginRequiredMixin, UserPassesTestMixin, View):
-    def post(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
-        reservation = get_object_or_404(Reservation, id=self.kwargs["pk"])
-        if reservation.status != "CANCELLED":
-            reservation.status = "CANCELLED"
-            reservation.save()
-            messages.success(request, "The reservation has been canceled!")
-        else:
-            messages.info(request, "The reservation has already been canceled.")
-
-        return redirect("user_reservations_list")
-
-    def test_func(self) -> bool:
-        return self.request.user.is_authenticated
-
-
-# WorkDay Management ###################
-class WorkDayListView(OwnerRequiredMixin, ListView):
-    model = WorkDay
-    template_name = "reservations/workday_list.html"
-    context_object_name = "workdays"
-
-    def get_queryset(self) -> QuerySet[WorkDay]:
-        return WorkDay.objects.all().order_by("-date")
-
-
-class WorkDayCreateView(OwnerRequiredMixin, CreateView):
-    model = WorkDay
-    form_class = WorkDayForm
-    template_name = "reservations/workday_form.html"
-    success_url = reverse_lazy("workday_list")
-
-    def form_valid(self, form: WorkDayForm) -> HttpResponse:
-        messages.success(self.request, "Work day created successfully!")
-        return super().form_valid(form)
-
-
-class WorkDayUpdateView(OwnerRequiredMixin, UpdateView):
-    model = WorkDay
-    form_class = WorkDayForm
-    template_name = "reservations/workday_form.html"
-    success_url = reverse_lazy("workday_list")
-
-    def form_valid(self, form: WorkDayForm) -> HttpResponse:
-        is_ajax = self.request.headers.get("x-requested-with") == "XMLHttpRequest"
-
-        if is_ajax:
-            self.object = form.save()
-            return JsonResponse(
-                {
-                    "status": "success",
-                    "message": "Work day updated successfully!",
-                }
-            )
-        else:
-            messages.success(self.request, "Work day updated successfully!")
-            return super().form_valid(form)
-
-    def form_invalid(self, form: WorkDayForm) -> HttpResponse:
-        is_ajax = self.request.headers.get("x-requested-with") == "XMLHttpRequest"
-
-        if is_ajax:
-            return JsonResponse({"status": "error", "errors": form.errors}, status=400)
-        return super().form_invalid(form)
-
-    def get_form_kwargs(self):
-        kwargs = super().get_form_kwargs()
-        if self.request.headers.get("x-requested-with") == "XMLHttpRequest":
-            if self.request.content_type == "application/json":
-                kwargs["data"] = json.loads(self.request.body)
-        return kwargs
-
-    def get_success_url(self):
-        messages.success(self.request, "Work day updated successfully!")
-        return self.success_url
-
-
-class WorkDayDeleteView(OwnerRequiredMixin, DeleteView):
-    model = WorkDay
-    template_name = "reservations/workday_confirm_delete.html"
-    success_url = reverse_lazy("workday_list")
-
-    def get_success_url(self):
-        messages.success(self.request, "Work day deleted successfully!")
-        return self.success_url
-
-
-# Reservations Management ########
 class ManageReservationsListView(OwnerRequiredMixin, ListView):
     model = Reservation
     template_name = "reservations/manage_reservations_list.html"
@@ -306,19 +204,3 @@ class ConfirmReservationView(OwnerRequiredMixin, View):
             messages.success(request, "Reservation confirmed!")
 
         return redirect(reverse("manage_reservations_list"))
-
-
-class CancelReservationByUserView(View):
-    def get(self, request: HttpRequest, token: str) -> HttpResponse:
-        reservation = get_object_or_404(Reservation, id_request=token)
-
-        if now() - reservation.created_at > timedelta(days=7):
-            return render(request, "reservations/cancel_expired.html")
-
-        if reservation.status == "CANCELLED":
-            return render(request, "reservations/already_cancelled.html")
-
-        reservation.status = "CANCELLED"
-        reservation.save()
-
-        return render(request, "reservations/cancel_success.html")
