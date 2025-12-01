@@ -1,33 +1,38 @@
 from django.urls import path
-
-from . import api, views, views_reservation  # TODO importy konkretne
+from reservations.views import (  # TODO importy konkretne
+    api,
+    manage_reservations_views,
+    manage_workday_views,
+    reservation_views,
+    user_reservations_views,
+)
 
 # TODO app_name = "reservations"  # reservations:sucess
 urlpatterns = [
     path(
         "reservation-success/",
-        views.ReservationSuccessView.as_view(),
+        user_reservations_views.ReservationSuccessView.as_view(),
         name="reservation_success",  # success
     ),
     path(
         "your-reservations/",  # my/
-        views.UserReservationsListView.as_view(),
+        user_reservations_views.UserReservationsListView.as_view(),
         name="user_reservations_list",
     ),
     path(
         "reservation-cancel/<int:pk>/",  # reservations/cancel
-        views.CancelUserReservationView.as_view(),
+        user_reservations_views.CancelUserReservationView.as_view(),
         name="reservation_cancel",
     ),
     # New Reservations
     path(
         "request/<int:service_id>/",
-        views_reservation.reservation_request,
+        reservation_views.reservation_request,
         name="reservation_request",
     ),
     path(
         "client-info/<int:reservation_request_id>/<str:id_request>/",  # request/.../client-info/
-        views_reservation.reservation_client_information,
+        reservation_views.reservation_client_information,
         name="reservation_client_information",
     ),
     # Ajax for New Reservations
@@ -48,19 +53,21 @@ urlpatterns = [
     ),
     # WorkDay Management URLs
     path(
-        "workdays/", views.WorkDayListView.as_view(), name="workday_list"
+        "workdays/", manage_workday_views.WorkDayListView.as_view(), name="workday_list"
     ),  # workdays/
     path(
-        "workdays/add/", views.WorkDayCreateView.as_view(), name="workday_create"
+        "workdays/create/",
+        manage_workday_views.WorkDayCreateView.as_view(),
+        name="workday_create",
     ),  # workdays/create
     path(
-        "workdays/<int:pk>/update/",  # edit
-        views.WorkDayUpdateView.as_view(),
-        name="workday_update",
+        "workdays/<int:pk>/edit/",  # edit
+        manage_workday_views.WorkDayUpdateView.as_view(),
+        name="workday_edit",
     ),
     path(
         "workdays/<int:pk>/delete/",  # delete
-        views.WorkDayDeleteView.as_view(),
+        manage_workday_views.WorkDayDeleteView.as_view(),
         name="workday_delete",
     ),
     # API endpoints for FullCalendar
@@ -76,32 +83,32 @@ urlpatterns = [
     # Reservation Management URLs
     path(
         "manage-reservations/",  #
-        views.ManageReservationsListView.as_view(),
+        manage_reservations_views.ManageReservationsListView.as_view(),
         name="manage_reservations_list",
     ),
     path(
         "manage-reservations/add",  # manage-reservations/create
-        views.ReservationCreateView.as_view(),
+        manage_reservations_views.ReservationCreateView.as_view(),
         name="reservation_create",
     ),
     path(
         "reservations/<int:pk>/edit/",
-        views.ReservationUpdateView.as_view(),
+        manage_reservations_views.ReservationUpdateView.as_view(),
         name="reservation_edit",
     ),
     path(
         "manage-reservations/<int:pk>/delete/",
-        views.ReservationDeleteView.as_view(),
+        manage_reservations_views.ReservationDeleteView.as_view(),
         name="reservation_delete",
     ),
     path(
         "reservations/<int:pk>/confirm/",
-        views.ConfirmReservationView.as_view(),
+        manage_reservations_views.ConfirmReservationView.as_view(),
         name="reservation_confirm",
     ),
     path(
         "reservations/cancel/<str:token>/",
-        views.CancelReservationByUserView.as_view(),
+        user_reservations_views.CancelReservationByUserView.as_view(),
         name="cancel_reservation",
     ),
 ]
