@@ -1,3 +1,5 @@
+from datetime import date, datetime, time
+
 from celery import shared_task
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives, send_mail
@@ -8,7 +10,9 @@ from .models import Reservation, ReservationRequest
 
 
 @shared_task
-def send_reservation_notification(customer, service, date, time):  # TODO typing
+def send_reservation_notification(
+    customer: str, service: str, date: date, time: time
+) -> int:
     subject = "New reservation!"
     from_email = settings.DEFAULT_FROM_EMAIL
     recipient_list = [settings.OWNER_EMAIL]
@@ -38,13 +42,13 @@ def send_reservation_notification(customer, service, date, time):  # TODO typing
 
 @shared_task
 def send_confirmation_email(
-    customer_email,
-    customer_name,
-    service_name,
-    date,
-    time,
-    cancel_url,  # TODO typing
-):
+    customer_email: str,
+    customer_name: str,
+    service_name: str,
+    date: date,
+    time: time,
+    cancel_url: str,
+) -> int:
     subject = "Reservation confirmation"
     from_email = settings.DEFAULT_FROM_EMAIL
     to = [customer_email]
@@ -72,7 +76,7 @@ def send_confirmation_email(
 
 
 @shared_task
-def send_upcoming_reminder():
+def send_upcoming_reminder() -> str:
     today = now()
     tomorrow = today.date() + timedelta(days=1)
 
@@ -105,7 +109,7 @@ def send_upcoming_reminder():
 
 
 @shared_task
-def change_reservation_status():
+def change_reservation_status() -> str:
     today = now().date()
 
     reservations = Reservation.objects.filter(
@@ -127,7 +131,7 @@ def change_reservation_status():
 
 
 @shared_task
-def cleanup_expired_requests():
+def cleanup_expired_requests() -> str:
     expired_requests = ReservationRequest.objects.filter(
         expires_at__lt=now(), reservation__isnull=True
     )

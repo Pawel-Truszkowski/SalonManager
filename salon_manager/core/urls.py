@@ -63,7 +63,7 @@ urlpatterns = [
         ),
         name="password_reset_complete",
     ),
-    path("profile/", user_views.profile, name="profile"),
+    path("profile/", user_views.ProfileView.as_view(), name="profile"),
     # Employee Management
     path("employees/", user_views.EmployeeListView.as_view(), name="employee_list"),
     path(
