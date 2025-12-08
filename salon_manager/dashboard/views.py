@@ -1,42 +1,41 @@
 from django.contrib import messages
-from django.http import HttpRequest, HttpResponse
-from django.shortcuts import render
+from django.urls import reverse_lazy
+from django.views.generic import FormView, TemplateView
 
 from .forms import ContactForm
 from .tasks import send_email_to_admin, send_email_to_customer
 
 
-def home(request: HttpRequest) -> HttpResponse:  # TODO CBV
-    return render(request, "dashboard/index.html")
+class HomeView(TemplateView):
+    template_name = "dashboard/index.html"
 
 
-def about(request: HttpRequest) -> HttpResponse:  # TODO CBV
-    return render(request, "dashboard/about.html")
+class AboutView(TemplateView):
+    template_name = "dashboard/about.html"
 
 
-def contact(request: HttpRequest) -> HttpResponse:  # TODO CBV
-    if request.method == "POST":
-        form = ContactForm(request.POST)
-        if form.is_valid():
-            con = form.save()
+class ContactView(FormView):
+    form_class = ContactForm
+    template_name = "dashboard/contact.html"
+    success_url = reverse_lazy("dashboard:contact")
 
-            messages.success(request, "Your message has been sent.")
+    def form_valid(self, form):
+        con = form.save()
+        messages.success(self.request, "Your message has been sent.")
 
-            send_email_to_customer.delay_on_commit(  # type: ignore[attr-defined]
-                first_name=con.first_name, last_name=con.last_name, email=con.email
-            )
-            send_email_to_admin.delay_on_commit(  # type: ignore[attr-defined]
-                first_name=con.first_name,
-                last_name=con.last_name,
-                email=con.email,
-                subject=con.subject,
-                message=con.message,
-            )
+        send_email_to_customer.delay_on_commit(  # type: ignore[attr-defined]
+            first_name=con.first_name, last_name=con.last_name, email=con.email
+        )
+        send_email_to_admin.delay_on_commit(  # type: ignore[attr-defined]
+            first_name=con.first_name,
+            last_name=con.last_name,
+            email=con.email,
+            subject=con.subject,
+            message=con.message,
+        )
 
-        else:
-            messages.error(request, "Please correct the errors below.")
+        return super().form_valid(form)
 
-    else:
-        form = ContactForm()
-
-    return render(request, "dashboard/contact.html", {"form": form})
+    def form_invalid(self, form):
+        messages.error(self.request, "Please correct the errors below.")
+        return super().form_invalid(form)

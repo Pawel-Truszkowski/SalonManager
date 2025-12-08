@@ -26,7 +26,7 @@ if not SECRET_KEY:
     raise ImproperlyConfigured("SECRET_KEY is not set in environment variables!")
 
 
-ALLOWED_HOSTS = ["*"]  # TODO .env
+ALLOWED_HOSTS = os.getenv("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
 
 
 INSTALLED_APPS = [
