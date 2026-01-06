@@ -62,7 +62,7 @@
                     <div class="row align-items-center">
                         <div class="col-6 col-xl-2" data-aos="fade-down">
                             <h1 class="mb-0">
-                                <a href="{% url 'dashboard:home' %}" class="text-green h2 mb-0">Royal Beauty</a>
+                                <a href="{% url 'home' %}" class="text-green h2 mb-0">Royal Beauty</a>
                             </h1>
                         </div>
                         <div class="col-10 col-md-8 d-none d-xl-block" data-aos="fade-down">
@@ -70,7 +70,7 @@
                                  role="navigation">
                                 <ul class="site-menu js-clone-nav mx-auto d-none d-lg-block">
                                     <li class="has-children {% if request.path == '/' %}active{% endif %}">
-                                        <a href="{% url 'dashboard:home' %}">Home</a>
+                                        <a href="{% url 'home' %}">Home</a>
                                         <ul class="dropdown">
                                             <li>
                                                 <a href="#">Menu One</a>
@@ -101,10 +101,10 @@
                                         <a href="{% url 'services_list' %}">Services</a>
                                     </li>
                                     <li class="{% if request.path == '/about/' %}active{% endif %}">
-                                        <a href="{% url 'dashboard:about' %}">About</a>
+                                        <a href="{% url 'about' %}">About</a>
                                     </li>
                                     <li class="{% if request.path == '/contact/' %}active{% endif %}">
-                                        <a href="{% url 'dashboard:contact' %}">Contact</a>
+                                        <a href="{% url 'contact' %}">Contact</a>
                                     </li>
                                     {% if user.is_authenticated and user.role == "OWNER" %}
                                         <li class="has-children {% if request.path == '/owner/' %}active{% endif %}">
@@ -149,7 +149,7 @@
                                         <li class="{% if request.path == '/login/' %}active{% endif %}">
                                             <a href="{% url 'login' %}">Login</a>
                                         </li>
-                                        <li class="{% if request.path == '/register/' %}active{% endif %}">
+                                        <li class="{% if request.path == 'users/register/' %}active{% endif %}">
                                             <a href="{% url 'register' %}">Register</a>
                                         </li>
                                     {% endif %}

@@ -11,10 +11,12 @@ urlpatterns = [
         name="manage_services_list",
     ),
     path(
-        "manage-services/add/", views.ServiceCreateView.as_view(), name="service_create"
+        "manage-services/create/",
+        views.ServiceCreateView.as_view(),
+        name="service_create",
     ),
     path(
-        "manage-services/<int:pk>/edit/",
+        "manage-services/<int:pk>/update/",
         views.ServiceUpdateView.as_view(),
         name="service_update",
     ),
