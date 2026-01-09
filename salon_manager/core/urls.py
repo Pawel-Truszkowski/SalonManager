@@ -11,6 +11,7 @@ urlpatterns = [
     path("users/", include("users.urls")),
     path("services/", include("services.urls")),
     path("reservations/", include("reservations.urls")),
+    # Authentication URLs
     path(
         "login/",
         auth_views.LoginView.as_view(template_name="users/login.html"),

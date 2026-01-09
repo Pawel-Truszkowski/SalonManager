@@ -61,7 +61,7 @@
                     </div>
                     <div class="djangoAppt_service-description">
                         <form method="post"
-                              action="{% url 'reservation_request' service.id %}"
+                              action="{% url 'reservations:reservation_request' service.id %}"
                               class="appointment-form">
                             {% csrf_token %}
                             <div class="staff-members-list">
@@ -112,13 +112,13 @@
     <script>
         const timezone = "{{ timezoneTxt }}";
         const locale = "{{ locale }}";
-        const availableSlotsAjaxURL = "{% url 'get_available_slots' %}";
-        const requestNextAvailableSlotURLTemplate = "{% url 'get_next_available_date' service.id %}";
-        const getNonWorkingDaysURL = "{% url 'get_non_working_days' %}";
+        const availableSlotsAjaxURL = "{% url 'reservations:get_available_slots' %}";
+        const requestNextAvailableSlotURLTemplate = "{% url 'reservations:get_next_available_date' service.id %}";
+        const getNonWorkingDaysURL = "{% url 'reservations:get_non_working_days' %}";
         const serviceId = "{{ service.id }}";
         const serviceDuration = "{{ service.duration }}";
         const appointmentRequestId = "{{ ar_id_request }}";
-        const appointmentRequestSubmitURL = "{% url 'reservation_request' service.id %}";
+        const appointmentRequestSubmitURL = "{% url 'reservations:reservation_request' service.id %}";
     </script>
     <script>
         const requestNonAvailableSlotBtnTxt = "{% trans 'Request next available slot' %}";

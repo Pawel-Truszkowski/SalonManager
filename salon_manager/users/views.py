@@ -13,7 +13,7 @@ from django.views.generic import (
 from utils.mixins import OwnerRequiredMixin
 
 from .forms import EmployeeForm, ProfileUpdateForm, UserRegisterForm, UserUpdateForm
-from .models import Employee
+from .models import Employee, Profile
 
 
 class RegisterView(FormView):
@@ -21,8 +21,9 @@ class RegisterView(FormView):
     form_class = UserRegisterForm
 
     def form_valid(self, form):
-        form.save()
+        user = form.save()
         username = form.cleaned_data.get("username")
+        Profile.objects.create(user=user)
         messages.success(
             self.request,
             f"Dear {username}, you have been successfully signed up! Now, you can log-in!",

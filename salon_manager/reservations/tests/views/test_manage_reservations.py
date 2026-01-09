@@ -13,7 +13,7 @@ from reservations.tests.base_test import BaseTestCase
 class ManageReservationsListViewTest(BaseTestCase):
     def setUp(self):
         super().setUp()
-        self.url = reverse("manage_reservations_list")
+        self.url = reverse("reservations:manage_reservations_list")
 
         self.request1 = ReservationRequest.objects.create(
             date=date.today() + timedelta(days=5),
@@ -116,7 +116,7 @@ class ReservationCreateViewTest(BaseTestCase):
 
         self.assertEqual(Reservation.objects.count(), 1)
         self.assertEqual(ReservationRequest.objects.count(), 1)
-        self.assertRedirects(response, reverse("manage_reservations_list"))
+        self.assertRedirects(response, reverse("reservations:manage_reservations_list"))
 
     def test_create_reservation_shows_success_message(self):
         self.client.force_login(self.users["superuser"])
@@ -292,7 +292,7 @@ class ReservationUpdateViewTest(BaseTestCase):
 
         self.assertEqual(self.reservation.name, "Updated Name")
         self.assertEqual(self.reservation.email, "updated@test.com")
-        self.assertRedirects(response, reverse("manage_reservations_list"))
+        self.assertRedirects(response, reverse("reservations:manage_reservations_list"))
 
     def test_update_reservation_shows_success_message(self):
         self.client.force_login(self.users["superuser"])
@@ -411,7 +411,7 @@ class ReservationDeleteViewTest(BaseTestCase):
         self.assertEqual(Reservation.objects.count(), 0)
         messages = list(get_messages(response.wsgi_request))
         self.assertEqual(str(messages[0]), "Reservation deleted successfully!")
-        self.assertRedirects(response, reverse("manage_reservations_list"))
+        self.assertRedirects(response, reverse("reservations:manage_reservations_list"))
 
     def test_invalid_workday_id_returns_404(self):
         self.client.force_login(self.users["superuser"])
@@ -464,7 +464,7 @@ class ConfirmReservationViewTest(BaseTestCase):
 
         self.reservation.refresh_from_db()
         self.assertEqual(self.reservation.status, "CONFIRMED")
-        self.assertRedirects(response, reverse("manage_reservations_list"))
+        self.assertRedirects(response, reverse("reservations:manage_reservations_list"))
 
     @patch("reservations.views.manage_reservations_views.send_confirmation_email.delay")
     def test_confirm_reservation_sends_email(self, mock_email):

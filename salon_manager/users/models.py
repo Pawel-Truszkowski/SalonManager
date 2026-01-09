@@ -2,7 +2,6 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 from phonenumber_field.modelfields import PhoneNumberField
 from PIL import Image
-
 from services.models import Service
 
 
@@ -46,7 +45,9 @@ class Employee(models.Model):
 
 class Profile(models.Model):
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE)
-    image = models.ImageField(default="default.jpg", upload_to="profile_pics")
+    image = models.ImageField(
+        default="default.jpg", upload_to="profile_pics"
+    )  # TODO: change default image
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)

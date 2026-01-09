@@ -114,13 +114,13 @@
                                                     <a href="{% url 'employee_list' %}">Employees</a>
                                                 </li>
                                                 <li>
-                                                    <a href="{% url 'workday_list' %}">Work Days</a>
+                                                    <a href="{% url 'reservations:workday_list' %}">Work Days</a>
                                                 </li>
                                                 <li>
                                                     <a href="{% url 'manage_services_list' %}">Services</a>
                                                 </li>
                                                 <li>
-                                                    <a href="{% url 'manage_reservations_list' %}">Reservations</a>
+                                                    <a href="{% url 'reservations:manage_reservations_list' %}">Reservations</a>
                                                 </li>
                                             </ul>
                                         </li>
@@ -133,7 +133,7 @@
                                                     <a href="{% url 'profile' %}">Your Profile</a>
                                                 </li>
                                                 <li>
-                                                    <a href="{% url 'user_reservations_list' %}">Reservations</a>
+                                                    <a href="{% url 'reservations:user_reservations_list' %}">Reservations</a>
                                                 </li>
                                             </ul>
                                         </li>
@@ -168,7 +168,7 @@
                                     <li>
                                         <a href="https://booksy.com/pl-pl/91217_royal-beauty_brwi-i-rzesy_13750_wroclaw#ba_s=sr_1"
                                            target="_blank"
-                                           class="pl-3 pr-3 text-black">
+                                           class="pl-3 pr-3">
                                             <img src="{% static 'core/images/booksy.svg' %}"
                                                  alt="Booksy logo"
                                                  style="height: 22px;

@@ -46,7 +46,7 @@ class CancelUserReservationView(LoginRequiredMixin, UserPassesTestMixin, View):
         else:
             messages.info(request, "The reservation has already been canceled.")
 
-        return redirect("user_reservations_list")
+        return redirect("reservations:user_reservations_list")
 
     def test_func(self) -> bool:
         return self.request.user.is_authenticated
