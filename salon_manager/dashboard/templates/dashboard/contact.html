@@ -19,7 +19,9 @@
         <div class="container">
             <div class="row">
                 <div class="col-md-7 mb-5">
-                    <form action="{% url 'contact' %}" method="post" class="p-5 bg-white">
+                    <form action="{% url 'dashboard:contact' %}"
+                          method="post"
+                          class="p-5 bg-white">
                         {% csrf_token %}
                         <div class="row form-group">
                             <div class="col-md-6 mb-3 mb-md-0">

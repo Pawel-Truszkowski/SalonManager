@@ -49,7 +49,7 @@ class ManageReservationsListView(OwnerRequiredMixin, ListView):
 
 class ReservationCreateView(OwnerRequiredMixin, View):
     template_name = "reservations/manage_reservations_form.html"
-    success_url = reverse_lazy("manage_reservations_list")
+    success_url = reverse_lazy("reservations:manage_reservations_list")
 
     def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
         request_reservation_form = ReservationRequestForm()
@@ -100,7 +100,7 @@ class ReservationUpdateView(OwnerRequiredMixin, UpdateView):
     model = Reservation
     form_class = ReservationForm
     template_name = "reservations/manage_reservations_form.html"
-    success_url = reverse_lazy("manage_reservations_list")
+    success_url = reverse_lazy("reservations:manage_reservations_list")
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         context = super().get_context_data()
@@ -161,7 +161,7 @@ class ReservationUpdateView(OwnerRequiredMixin, UpdateView):
 class ReservationDeleteView(OwnerRequiredMixin, DeleteView):
     model = Reservation
     template_name = "reservations/manage_reservations_delete.html"
-    success_url = reverse_lazy("manage_reservations_list")
+    success_url = reverse_lazy("reservations:manage_reservations_list")
 
     def get_success_url(self):
         messages.success(self.request, "Reservation deleted successfully!")
@@ -176,14 +176,16 @@ class ConfirmReservationView(OwnerRequiredMixin, View):
 
         if reservation.status == "CONFIRMED":
             messages.info(request, "Reservation already confirmed!")
-            return redirect(reverse("manage_reservations_list"))
+            return redirect(reverse("reservations:manage_reservations_list"))
 
         reservation.status = "CONFIRMED"
         reservation.save()
 
         if reservation.email:
             cancel_url = request.build_absolute_uri(
-                reverse("cancel_reservation", args=[reservation.id_request])
+                reverse(
+                    "reservations:cancel_reservation", args=[reservation.id_request]
+                )
             )
             try:
                 send_confirmation_email.delay(  # type: ignore[attr-defined]
@@ -203,4 +205,4 @@ class ConfirmReservationView(OwnerRequiredMixin, View):
         else:
             messages.success(request, "Reservation confirmed!")
 
-        return redirect(reverse("manage_reservations_list"))
+        return redirect(reverse("reservations:manage_reservations_list"))

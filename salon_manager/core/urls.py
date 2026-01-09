@@ -4,20 +4,20 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.contrib.auth import views as auth_views
 from django.urls import include, path, reverse_lazy
-from users import views as user_views  # TODO import jak reszta rzeczy
 
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("", include("dashboard.urls")),
+    path("users/", include("users.urls")),
     path("services/", include("services.urls")),
     path("reservations/", include("reservations.urls")),
+    # Authentication URLs
     path(
         "login/",
         auth_views.LoginView.as_view(template_name="users/login.html"),
         name="login",
     ),
     path("logout/", auth_views.LogoutView.as_view(next_page="home"), name="logout"),
-    path("register/", user_views.RegisterView.as_view(), name="register"),
     path(
         "password-change/",
         auth_views.PasswordChangeView.as_view(
@@ -62,24 +62,6 @@ urlpatterns = [
             template_name="users/password_reset_complete.html"
         ),
         name="password_reset_complete",
-    ),
-    path("profile/", user_views.profile, name="profile"),
-    # Employee Management
-    path("employees/", user_views.EmployeeListView.as_view(), name="employee_list"),
-    path(
-        "employees/add/",
-        user_views.EmployeeCreateView.as_view(),
-        name="employee_create",
-    ),
-    path(
-        "employees/<int:pk>/edit/",
-        user_views.EmployeeUpdateView.as_view(),
-        name="employee_update",
-    ),
-    path(
-        "employees/<int:pk>/delete/",
-        user_views.EmployeeDeleteView.as_view(),
-        name="employee_delete",
     ),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 

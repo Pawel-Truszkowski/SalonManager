@@ -1,5 +1,5 @@
 from django.urls import path
-from reservations.views import (  # TODO importy konkretne
+from reservations.views import (
     api,
     manage_reservations_views,
     manage_workday_views,
@@ -8,6 +8,11 @@ from reservations.views import (  # TODO importy konkretne
 )
 
 # TODO app_name = "reservations"  # reservations:sucess
+app_name = "reservations"
+
+
+# TODO edycja urls
+
 urlpatterns = [
     path(
         "reservation-success/",

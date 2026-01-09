@@ -13,12 +13,17 @@ from users.models import CustomUser, Employee
 from utils.support_functions import generate_random_id, get_timestamp, time_difference
 
 
-class WorkDay(models.Model):  # TODO helptexts
-    date = models.DateField()
-    start_time = models.TimeField()
-    end_time = models.TimeField()
+class WorkDay(models.Model):
+    date = models.DateField(help_text="The date of the work day")
+    start_time = models.TimeField(help_text="The start time of the work day")
+    end_time = models.TimeField(
+        help_text="The end time of the work day (must be later than start time)"
+    )
     employee = models.ForeignKey(
-        Employee, on_delete=models.CASCADE, related_name="work_day"
+        Employee,
+        on_delete=models.CASCADE,
+        related_name="work_day",
+        help_text="The employee assigned to this work day",
     )
 
     def clean(self):
@@ -37,16 +42,39 @@ class WorkDay(models.Model):  # TODO helptexts
         return f"{self.employee} - {self.date}"
 
 
-class ReservationRequest(models.Model):  # TODO helptexts
-    date = models.DateField()
-    start_time = models.TimeField()
-    end_time = models.TimeField()
-    service = models.ForeignKey(Service, on_delete=models.CASCADE)
-    employee = models.ForeignKey(Employee, on_delete=models.SET_NULL, null=True)
-    id_request = models.CharField(max_length=100, blank=True, null=True, default=None)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    expires_at = models.DateTimeField()
+class ReservationRequest(models.Model):
+    date = models.DateField(
+        help_text="The date for the reservation request (cannot be in the past)"
+    )
+    start_time = models.TimeField(help_text="The start time of the requested service")
+    end_time = models.TimeField(
+        help_text="The end time of the requested service (must be after start time)"
+    )
+    service = models.ForeignKey(
+        Service, on_delete=models.CASCADE, help_text="The service requested"
+    )
+    employee = models.ForeignKey(
+        Employee,
+        on_delete=models.SET_NULL,
+        null=True,
+        help_text="The employee assigned to provide the service (optional)",
+    )
+    id_request = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        default=None,
+        help_text="Unique request identifier (auto-generated)",
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True, help_text="The datetime when the request was created"
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True, help_text="The datetime when the request was last updated"
+    )
+    expires_at = models.DateTimeField(
+        help_text="The datetime when the request expires (typically 15 minutes after creation)"
+    )
 
     def __str__(self) -> str:
         return (
@@ -97,22 +125,48 @@ class Reservation(models.Model):
         limit_choices_to={"is_customer": True},
         null=True,
         blank=True,
+        help_text="The customer who made the reservation (optional for guests)",
     )
     status = models.CharField(
-        max_length=10, choices=RESERVATION_STATUS_CHOICES, default="PENDING"
+        max_length=10,
+        choices=RESERVATION_STATUS_CHOICES,
+        default="PENDING",
+        help_text="The current status of the reservation",
     )
     reservation_request = models.OneToOneField(
-        ReservationRequest, on_delete=models.CASCADE, related_name="reservation"
+        ReservationRequest,
+        on_delete=models.CASCADE,
+        related_name="reservation",
+        help_text="The associated reservation request",
     )
-    id_request = models.CharField(max_length=100, blank=True, null=True)
+    id_request = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        help_text="Unique reservation identifier (auto-generated)",
+    )
 
-    name = models.CharField(max_length=100)
-    email = models.EmailField(null=True, blank=True)
-    phone = PhoneNumberField(blank=True)
-    additional_info = models.TextField(blank=True, null=True)
+    name = models.CharField(
+        max_length=100, help_text="The name of the person making the reservation"
+    )
+    email = models.EmailField(
+        null=True, blank=True, help_text="The email address of the customer (optional)"
+    )
+    phone = PhoneNumberField(
+        blank=True, help_text="The phone number of the customer (optional)"
+    )
+    additional_info = models.TextField(
+        blank=True,
+        null=True,
+        help_text="Additional information or special requests from the customer",
+    )
 
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(
+        auto_now_add=True, help_text="The datetime when the reservation was created"
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True, help_text="The datetime when the reservation was last updated"
+    )
 
     def __str__(self) -> str:
         customer_name = self.customer.username if self.customer else self.name

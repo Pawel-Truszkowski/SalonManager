@@ -13,7 +13,7 @@ from salon_manager.reservations.tests.base_test import BaseTestCase
 class UserReservationsListViewTest(BaseTestCase):
     def setUp(self):
         super().setUp()
-        self.url = reverse("user_reservations_list")
+        self.url = reverse("reservations:user_reservations_list")
 
         self.request1 = ReservationRequest.objects.create(
             date=date.today() + timedelta(days=5),
@@ -179,7 +179,7 @@ class CancelUserReservationViewTest(BaseTestCase):
         self.client.force_login(self.users["client1"])
         response = self.client.post(self.url)
 
-        self.assertRedirects(response, reverse("user_reservations_list"))
+        self.assertRedirects(response, reverse("reservations:user_reservations_list"))
 
     def test_post_shows_success_message(self):
         self.client.force_login(self.users["client1"])
@@ -250,7 +250,7 @@ class CancelUserReservationViewTest(BaseTestCase):
 
         self.reservation.refresh_from_db()
         self.assertEqual(self.reservation.status, "CANCELLED")
-        self.assertRedirects(response, reverse("user_reservations_list"))
+        self.assertRedirects(response, reverse("reservations:user_reservations_list"))
 
     def test_employee_can_cancel_reservation(self):
         self.client.force_login(self.users["employee1"])
